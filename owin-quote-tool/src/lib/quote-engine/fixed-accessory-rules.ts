@@ -99,14 +99,17 @@ export function enrichFixedAccessoryPackageValue(
   if (!pkg || typeof pkg !== 'object') return typeof packageValue === 'string' ? packageValue : null;
 
   const hasExistingManualItems = hasManualItems(pkg);
-  const packageQuantity = hasExistingManualItems
-    ? Number(pkg.packageQuantity ?? pkg.quantity ?? totalQuantity) || 1
-    : Number(totalQuantity || pkg.packageQuantity || pkg.quantity || 1) || 1;
+  const totalSl = Math.max(1, Number(totalQuantity) || 1);
+  // Auto SL bộ = tổng SL hạng mục, trừ khi user đã sửa tay (packageQuantityManual).
+  const packageQuantity = pkg.packageQuantityManual
+    ? Number(pkg.packageQuantity ?? pkg.quantity ?? totalSl) || 1
+    : totalSl;
   const unitPrice = Number(pkg.unitPrice ?? pkg.unitPriceVnd ?? 0);
   const next: FixedAccessoryPackageLike = {
     ...pkg,
     packageQuantity,
     quantity: packageQuantity,
+    packageQuantityManual: pkg.packageQuantityManual ? true : undefined,
     unit: pkg.unit || 'BO',
     unitPrice,
     unitPriceVnd: unitPrice,

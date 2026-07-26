@@ -206,7 +206,9 @@ export function FixedAccessoryPackageEditor({
             mode="int"
             min={0}
             value={value.packageQuantity}
-            onChange={(packageQuantity) => patch({ packageQuantity })}
+            onChange={(packageQuantity) =>
+              patch({ packageQuantity, packageQuantityManual: true })
+            }
             placeholder="0"
           />
         </div>

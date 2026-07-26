@@ -4,7 +4,7 @@ import type { ProductRecord } from '@/types/models';
 import { useProducts } from './useProducts';
 import { bulkAdjustProductPrices, getProductRecord, reorderProducts } from './productStore';
 import { reorderList } from '@/components/DragReorder';
-import { sortProductsByColor } from '@/lib/products/productSort';
+import { sortProductsForCatalog } from '@/lib/products/productSort';
 import { ProductForm, type ProductFormSaveOptions } from './ProductForm';
 import { ProductList } from './ProductList';
 import { ProductPreviewCard } from './ProductPreviewCard';
@@ -323,11 +323,11 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
         .toLowerCase();
       return categoryOk && (!q || text.includes(q));
     });
-    // Mặc định: tự xếp theo màu (Trắc → Lim → Ghi → Xanh…); trong cùng màu giữ thứ tự đã kéo.
-    return sortProductsByColor(filtered);
+    // Nhóm → màu (Trắc → Lim → Ghi → Xanh) → giá cao → thấp.
+    return sortProductsForCatalog(filtered);
   }, [productRecords, searchQuery, selectedCategory]);
 
-  // Drag reorder arranges products within the same colour group.
+  // Drag reorder vẫn cho phép chỉnh tay; thứ tự hiển thị mặc định theo nhóm/màu/giá.
   const canReorder = !searchQuery.trim() && !selectedCategory;
   const handleReorder = async (from: number, to: number) => {
     const nextOrder = reorderList(filteredProducts, from, to);

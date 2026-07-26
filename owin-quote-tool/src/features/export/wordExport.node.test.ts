@@ -24,6 +24,8 @@ function fixedPackage() {
       { name: 'Keo silicone', quantity: 0 },
     ],
     packageQuantity: 2,
+    // SL bộ PK sửa tay (khác tổng SL cửa = 1) — không auto ghi đè.
+    packageQuantityManual: true,
     unit: 'BO',
     unitPrice: 500000,
     total: 1000000,

@@ -50,6 +50,8 @@ export type FixedAccessoryPackageLike = {
   itemsText?: string | null;
   packageQuantity?: number | null;
   quantity?: number | null;
+  /** User đã sửa tay SL bộ — không auto = totalSet cho đến khi SL cửa đổi. */
+  packageQuantityManual?: boolean | null;
   unit?: string | null;
   unitPrice?: number | null;
   unitPriceVnd?: number | null;

@@ -15,6 +15,11 @@ export interface FixedAccessoryDraft {
   unit: ProductUnit;
   unitPrice: number;
   total: number;
+  /**
+   * true = user đã sửa tay SL bộ PK; không auto-ghi đè bằng tổng SL hạng mục
+   * cho đến khi tổng SL cửa thay đổi (khi đó clear flag và sync lại).
+   */
+  packageQuantityManual?: boolean;
 }
 
 export interface ExtraAccessoryDraft {
@@ -154,6 +159,7 @@ export function parseFixedAccessoriesJson(
     rawName === undefined || rawName === null
       ? DEFAULT_FIXED_ACCESSORY_NAME
       : String(rawName).trim();
+  const packageQuantityManual = Boolean(parsed.packageQuantityManual);
 
   return {
     name,
@@ -162,6 +168,7 @@ export function parseFixedAccessoriesJson(
     unit: 'BO',
     unitPrice,
     total: numberOr(parsed.total ?? parsed.totalVnd, packageQuantity * unitPrice),
+    packageQuantityManual,
   };
 }
 
@@ -190,7 +197,7 @@ export function serializeFixedAccessoriesJson(
 
   if (isBlank && !options?.keepEmpty) return null;
 
-  return JSON.stringify({
+  const payload: Record<string, unknown> = {
     name: options?.keepEmpty ? name : name || DEFAULT_FIXED_ACCESSORY_NAME,
     items: options?.keepEmpty
       ? cleanItems
@@ -201,7 +208,9 @@ export function serializeFixedAccessoriesJson(
     unitPriceVnd: unitPrice,
     total,
     totalVnd: total,
-  });
+  };
+  if (value.packageQuantityManual) payload.packageQuantityManual = true;
+  return JSON.stringify(payload);
 }
 
 export function updateFixedAccessoryDraft(
@@ -211,6 +220,25 @@ export function updateFixedAccessoryDraft(
   const next = { ...draft, ...patch };
   next.total = calculateFixedAccessoryDraftTotal(next);
   return next;
+}
+
+/**
+ * Gắn SL bộ PK = tổng SL hạng mục (số cái).
+ * Dùng khi user đổi SL/dòng kích thước; xoá cờ manual để lần sau vẫn auto.
+ * Không có bộ PK → giữ nguyên item.
+ */
+export function syncFixedPackageQuantityToTotalSl(
+  fixedAccessoryPackage: string | null | undefined,
+  totalSl: number,
+  options?: { keepEmpty?: boolean },
+): string | null | undefined {
+  if (fixedAccessoryPackage == null || fixedAccessoryPackage === '') return fixedAccessoryPackage;
+  const draft = parseFixedAccessoriesJson(fixedAccessoryPackage, Math.max(1, totalSl));
+  const next = updateFixedAccessoryDraft(draft, {
+    packageQuantity: Math.max(1, Math.round(totalSl) || 1),
+    packageQuantityManual: false,
+  });
+  return serializeFixedAccessoriesJson(next, { keepEmpty: options?.keepEmpty ?? true });
 }
 
 export function addEmptyFixedAccessoryItem(draft: FixedAccessoryDraft): FixedAccessoryDraft {

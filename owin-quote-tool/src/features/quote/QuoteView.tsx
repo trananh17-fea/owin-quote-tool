@@ -44,7 +44,13 @@ import {
   parseFixedAccessoriesJson,
   serializeExtraAccessoriesJson,
   serializeFixedAccessoriesJson,
+  syncFixedPackageQuantityToTotalSl,
 } from '@/lib/quote/accessoryDrafts';
+import {
+  sortQuoteItemsByMaxLineAmount,
+  sortQuoteItemsWithKeys,
+  sumItemDimensionQuantity,
+} from '@/lib/quote/quoteItemOrder';
 import {
   buildAccessoryPackageCatalog,
   findOrphanAccessoryNames,
@@ -538,8 +544,11 @@ export function QuoteView() {
 
   const appendItem = (item: QuoteItemInput, options?: { expand?: boolean }) => {
     const key = makeItemUiKey();
-    setItems((current) => [...current, item]);
-    setItemUiKeys((current) => [...current, key]);
+    // SL bộ PK = tổng SL hạng mục; xếp theo max thành tiền dòng KT.
+    const seeded = withSyncedPackageQuantity(item);
+    const sorted = sortQuoteItemsWithKeys([...items, seeded], [...itemUiKeys, key]);
+    setItems(sorted.items);
+    setItemUiKeys(sorted.keys);
     if (options?.expand !== false) {
       setExpandedItemKeys((current) => new Set(current).add(key));
     }
@@ -555,8 +564,27 @@ export function QuoteView() {
   const addCustom = () =>
     appendItem(createCustomQuoteItem(makeItemCode(items.length)), { expand: true });
 
-  const updateItem = (index: number, patch: Partial<QuoteItemInput>) =>
-    setItems((current) => current.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  const updateItem = (index: number, patch: Partial<QuoteItemInput>) => {
+    const affectsMoney =
+      patch.dimensions !== undefined ||
+      patch.unitPriceVnd !== undefined ||
+      patch.unit !== undefined;
+    const nextItems = items.map((item, i) => {
+      if (i !== index) return item;
+      let merged: QuoteItemInput = { ...item, ...patch };
+      if (patch.dimensions) {
+        merged = withSyncedPackageQuantity({ ...merged, dimensions: patch.dimensions });
+      }
+      return merged;
+    });
+    if (affectsMoney) {
+      const sorted = sortQuoteItemsWithKeys(nextItems, itemUiKeys);
+      setItems(sorted.items);
+      setItemUiKeys(sorted.keys);
+      return;
+    }
+    setItems(nextItems);
+  };
 
   /** Collapse an item to its compact card. Silently tidies blank rows — no confirm prompt. */
   const collapseItem = (index: number) => {
@@ -604,27 +632,29 @@ export function QuoteView() {
     if (!source) return;
     const key = makeItemUiKey();
     const code = makeItemCode(items.length);
-    const clone: QuoteItemInput = {
+    const clone: QuoteItemInput = withSyncedPackageQuantity({
       ...confirmNormalizeItem(source),
       productCode: code,
       quoteItemCode: code,
-    };
-    setItems((current) => [...current.slice(0, index + 1), clone, ...current.slice(index + 1)]);
-    setItemUiKeys((current) => [...current.slice(0, index + 1), key, ...current.slice(index + 1)]);
+    });
+    const nextItems = [...items.slice(0, index + 1), clone, ...items.slice(index + 1)];
+    const nextKeys = [...itemUiKeys.slice(0, index + 1), key, ...itemUiKeys.slice(index + 1)];
+    const sorted = sortQuoteItemsWithKeys(nextItems, nextKeys);
+    setItems(sorted.items);
+    setItemUiKeys(sorted.keys);
     setExpandedItemKeys((current) => new Set(current).add(key));
   };
 
-  const updateDimension = (itemIndex: number, lineIndex: number, patch: Partial<DimensionInput>) =>
-    setItems((current) =>
-      current.map((item, i) =>
-        i === itemIndex
-          ? {
-              ...item,
-              dimensions: item.dimensions.map((line, j) => (j === lineIndex ? { ...line, ...patch } : line)),
-            }
-          : item,
-      ),
-    );
+  const updateDimension = (itemIndex: number, lineIndex: number, patch: Partial<DimensionInput>) => {
+    const nextItems = items.map((item, i) => {
+      if (i !== itemIndex) return item;
+      const dimensions = item.dimensions.map((line, j) => (j === lineIndex ? { ...line, ...patch } : line));
+      return withSyncedPackageQuantity({ ...item, dimensions });
+    });
+    const sorted = sortQuoteItemsWithKeys(nextItems, itemUiKeys);
+    setItems(sorted.items);
+    setItemUiKeys(sorted.keys);
+  };
 
   const updateAccessory = (itemIndex: number, accIndex: number, patch: Partial<AccessoryInput>) =>
     setItems((current) =>
@@ -1073,7 +1103,11 @@ export function QuoteView() {
     setCustomerAddress(quote.customerAddress);
     setQuoteDate((quote.quoteDate || quote.createdAt).slice(0, 10));
     setDepositVnd(quote.depositVnd);
-    const loaded = snapshotToInputs(quote).map((item) => confirmNormalizeItem(item));
+    const loaded = sortQuoteItemsByMaxLineAmount(
+      snapshotToInputs(quote).map((item) =>
+        withSyncedPackageQuantity(confirmNormalizeItem(item), 'auto'),
+      ),
+    );
     acknowledgedQuoteRef.current = duplicate ? null : quote;
     acknowledgedFormRef.current = duplicate
       ? null
@@ -1813,6 +1847,28 @@ function TotalLine({ label, value, strong }: { label: string; value: number; str
       <span style={{ fontWeight: strong ? 800 : 600 }}>{formatVND(value)}</span>
     </div>
   );
+}
+
+/**
+ * Tổng SL cửa → SL bộ phụ kiện cố định.
+ * - force: luôn ghi đè (khi user đổi SL/dòng KT) và xoá cờ manual
+ * - auto: chỉ sync khi user chưa sửa tay SL bộ
+ */
+function withSyncedPackageQuantity(
+  item: QuoteItemInput,
+  mode: 'force' | 'auto' = 'force',
+): QuoteItemInput {
+  if (item.fixedAccessoryPackage == null || item.fixedAccessoryPackage === '') return item;
+  const totalSl = sumItemDimensionQuantity(item);
+  if (mode === 'auto') {
+    const draft = parseFixedAccessoriesJson(item.fixedAccessoryPackage, Math.max(1, totalSl));
+    if (draft.packageQuantityManual) return item;
+  }
+  const nextPackage = syncFixedPackageQuantityToTotalSl(item.fixedAccessoryPackage, totalSl, {
+    keepEmpty: true,
+  });
+  if (nextPackage === item.fixedAccessoryPackage) return item;
+  return { ...item, fixedAccessoryPackage: nextPackage ?? null };
 }
 
 function parseJsonMaybe<T>(value: unknown, fallback: T): T {
