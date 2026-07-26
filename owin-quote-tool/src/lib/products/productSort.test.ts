@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductRecord } from '@/types/models';
-import { productColorRank, sortProductsForCatalog } from './productSort';
+import { productCatalogueTotalVnd, productColorRank, sortProductsForCatalog } from './productSort';
 
 function product(partial: Partial<ProductRecord> & Pick<ProductRecord, 'id' | 'name' | 'category' | 'unitPriceVnd'>): ProductRecord {
   return {
     numericId: 0,
     code: partial.id,
     slug: partial.id,
-    unit: 'M2',
+    unit: 'BO',
     shortDesc: null,
     coverImagePath: null,
     gallery: [],
@@ -34,16 +34,63 @@ describe('productColorRank', () => {
   });
 });
 
+describe('productCatalogueTotalVnd', () => {
+  it('sums product + fixed package', () => {
+    const p = product({
+      id: 'x',
+      name: 'X',
+      category: 'Cửa Chính',
+      unit: 'BO',
+      unitPriceVnd: 5_000_000,
+      fixedAccessoryPackage: JSON.stringify({
+        name: 'Bộ PK',
+        packageQuantity: 1,
+        unitPrice: 500_000,
+      }),
+    });
+    expect(productCatalogueTotalVnd(p)).toBe(5_500_000);
+  });
+});
+
 describe('sortProductsForCatalog', () => {
-  it('sorts by category, then color, then price high→low', () => {
+  it('sorts by category, then color, then completed total high→low', () => {
     const list = [
-      product({ id: 'a', name: 'Lim rẻ', category: 'Cửa Phụ', unitPriceVnd: 1_000_000, specs: [{ key: 'Màu', value: 'Vân Gỗ Lim' }] }),
-      product({ id: 'b', name: 'Trắc rẻ', category: 'Cửa Chính', unitPriceVnd: 2_000_000, specs: [{ key: 'Màu', value: 'Vân Gỗ Trắc' }] }),
-      product({ id: 'c', name: 'Trắc đắt', category: 'Cửa Chính', unitPriceVnd: 5_000_000, specs: [{ key: 'Màu', value: 'Vân Gỗ Trắc' }] }),
-      product({ id: 'd', name: 'Ghi', category: 'Cửa Chính', unitPriceVnd: 9_000_000, specs: [{ key: 'Màu', value: 'Ghi - Cafe' }] }),
+      product({
+        id: 'a',
+        name: 'Lim rẻ',
+        category: 'Cửa Phụ',
+        unitPriceVnd: 1_000_000,
+        specs: [{ key: 'Màu', value: 'Vân Gỗ Lim' }],
+      }),
+      product({
+        id: 'b',
+        name: 'Trắc rẻ',
+        category: 'Cửa Chính',
+        unitPriceVnd: 2_000_000,
+        specs: [{ key: 'Màu', value: 'Vân Gỗ Trắc' }],
+      }),
+      // unit price thấp hơn b nhưng + PK → tổng cao hơn b
+      product({
+        id: 'c',
+        name: 'Trắc + PK',
+        category: 'Cửa Chính',
+        unitPriceVnd: 1_500_000,
+        specs: [{ key: 'Màu', value: 'Vân Gỗ Trắc' }],
+        fixedAccessoryPackage: JSON.stringify({
+          name: 'Bộ PK',
+          packageQuantity: 1,
+          unitPrice: 2_000_000,
+        }),
+      }),
+      product({
+        id: 'd',
+        name: 'Ghi',
+        category: 'Cửa Chính',
+        unitPriceVnd: 9_000_000,
+        specs: [{ key: 'Màu', value: 'Ghi - Cafe' }],
+      }),
     ];
-    const sorted = sortProductsForCatalog(list).map((p) => p.id);
-    // Cửa Chính trước Cửa Phụ; trong Chính: Trắc (đắt→rẻ) rồi Ghi
-    expect(sorted).toEqual(['c', 'b', 'd', 'a']);
+    // c total 3.5tr > b 2tr trong cùng Trắc; d Ghi sau Trắc; a Cửa Phụ cuối
+    expect(sortProductsForCatalog(list).map((p) => p.id)).toEqual(['c', 'b', 'd', 'a']);
   });
 });

@@ -1,7 +1,7 @@
 /**
  * One-shot migrate: persist catalogue order + re-order quote items.
  *
- * Products: category → color (Trắc→Lim→Ghi→Xanh) → price high→low
+ * Products: category → color (Trắc→Lim→Ghi→Xanh) → catalogue total (SP+PK+extra) high→low
  *           → RPC set_product_order (sort_order + data.sortOrder)
  *
  * Quotes:   items + snapshot.items by max(line SP + PK share) high→low
@@ -92,12 +92,87 @@ function productColorRank(product) {
   return rank === -1 ? COLOR_ORDER.length : rank;
 }
 
+function parseSizeToMeters(sizeText) {
+  if (!sizeText) return { width: 0, height: 0 };
+  const parts = String(sizeText).split(/\s*[xX*]\s*/);
+  if (parts.length < 2) return { width: 0, height: 0 };
+  const parseDim = (v) => {
+    const m = String(v).trim().replace(',', '.').match(/\d+(?:\.\d+)?/);
+    let n = m ? Number(m[0]) : 0;
+    if (n > 10) n /= 1000;
+    return n;
+  };
+  return { width: parseDim(parts[0]), height: parseDim(parts[1]) };
+}
+
+function catalogueLineWeight(unit, width, height, quantity = 1) {
+  const u = String(unit || 'BO').toUpperCase();
+  if (u === 'M2' || u === 'M²') return width > 0 && height > 0 ? width * height * quantity : quantity;
+  if (u === 'METER' || u === 'MD' || u === 'M') return width + height > 0 ? (width + height) * quantity : quantity;
+  return quantity;
+}
+
+/** Tổng tiền 1 SP = cửa (size×đơn giá) + bộ PK + legacy + extra — giống bảng giá. */
+function productCatalogueTotalVnd(product) {
+  const { width, height } = parseSizeToMeters(product.rawSizeText);
+  const unitPrice = Number(product.unitPriceVnd || product.unit_price_vnd || 0);
+  const weight = catalogueLineWeight(product.unit, width, height, 1);
+  let total = Math.round(weight * unitPrice);
+
+  const rawPkg = product.fixedAccessoryPackage;
+  if (rawPkg) {
+    try {
+      const pkg = typeof rawPkg === 'string' ? JSON.parse(rawPkg) : rawPkg;
+      if (pkg && typeof pkg === 'object') {
+        const q = Number(pkg.packageQuantity ?? pkg.quantity ?? 1) || 1;
+        const p = Number(pkg.unitPrice ?? pkg.unitPriceVnd ?? 0) || 0;
+        const stored = Number(pkg.total ?? pkg.totalVnd ?? 0);
+        total += stored > 0 ? Math.round(stored) : Math.round(q * p);
+      }
+    } catch {
+      /* ignore */
+    }
+  } else if (Array.isArray(product.accessories)) {
+    for (const acc of product.accessories) {
+      const q = Number(acc.quantityPerSet ?? 1) || 1;
+      const p = Number(acc.unitPriceVnd ?? 0) || 0;
+      total += Math.round(q * p);
+    }
+  }
+
+  if (product.extraAccessories) {
+    try {
+      const extras =
+        typeof product.extraAccessories === 'string'
+          ? JSON.parse(product.extraAccessories)
+          : product.extraAccessories;
+      if (Array.isArray(extras)) {
+        for (const acc of extras) {
+          if (!String(acc?.name || '').trim()) continue;
+          const unit = String(acc.unit || 'BO').toUpperCase();
+          const q = Number(acc.quantity ?? acc.quantityPerSet ?? 1) || 1;
+          const w = Number(acc.weight ?? acc.kl ?? 0) || 0;
+          const p = Number(acc.unitPrice ?? acc.unitPriceVnd ?? 0) || 0;
+          const basis = unit === 'BO' || unit === 'BỘ' ? q : w > 0 ? w : q;
+          total += Math.round(basis * p);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return total;
+}
+
 function sortProductsForCatalog(products) {
   return [...products].sort((a, b) => {
     const byCategory = categoryOrderIndex(a.category) - categoryOrderIndex(b.category);
     if (byCategory !== 0) return byCategory;
     const byColor = productColorRank(a) - productColorRank(b);
     if (byColor !== 0) return byColor;
+    const totalA = productCatalogueTotalVnd(a);
+    const totalB = productCatalogueTotalVnd(b);
+    if (totalA !== totalB) return totalB - totalA;
     const priceA = Number(a.unitPriceVnd || a.unit_price_vnd || 0);
     const priceB = Number(b.unitPriceVnd || b.unit_price_vnd || 0);
     if (priceA !== priceB) return priceB - priceA;
@@ -262,7 +337,12 @@ async function fetchAllProducts(supabase) {
       code: row.code || data.code,
       name: row.name || data.name,
       category: row.category || data.category,
+      unit: data.unit || row.unit || 'BO',
       unitPriceVnd: row.unit_price_vnd ?? data.unitPriceVnd ?? 0,
+      rawSizeText: data.rawSizeText ?? row.size_text ?? null,
+      fixedAccessoryPackage: data.fixedAccessoryPackage ?? null,
+      extraAccessories: data.extraAccessories ?? null,
+      accessories: data.accessories || [],
       numericId: data.numericId,
       specs: data.specs || [],
       sortOrder: row.sort_order ?? data.sortOrder,
@@ -309,8 +389,9 @@ async function migrateProducts(supabase) {
   for (const p of sorted.slice(0, 12)) {
     const color =
       (p.specs || []).find((s) => stripAccents(s.key).includes('mau'))?.value || '—';
+    const total = productCatalogueTotalVnd(p);
     console.log(
-      `  ${String(p.sortOrder ?? '·').padStart(3)}→ ${normalizeCategoryName(p.category).padEnd(12)} | ${String(color).padEnd(16)} | ${Number(p.unitPriceVnd).toLocaleString('vi-VN').padStart(12)} | ${p.code} ${p.name}`,
+      `  ${String(p.sortOrder ?? '·').padStart(3)}→ ${normalizeCategoryName(p.category).padEnd(12)} | ${String(color).padEnd(16)} | Σ${total.toLocaleString('vi-VN').padStart(12)} | ${p.code} ${p.name}`,
     );
   }
 

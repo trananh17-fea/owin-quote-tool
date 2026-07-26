@@ -1,11 +1,20 @@
 import type { ProductRecord } from '@/types/models';
 import { categoryOrderIndex } from '@/config/categoryOrder';
+import { buildCatalogueMoneyBlocks } from '@/lib/catalogue/catalogueMoney';
 
 /**
  * Thứ tự màu ưu tiên (keyword không dấu, match `includes`).
  * Vân Gỗ Trắc → Vân Gỗ Lim → Ghi/Ghi Xanh/Ghi-Cafe → Xanh → khác.
  */
 export const COLOR_ORDER = ['trac', 'lim', 'ghi', 'xanh'];
+
+/**
+ * Tổng tiền 1 SP trên bảng giá = tiền SP (size × đơn giá) + bộ PK + legacy + extra.
+ * Cùng engine với cột "Thành tiền / hoàn thành" catalogue.
+ */
+export function productCatalogueTotalVnd(product: ProductRecord): number {
+  return buildCatalogueMoneyBlocks(product).completedTotal;
+}
 
 function stripAccents(value: string): string {
   return value
@@ -42,7 +51,7 @@ export function sortProductsByColor<T extends ProductRecord>(products: T[]): T[]
  * Sản phẩm / Bảng giá:
  * 1. Nhóm (loại cửa)
  * 2. Màu (Trắc → Lim → Ghi → Xanh → khác)
- * 3. Giá cao → thấp
+ * 3. Tổng tiền SP (cửa + PK + extra) cao → thấp
  */
 export function sortProductsForCatalog<T extends ProductRecord>(products: T[]): T[] {
   return [...products].sort((a, b) => {
@@ -52,6 +61,11 @@ export function sortProductsForCatalog<T extends ProductRecord>(products: T[]): 
     const byColor = productColorRank(a) - productColorRank(b);
     if (byColor !== 0) return byColor;
 
+    const totalA = productCatalogueTotalVnd(a);
+    const totalB = productCatalogueTotalVnd(b);
+    if (totalA !== totalB) return totalB - totalA;
+
+    // Tie-break: đơn giá, rồi id/tên
     const priceA = Number(a.unitPriceVnd || 0);
     const priceB = Number(b.unitPriceVnd || 0);
     if (priceA !== priceB) return priceB - priceA;
