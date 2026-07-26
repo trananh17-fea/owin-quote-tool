@@ -238,7 +238,10 @@ describe('reference Word catalogue template renderer', () => {
     continuationCells.forEach((match) => expect(match[0]).toContain('<w:tcBorders>'));
   });
 
-  it('protects catalogue Word export as read-only with edit password 222333', async () => {
+  // SHA-1 verifier + template zip can exceed default 5s on cold CI runners.
+  it(
+    'protects catalogue Word export as read-only with edit password 222333',
+    async () => {
     expect(CATALOGUE_WORD_EDIT_PASSWORD).toBe('222333');
 
     // Fixed salt — hash must match the Microsoft/PHPWord Word97+SHA-1 verifier.
@@ -264,5 +267,7 @@ describe('reference Word catalogue template renderer', () => {
     expect(settings).not.toContain('w:hashValue=');
     // Password itself must not appear in cleartext inside the package.
     expect(settings).not.toContain('222333');
-  });
+    },
+    20_000,
+  );
 });
