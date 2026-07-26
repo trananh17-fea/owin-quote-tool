@@ -40,7 +40,7 @@ export function fixedPackageTotalVnd(item: Pick<QuoteItemInput, 'fixedAccessoryP
 export function extraAccessoriesTotalVnd(item: Pick<QuoteItemInput, 'extraAccessories'>): number {
   const extras = parseJsonMaybe<unknown[]>(item.extraAccessories, []);
   if (!Array.isArray(extras)) return 0;
-  return extras.reduce((sum, row) => {
+  return extras.reduce<number>((sum, row) => {
     const acc = row as Record<string, unknown>;
     if (!String(acc?.name || '').trim()) return sum;
     const unit = normalizeUnit(String(acc.unit || 'BO'));
