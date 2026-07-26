@@ -8,6 +8,7 @@ import {
   parseFixedAccessoriesJson,
   serializeExtraAccessoriesJson,
   serializeFixedAccessoriesJson,
+  syncFixedPackageQuantityToTotalSl,
 } from './accessoryDrafts';
 
 describe('fixed accessory draft normalization', () => {
@@ -130,5 +131,50 @@ describe('fixed accessory draft normalization', () => {
     const json = serializeFixedAccessoriesJson(cleared, { keepEmpty: true });
     const reparsed = parseFixedAccessoriesJson(json, 1);
     expect(reparsed.items.some((item) => item.id === 'stable-1' || item.name === '')).toBe(true);
+  });
+});
+
+describe('syncFixedPackageQuantityToTotalSl', () => {
+  it('creates shell with package qty = total door SL when missing', () => {
+    const json = syncFixedPackageQuantityToTotalSl(null, 3, { createIfMissing: true, keepEmpty: true });
+    expect(json).toBeTruthy();
+    const draft = parseFixedAccessoriesJson(json, 1);
+    expect(draft.packageQuantity).toBe(3);
+    expect(draft.packageQuantityManual).toBeFalsy();
+  });
+
+  it('updates non-manual package qty when door SL changes', () => {
+    const base = serializeFixedAccessoriesJson(
+      {
+        name: 'Bộ PK',
+        items: [{ id: '1', name: 'Khóa', quantity: 0 }],
+        packageQuantity: 1,
+        unit: 'BO',
+        unitPrice: 100000,
+        total: 100000,
+      },
+      { keepEmpty: true },
+    );
+    const next = syncFixedPackageQuantityToTotalSl(base, 5, { keepEmpty: true });
+    expect(parseFixedAccessoriesJson(next, 1).packageQuantity).toBe(5);
+  });
+
+  it('keeps manual package qty when door SL changes', () => {
+    const base = serializeFixedAccessoriesJson(
+      {
+        name: 'Bộ PK',
+        items: [{ id: '1', name: 'Khóa', quantity: 0 }],
+        packageQuantity: 2,
+        packageQuantityManual: true,
+        unit: 'BO',
+        unitPrice: 100000,
+        total: 200000,
+      },
+      { keepEmpty: true },
+    );
+    const next = syncFixedPackageQuantityToTotalSl(base, 9, { keepEmpty: true });
+    const draft = parseFixedAccessoriesJson(next, 1);
+    expect(draft.packageQuantity).toBe(2);
+    expect(draft.packageQuantityManual).toBe(true);
   });
 });

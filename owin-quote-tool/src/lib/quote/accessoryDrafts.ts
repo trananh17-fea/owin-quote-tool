@@ -225,20 +225,32 @@ export function updateFixedAccessoryDraft(
 /**
  * Gắn SL bộ PK = tổng SL hạng mục (số cái).
  * Dùng khi user đổi SL/dòng kích thước; xoá cờ manual để lần sau vẫn auto.
- * Không có bộ PK → giữ nguyên item.
+ * createIfMissing: tạo shell bộ PK rỗng (keepEmpty) để UI hiện đúng SL bộ.
  */
 export function syncFixedPackageQuantityToTotalSl(
   fixedAccessoryPackage: string | null | undefined,
   totalSl: number,
-  options?: { keepEmpty?: boolean },
+  options?: { keepEmpty?: boolean; createIfMissing?: boolean },
 ): string | null | undefined {
-  if (fixedAccessoryPackage == null || fixedAccessoryPackage === '') return fixedAccessoryPackage;
-  const draft = parseFixedAccessoriesJson(fixedAccessoryPackage, Math.max(1, totalSl));
+  const qty = Math.max(1, Math.round(Number(totalSl) || 0) || 1);
+  const keepEmpty = options?.keepEmpty ?? true;
+  if (fixedAccessoryPackage == null || fixedAccessoryPackage === '') {
+    if (!options?.createIfMissing) return fixedAccessoryPackage;
+    return serializeFixedAccessoriesJson(createEmptyFixedAccessoryDraft(qty), { keepEmpty: true });
+  }
+  const draft = parseFixedAccessoriesJson(fixedAccessoryPackage, qty);
+  // Đã sửa tay → giữ nguyên
+  if (draft.packageQuantityManual) {
+    return serializeFixedAccessoriesJson(draft, { keepEmpty });
+  }
+  if (draft.packageQuantity === qty && !draft.packageQuantityManual) {
+    return fixedAccessoryPackage;
+  }
   const next = updateFixedAccessoryDraft(draft, {
-    packageQuantity: Math.max(1, Math.round(totalSl) || 1),
+    packageQuantity: qty,
     packageQuantityManual: false,
   });
-  return serializeFixedAccessoriesJson(next, { keepEmpty: options?.keepEmpty ?? true });
+  return serializeFixedAccessoriesJson(next, { keepEmpty });
 }
 
 export function addEmptyFixedAccessoryItem(draft: FixedAccessoryDraft): FixedAccessoryDraft {

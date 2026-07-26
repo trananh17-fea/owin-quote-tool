@@ -45,6 +45,7 @@ import {
   serializeExtraAccessoriesJson,
   serializeFixedAccessoriesJson,
   syncFixedPackageQuantityToTotalSl,
+  updateFixedAccessoryDraft,
 } from '@/lib/quote/accessoryDrafts';
 import {
   sortQuoteItemsByMaxLineAmount,
@@ -1851,21 +1852,24 @@ function TotalLine({ label, value, strong }: { label: string; value: number; str
 
 /**
  * Tổng SL cửa → SL bộ phụ kiện cố định.
- * - force: luôn ghi đè (khi user đổi SL/dòng KT) và xoá cờ manual
- * - auto: chỉ sync khi user chưa sửa tay SL bộ
+ * - force: luôn ghi đè khi đổi SL/dòng KT (tạo shell PK nếu chưa có); xoá cờ manual
+ * - auto: chỉ sync khi đã có bộ PK và user chưa sửa tay SL bộ
  */
 function withSyncedPackageQuantity(
   item: QuoteItemInput,
   mode: 'force' | 'auto' = 'force',
 ): QuoteItemInput {
-  if (item.fixedAccessoryPackage == null || item.fixedAccessoryPackage === '') return item;
   const totalSl = sumItemDimensionQuantity(item);
+  const hasPackage = item.fixedAccessoryPackage != null && item.fixedAccessoryPackage !== '';
   if (mode === 'auto') {
+    if (!hasPackage) return item;
     const draft = parseFixedAccessoriesJson(item.fixedAccessoryPackage, Math.max(1, totalSl));
     if (draft.packageQuantityManual) return item;
   }
   const nextPackage = syncFixedPackageQuantityToTotalSl(item.fixedAccessoryPackage, totalSl, {
     keepEmpty: true,
+    // Khi gõ SL kích thước: luôn có shell bộ PK để "Số lượng bộ" bám theo.
+    createIfMissing: mode === 'force',
   });
   if (nextPackage === item.fixedAccessoryPackage) return item;
   return { ...item, fixedAccessoryPackage: nextPackage ?? null };
@@ -2155,11 +2159,21 @@ function QuoteItemCard({
   dragHandleProps: Record<string, unknown>;
   products: ProductRecord[];
 }) {
-  // Always keep an editable fixed-package shell (empty name is allowed).
-  const fixedDraft =
-    item.fixedAccessoryPackage != null && item.fixedAccessoryPackage !== ''
-      ? parseFixedAccessoriesJson(item.fixedAccessoryPackage, 1)
-      : createEmptyFixedAccessoryDraft(1);
+  // SL bộ PK mặc định = tổng SL cửa; shell rỗng / JSON cũ qty=1 vẫn hiện đúng số.
+  const totalDoorSl = Math.max(1, sumItemDimensionQuantity(item) || 1);
+  const fixedDraft = (() => {
+    if (item.fixedAccessoryPackage == null || item.fixedAccessoryPackage === '') {
+      return createEmptyFixedAccessoryDraft(totalDoorSl);
+    }
+    const draft = parseFixedAccessoriesJson(item.fixedAccessoryPackage, totalDoorSl);
+    if (!draft.packageQuantityManual && draft.packageQuantity !== totalDoorSl) {
+      return updateFixedAccessoryDraft(draft, {
+        packageQuantity: totalDoorSl,
+        packageQuantityManual: false,
+      });
+    }
+    return draft;
+  })();
   const extraDraft = parseExtraAccessoriesJson(item.extraAccessories);
   const usesPackageAccessories = Boolean(item.fixedAccessoryPackage || extraDraft.length > 0);
   const specs = item.specs ?? [];
