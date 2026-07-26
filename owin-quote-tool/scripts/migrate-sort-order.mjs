@@ -4,7 +4,8 @@
  * Products: category → color (Trắc→Lim→Ghi→Xanh) → price high→low
  *           → RPC set_product_order (sort_order + data.sortOrder)
  *
- * Quotes:   items + snapshot.items by max dimension line amount high→low
+ * Quotes:   items + snapshot.items by max(line SP + PK share) high→low
+ *           PK share = (line SL / total door SL) × package pool
  *           (sync fixed package SL = total door SL unless packageQuantityManual)
  *
  * Run:
@@ -107,38 +108,100 @@ function sortProductsForCatalog(products) {
   });
 }
 
-function maxDimensionLineAmount(item) {
+function lineProductAmount(item, line) {
+  const stored = Number(line.lineTotalVnd || 0);
+  if (stored > 0) return stored;
+  const unitPrice = Number(line.unitPriceVnd ?? item.unitPriceVnd ?? 0);
+  const w = Number(line.widthM || 0);
+  const h = Number(line.heightM || 0);
+  const qty = Number(line.quantity || 0);
+  const unit = String(line.unit || item.unit || 'M2').toUpperCase();
+  let basis = qty;
+  if (unit === 'M2' || unit === 'M²') basis = Math.max(0, w) * Math.max(0, h) * qty;
+  else if (unit === 'METER' || unit === 'MD' || unit === 'M') basis = (Math.max(0, w) + Math.max(0, h)) * qty;
+  return Math.round(basis * unitPrice);
+}
+
+/** Tiền bộ PK + extra (pool phân bổ theo SL dòng). */
+function packagePoolVnd(item) {
+  let pool = 0;
+  const raw = item.fixedAccessoryPackage;
+  if (raw != null && raw !== '') {
+    try {
+      const pkg = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (pkg && typeof pkg === 'object') {
+        const qty = Math.max(0, Number(pkg.packageQuantity ?? pkg.quantity ?? 0));
+        const unitPrice = Number(pkg.unitPrice ?? pkg.unitPriceVnd ?? 0);
+        const stored = Number(pkg.total ?? pkg.totalVnd ?? 0);
+        pool += stored > 0 ? Math.round(stored) : Math.round(qty * unitPrice);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  if (item.extraAccessories) {
+    try {
+      const extras = typeof item.extraAccessories === 'string'
+        ? JSON.parse(item.extraAccessories)
+        : item.extraAccessories;
+      if (Array.isArray(extras)) {
+        for (const acc of extras) {
+          if (!String(acc?.name || '').trim()) continue;
+          const amount = Number(acc.amount ?? acc.total ?? 0);
+          if (amount > 0) {
+            pool += Math.round(amount);
+            continue;
+          }
+          const q = Number(acc.quantity || 0);
+          const w = Number(acc.weight ?? acc.kl ?? 0);
+          const p = Number(acc.unitPriceVnd ?? acc.unitPrice ?? 0);
+          const unit = String(acc.unit || 'BO').toUpperCase();
+          const basis = unit === 'BO' || unit === 'BỘ' ? q : w > 0 ? w : q;
+          pool += Math.round(basis * p);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  // Legacy accessories if no package path
+  if (pool === 0 && Array.isArray(item.accessories) && item.accessories.length > 0) {
+    const totalSl = sumDoorQuantity(item);
+    for (const acc of item.accessories) {
+      if (acc.isEnabled === false || acc.enabled === false) continue;
+      const per = Number(acc.quantityPerSet || 0);
+      const price = Number(acc.unitPriceVnd || acc.donGia || 0);
+      pool += Math.round(per * totalSl * price);
+    }
+  }
+  return pool;
+}
+
+/**
+ * Điểm xếp = max(tiền dòng SP + PK phân bổ dòng)
+ * PK dòng = (SL_dòng / tổng SL_SP) × tiền_PK_tổng
+ */
+function rankingAmountForQuoteItem(item) {
   const dims = item.dimensions || [];
+  const totalSl = sumDoorQuantity(item);
+  const pool = packagePoolVnd(item);
   if (dims.length === 0) {
-    return Math.max(0, Number(item.productSubtotalVnd ?? item.mainTotal ?? 0));
+    return pool + Math.max(0, Number(item.productSubtotalVnd ?? item.mainTotal ?? 0));
   }
   let max = 0;
   for (const line of dims) {
-    const total = Number(line.lineTotalVnd || 0);
-    if (total > max) max = total;
-  }
-  // Fallback: if line totals missing, approximate from qty × unit price
-  if (max === 0) {
-    const unitPrice = Number(item.unitPriceVnd || 0);
-    for (const line of dims) {
-      const w = Number(line.widthM || 0);
-      const h = Number(line.heightM || 0);
-      const qty = Number(line.quantity || 0);
-      const unit = String(line.unit || item.unit || 'M2').toUpperCase();
-      let basis = qty;
-      if (unit === 'M2' || unit === 'M²') basis = Math.max(0, w) * Math.max(0, h) * qty;
-      else if (unit === 'METER' || unit === 'MD' || unit === 'M') basis = (Math.max(0, w) + Math.max(0, h)) * qty;
-      const price = Number(line.unitPriceVnd ?? unitPrice);
-      const total = Math.round(basis * price);
-      if (total > max) max = total;
-    }
+    const lineProduct = lineProductAmount(item, line);
+    const lineSl = Math.max(0, Number(line.quantity || 0));
+    const linePk = totalSl > 0 ? Math.round((lineSl / totalSl) * pool) : pool;
+    const combined = lineProduct + linePk;
+    if (combined > max) max = combined;
   }
   return max;
 }
 
 function sortQuoteItemsByMaxLineAmount(items) {
   return items
-    .map((item, index) => ({ item, index, amount: maxDimensionLineAmount(item) }))
+    .map((item, index) => ({ item, index, amount: rankingAmountForQuoteItem(item) }))
     .sort((a, b) => b.amount - a.amount || a.index - b.index)
     .map((entry) => entry.item);
 }
