@@ -63,12 +63,12 @@ describe('normalizeAluminumEstimatorState', () => {
 
     expect(normalized?.color).toBe('Ghi - Cafe');
     expect(normalized?.quantities).toEqual({});
-    // 150000 Ghi → Vân gỗ = round(150000/147000*154000) = 157143
+    // 150000 Ghi → Vân gỗ ≈ 157143 → làm tròn 1.000 = 157000
     expect(normalized?.unitPricesByColor['Ghi - Cafe']?.['thuy-luc']?.row1).toEqual({
       unitPrice: '150000',
       note: '',
     });
-    expect(normalized?.unitPricesByColor['Vân Gỗ']?.['thuy-luc']?.row1?.unitPrice).toBe('157143');
+    expect(normalized?.unitPricesByColor['Vân Gỗ']?.['thuy-luc']?.row1?.unitPrice).toBe('157000');
   });
 
   it('fills Vân gỗ from Ghi on load using 147k/154k', () => {
