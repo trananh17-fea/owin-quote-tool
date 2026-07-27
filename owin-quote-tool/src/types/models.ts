@@ -415,6 +415,14 @@ export interface AluminumCalculationRecord extends SyncEntity {
   unitPricesByColor?: AluminumEstimatorUnitPricesByColor;
   /** Màu đang chọn: Ghi - Cafe | Vân Gỗ. */
   color?: string;
+  /**
+   * Mốc quy đổi 2 màu (đồng/md).
+   * Công thức: giá_VânGỗ = giá_Ghi / baseGhi × baseVanGo (và ngược lại).
+   */
+  colorBaseRates?: {
+    'Ghi - Cafe'?: number;
+    'Vân Gỗ'?: number;
+  };
   createdAt: string;
 }
 

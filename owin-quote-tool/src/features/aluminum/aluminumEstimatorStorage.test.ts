@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { AluminumEstimatorPriceState } from '@/types/models';
 import {
   aluminumEstimatorStateContentEquals,
+  applyLinkedUnitPrice,
   compareAluminumRowsByPriority,
+  convertAluminumUnitPrice,
   getAluminumEstimatorInput,
   mergeAluminumEstimatorStates,
   normalizeAluminumColor,
   normalizeAluminumEstimatorState,
-  transferVanGoPricesToGhiCafe,
+  recomputeLinkedPricesFromBases,
   type AluminumEstimatorPageState,
 } from './aluminumEstimatorStorage';
 
@@ -26,7 +28,14 @@ function state(
   color = 'Vân Gỗ',
   quantities: AluminumEstimatorPageState['quantities'] = {},
 ): AluminumEstimatorPageState {
-  return { selectedSystemId, unitPricesByColor, color, quantities, updatedAt };
+  return {
+    selectedSystemId,
+    unitPricesByColor,
+    color,
+    quantities,
+    colorBaseRates: { 'Ghi - Cafe': 147_000, 'Vân Gỗ': 154_000 },
+    updatedAt,
+  };
 }
 
 describe('normalizeAluminumColor', () => {
@@ -63,25 +72,21 @@ describe('normalizeAluminumEstimatorState', () => {
     });
   });
 
-  it('transfers Vân Gỗ unit prices into Ghi - Cafe and drops Vân Gỗ book', () => {
+  it('keeps both color books and default base rates', () => {
     const normalized = normalizeAluminumEstimatorState({
       selectedSystemId: 'thuy-luc',
       color: 'Vân Gỗ',
       unitPricesByColor: {
-        'Ghi - Cafe': { 'thuy-luc': { a: price('100'), b: price('50') } },
-        'Vân Gỗ': { 'thuy-luc': { a: price('200'), c: price('300') } },
+        'Ghi - Cafe': { 'thuy-luc': { a: price('100') } },
+        'Vân Gỗ': { 'thuy-luc': { a: price('200') } },
       },
       updatedAt: BASE_TIME,
     });
 
-    // a: Vân Gỗ 200 ghi đè 100; b: giữ 50; c: nhận từ Vân Gỗ
-    expect(normalized?.color).toBe('Ghi - Cafe');
-    expect(normalized?.unitPricesByColor['Vân Gỗ']).toBeUndefined();
-    expect(normalized?.unitPricesByColor['Ghi - Cafe']?.['thuy-luc']).toEqual({
-      a: price('200'),
-      b: price('50'),
-      c: price('300'),
-    });
+    expect(normalized?.color).toBe('Vân Gỗ');
+    expect(normalized?.colorBaseRates).toEqual({ 'Ghi - Cafe': 147_000, 'Vân Gỗ': 154_000 });
+    expect(normalized?.unitPricesByColor['Ghi - Cafe']?.['thuy-luc']?.a).toEqual(price('100'));
+    expect(normalized?.unitPricesByColor['Vân Gỗ']?.['thuy-luc']?.a).toEqual(price('200'));
     expect(getAluminumEstimatorInput(normalized!, 'thuy-luc', 'a')).toEqual({
       quantity: '',
       unitPrice: '200',
@@ -100,15 +105,30 @@ describe('compareAluminumRowsByPriority', () => {
   });
 });
 
-describe('transferVanGoPricesToGhiCafe', () => {
-  it('is idempotent when Vân Gỗ is already empty', () => {
-    const once = transferVanGoPricesToGhiCafe({
-      'Ghi - Cafe': { s: { r: price('1') } },
-      'Vân Gỗ': { s: { r: price('9') } },
+describe('convertAluminumUnitPrice / applyLinkedUnitPrice', () => {
+  const bases = { 'Ghi - Cafe': 147_000, 'Vân Gỗ': 154_000 } as const;
+
+  it('converts Ghi → Vân gỗ by base ratio', () => {
+    // 147000 → 154000; half: 73500 → 77000
+    expect(convertAluminumUnitPrice(147_000, 147_000, 154_000)).toBe(154_000);
+    expect(convertAluminumUnitPrice(73_500, 147_000, 154_000)).toBe(77_000);
+  });
+
+  it('writes both color books when editing one price', () => {
+    const next = applyLinkedUnitPrice({}, bases, 'Ghi - Cafe', 'sys', 'row1', '147000', '');
+    expect(next['Ghi - Cafe']?.sys?.row1?.unitPrice).toBe('147000');
+    expect(next['Vân Gỗ']?.sys?.row1?.unitPrice).toBe('154000');
+  });
+
+  it('recomputes all pairs when bases change', () => {
+    const books = applyLinkedUnitPrice({}, bases, 'Ghi - Cafe', 'sys', 'r', '147000', '');
+    const recomputed = recomputeLinkedPricesFromBases(books, {
+      'Ghi - Cafe': 100_000,
+      'Vân Gỗ': 200_000,
     });
-    const twice = transferVanGoPricesToGhiCafe(once);
-    expect(twice).toEqual(once);
-    expect(twice['Ghi - Cafe']?.s?.r).toEqual(price('9'));
+    // 147000 / 100000 * 200000 = 294000
+    expect(recomputed['Ghi - Cafe']?.sys?.r?.unitPrice).toBe('147000');
+    expect(recomputed['Vân Gỗ']?.sys?.r?.unitPrice).toBe('294000');
   });
 });
 
