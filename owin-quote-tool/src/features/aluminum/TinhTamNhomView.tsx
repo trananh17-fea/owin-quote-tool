@@ -35,16 +35,12 @@ import {
   ALUMINUM_COLORS,
   applyLinkedUnitPrice,
   createDefaultAluminumEstimatorState,
-  DEFAULT_COLOR_BASE_RATES,
   getAluminumEstimatorInput,
   loadAluminumEstimatorStorage,
   mergeAluminumEstimatorStates,
   normalizeAluminumColor,
-  normalizeColorBaseRates,
-  recomputeLinkedPricesFromBases,
   saveAluminumEstimatorStorage,
   touchAluminumEstimatorState,
-  type AluminumColor,
   type AluminumEstimatorInputState,
   type AluminumEstimatorPageState,
   type AluminumEstimatorStorageSnapshot,
@@ -369,16 +365,14 @@ export function TinhTamNhomView() {
         next = { ...next, quantities };
       }
 
-      // Đơn giá / note theo màu đang chọn — quy đổi sang màu kia theo mốc.
+      // Đơn giá / note — quy đổi Ghi ↔ Vân gỗ theo mốc cố định 147k / 154k.
       if (patch.unitPrice !== undefined || patch.note !== undefined) {
         const color = normalizeAluminumColor(current.color);
         const prev = current.unitPricesByColor[color]?.[systemId]?.[rowId];
         const unitPrice = patch.unitPrice !== undefined ? patch.unitPrice : (prev?.unitPrice ?? '');
         const note = patch.note !== undefined ? patch.note : (prev?.note ?? '');
-        const colorBaseRates = normalizeColorBaseRates(current.colorBaseRates);
         const unitPricesByColor = applyLinkedUnitPrice(
           current.unitPricesByColor,
-          colorBaseRates,
           color,
           systemId,
           rowId,
@@ -388,34 +382,11 @@ export function TinhTamNhomView() {
         next = touchAluminumEstimatorState({
           ...next,
           color,
-          colorBaseRates,
           unitPricesByColor,
         });
       }
 
       return next;
-    });
-  };
-
-  const updateBaseRate = (color: AluminumColor, raw: string) => {
-    updatePageState((current) => {
-      const parsed = Number(String(raw).replace(/[^\d.]/g, ''));
-      const fallback = DEFAULT_COLOR_BASE_RATES[color];
-      const value = Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : fallback;
-      const colorBaseRates = normalizeColorBaseRates({
-        ...current.colorBaseRates,
-        [color]: value,
-      });
-      // Đổi mốc → nhân chia lại toàn bộ cặp giá đã nhập.
-      const unitPricesByColor = recomputeLinkedPricesFromBases(
-        current.unitPricesByColor,
-        colorBaseRates,
-      );
-      return touchAluminumEstimatorState({
-        ...current,
-        colorBaseRates,
-        unitPricesByColor,
-      });
     });
   };
 
@@ -506,7 +477,7 @@ export function TinhTamNhomView() {
           />
         </div>
         <div className="aluminum-control-card aluminum-color-block">
-          <span className="aluminum-control-label aluminum-color-label">Màu (đơn giá liên kết)</span>
+          <span className="aluminum-control-label aluminum-color-label">Màu (đơn giá riêng)</span>
           <div className="aluminum-color-chips" role="group" aria-label="Chọn màu nhôm">
             {ALUMINUM_COLORS.map((color) => (
               <button
@@ -523,27 +494,6 @@ export function TinhTamNhomView() {
                 {color}
               </button>
             ))}
-          </div>
-          <div className="aluminum-base-rates" aria-label="Mốc quy đổi đơn giá">
-            <span className="aluminum-control-label">Mốc quy đổi</span>
-            <p className="aluminum-base-rates-hint">
-              Vân gỗ = Ghi ÷ mốc Ghi × mốc Vân gỗ (và ngược lại). Đổi mốc → tính lại toàn bộ.
-            </p>
-            <div className="aluminum-base-rates-grid">
-              {ALUMINUM_COLORS.map((color) => (
-                <label key={color} className="aluminum-base-rate-field">
-                  <span>{color}</span>
-                  <SmartNumberInput
-                    className="input aluminum-base-rate-input"
-                    mode="int"
-                    min={1}
-                    value={pageState.colorBaseRates?.[color] ?? DEFAULT_COLOR_BASE_RATES[color]}
-                    onChange={(n) => updateBaseRate(color, String(n || 0))}
-                    placeholder={String(DEFAULT_COLOR_BASE_RATES[color])}
-                  />
-                </label>
-              ))}
-            </div>
           </div>
         </div>
       </div>

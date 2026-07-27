@@ -52,10 +52,7 @@ export interface AluminumEstimatorPageState {
    * Đây là phần được lưu và đồng bộ.
    */
   unitPricesByColor: AluminumEstimatorUnitPricesByColor;
-  /**
-   * Mốc quy đổi 2 màu — user chỉnh được.
-   * giá_đích = giá_nguồn / mốc_nguồn × mốc_đích
-   */
+  /** Luôn = DEFAULT (147k / 154k); giữ field cho compat save, không UI. */
   colorBaseRates: AluminumColorBaseRates;
   updatedAt: string | null;
 }
@@ -174,12 +171,12 @@ export function writePriceOnColorBook(
 }
 
 /**
- * Khi nhập đơn giá một màu: ghi màu đó + quy đổi sang màu còn lại.
+ * Khi nhập đơn giá một màu: ghi màu đó + quy đổi sang màu còn lại
+ * theo mốc cố định Ghi 147k / Vân gỗ 154k (không UI).
  * Xoá giá → xoá cả 2 màu (cùng dòng).
  */
 export function applyLinkedUnitPrice(
   unitPricesByColor: AluminumEstimatorUnitPricesByColor,
-  colorBaseRates: AluminumColorBaseRates,
   sourceColor: AluminumColor,
   systemId: string,
   rowId: string,
@@ -187,9 +184,9 @@ export function applyLinkedUnitPrice(
   note: string,
 ): AluminumEstimatorUnitPricesByColor {
   const sourcePrice = parseEstimatorNumber(unitPriceRaw);
-  const sourceBase = colorBaseRates[sourceColor];
+  const sourceBase = DEFAULT_COLOR_BASE_RATES[sourceColor];
   const targetColor = otherAluminumColor(sourceColor);
-  const targetBase = colorBaseRates[targetColor];
+  const targetBase = DEFAULT_COLOR_BASE_RATES[targetColor];
   const prevTarget = unitPricesByColor[targetColor]?.[systemId]?.[rowId];
   const targetNote = prevTarget?.note ?? '';
 
@@ -221,12 +218,11 @@ export function applyLinkedUnitPrice(
 }
 
 /**
- * Đổi mốc quy đổi → tính lại toàn bộ cặp giá.
- * Ưu tiên sổ Ghi - Cafe làm nguồn; dòng chỉ có Vân Gỗ thì quy đổi ngược.
+ * Tính lại toàn bộ cặp giá theo mốc cố định 147k / 154k.
+ * Ưu tiên sổ Ghi - Cafe; dòng chỉ có Vân Gỗ thì quy đổi ngược.
  */
 export function recomputeLinkedPricesFromBases(
   unitPricesByColor: AluminumEstimatorUnitPricesByColor,
-  colorBaseRates: AluminumColorBaseRates,
 ): AluminumEstimatorUnitPricesByColor {
   const ghiBook = unitPricesByColor['Ghi - Cafe'] ?? {};
   const vanBook = unitPricesByColor['Vân Gỗ'] ?? {};
@@ -245,7 +241,6 @@ export function recomputeLinkedPricesFromBases(
       if (ghiPrice > 0) {
         next = applyLinkedUnitPrice(
           next,
-          colorBaseRates,
           'Ghi - Cafe',
           systemId,
           rowId,
@@ -255,7 +250,6 @@ export function recomputeLinkedPricesFromBases(
       } else if (vanPrice > 0) {
         next = applyLinkedUnitPrice(
           next,
-          colorBaseRates,
           'Vân Gỗ',
           systemId,
           rowId,
@@ -557,11 +551,8 @@ export function normalizeAluminumEstimatorState(value: unknown): AluminumEstimat
     unitPricesByColor = migrateLegacyInputRows(parsed.inputRows, color);
   }
 
-  // Nếu còn sót sổ Vân Gỗ cũ (trước khi có mốc quy đổi) mà Ghi trống dòng đó — copy sang Ghi 1 lần.
-  // Không xoá Vân Gỗ nữa: hai màu sống song song, liên kết bằng mốc.
-  const colorBaseRates = normalizeColorBaseRates(
-    (parsed as { colorBaseRates?: unknown }).colorBaseRates,
-  );
+  // Mốc cố định 147k / 154k — fill cặp màu còn thiếu khi load (không UI).
+  unitPricesByColor = recomputeLinkedPricesFromBases(unitPricesByColor);
 
   return {
     selectedSystemId: parsed.selectedSystemId,
@@ -569,7 +560,7 @@ export function normalizeAluminumEstimatorState(value: unknown): AluminumEstimat
     // SL không bao giờ load từ server.
     quantities: {},
     unitPricesByColor,
-    colorBaseRates,
+    colorBaseRates: { ...DEFAULT_COLOR_BASE_RATES },
     updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : null,
   };
 }

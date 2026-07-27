@@ -3283,41 +3283,6 @@ textarea.input:focus {
 .aluminum-table-compact th:nth-child(6) {
   text-align: right;
 }
-
-.aluminum-base-rates {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #e2e8f0;
-  display: grid;
-  gap: 6px;
-}
-.aluminum-base-rates-hint {
-  margin: 0;
-  font-size: 12px;
-  color: #64748b;
-  line-height: 1.35;
-}
-.aluminum-base-rates-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.aluminum-base-rate-field {
-  display: grid;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 650;
-  color: #334155;
-}
-.aluminum-base-rate-input {
-  min-height: 36px;
-  font-variant-numeric: tabular-nums;
-}
-@media (max-width: 640px) {
-  .aluminum-base-rates-grid {
-    grid-template-columns: 1fr;
-  }
-}
 .aluminum-table tbody tr:hover {
   background: #f8fafc;
 }

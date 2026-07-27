@@ -5,7 +5,6 @@ import {
   applyLinkedUnitPrice,
   compareAluminumRowsByPriority,
   convertAluminumUnitPrice,
-  getAluminumEstimatorInput,
   mergeAluminumEstimatorStates,
   normalizeAluminumColor,
   normalizeAluminumEstimatorState,
@@ -63,35 +62,26 @@ describe('normalizeAluminumEstimatorState', () => {
 
     expect(normalized?.color).toBe('Ghi - Cafe');
     expect(normalized?.quantities).toEqual({});
-    expect(normalized?.unitPricesByColor).toEqual({
-      'Ghi - Cafe': {
-        'thuy-luc': {
-          row1: { unitPrice: '150000', note: '' },
-        },
-      },
+    // 150000 Ghi → Vân gỗ = round(150000/147000*154000) = 157143
+    expect(normalized?.unitPricesByColor['Ghi - Cafe']?.['thuy-luc']?.row1).toEqual({
+      unitPrice: '150000',
+      note: '',
     });
+    expect(normalized?.unitPricesByColor['Vân Gỗ']?.['thuy-luc']?.row1?.unitPrice).toBe('157143');
   });
 
-  it('keeps both color books and default base rates', () => {
+  it('fills Vân gỗ from Ghi on load using 147k/154k', () => {
     const normalized = normalizeAluminumEstimatorState({
       selectedSystemId: 'thuy-luc',
-      color: 'Vân Gỗ',
+      color: 'Ghi - Cafe',
       unitPricesByColor: {
-        'Ghi - Cafe': { 'thuy-luc': { a: price('100') } },
-        'Vân Gỗ': { 'thuy-luc': { a: price('200') } },
+        'Ghi - Cafe': { 'thuy-luc': { a: price('147000') } },
       },
       updatedAt: BASE_TIME,
     });
 
-    expect(normalized?.color).toBe('Vân Gỗ');
-    expect(normalized?.colorBaseRates).toEqual({ 'Ghi - Cafe': 147_000, 'Vân Gỗ': 154_000 });
-    expect(normalized?.unitPricesByColor['Ghi - Cafe']?.['thuy-luc']?.a).toEqual(price('100'));
-    expect(normalized?.unitPricesByColor['Vân Gỗ']?.['thuy-luc']?.a).toEqual(price('200'));
-    expect(getAluminumEstimatorInput(normalized!, 'thuy-luc', 'a')).toEqual({
-      quantity: '',
-      unitPrice: '200',
-      note: '',
-    });
+    expect(normalized?.unitPricesByColor['Ghi - Cafe']?.['thuy-luc']?.a?.unitPrice).toBe('147000');
+    expect(normalized?.unitPricesByColor['Vân Gỗ']?.['thuy-luc']?.a?.unitPrice).toBe('154000');
   });
 });
 
@@ -106,29 +96,24 @@ describe('compareAluminumRowsByPriority', () => {
 });
 
 describe('convertAluminumUnitPrice / applyLinkedUnitPrice', () => {
-  const bases = { 'Ghi - Cafe': 147_000, 'Vân Gỗ': 154_000 } as const;
-
-  it('converts Ghi → Vân gỗ by base ratio', () => {
-    // 147000 → 154000; half: 73500 → 77000
+  it('converts Ghi → Vân gỗ by fixed 147k / 154k', () => {
     expect(convertAluminumUnitPrice(147_000, 147_000, 154_000)).toBe(154_000);
     expect(convertAluminumUnitPrice(73_500, 147_000, 154_000)).toBe(77_000);
   });
 
   it('writes both color books when editing one price', () => {
-    const next = applyLinkedUnitPrice({}, bases, 'Ghi - Cafe', 'sys', 'row1', '147000', '');
+    const next = applyLinkedUnitPrice({}, 'Ghi - Cafe', 'sys', 'row1', '147000', '');
     expect(next['Ghi - Cafe']?.sys?.row1?.unitPrice).toBe('147000');
     expect(next['Vân Gỗ']?.sys?.row1?.unitPrice).toBe('154000');
   });
 
-  it('recomputes all pairs when bases change', () => {
-    const books = applyLinkedUnitPrice({}, bases, 'Ghi - Cafe', 'sys', 'r', '147000', '');
-    const recomputed = recomputeLinkedPricesFromBases(books, {
-      'Ghi - Cafe': 100_000,
-      'Vân Gỗ': 200_000,
-    });
-    // 147000 / 100000 * 200000 = 294000
+  it('fills missing Vân gỗ from Ghi on recompute', () => {
+    const books = {
+      'Ghi - Cafe': { sys: { r: price('147000') } },
+    };
+    const recomputed = recomputeLinkedPricesFromBases(books);
     expect(recomputed['Ghi - Cafe']?.sys?.r?.unitPrice).toBe('147000');
-    expect(recomputed['Vân Gỗ']?.sys?.r?.unitPrice).toBe('294000');
+    expect(recomputed['Vân Gỗ']?.sys?.r?.unitPrice).toBe('154000');
   });
 });
 
