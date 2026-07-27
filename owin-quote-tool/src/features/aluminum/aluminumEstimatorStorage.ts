@@ -182,8 +182,9 @@ export function transferVanGoPricesToGhiCafe(
   const vanGo = unitPricesByColor['Vân Gỗ'];
   if (!vanGo || Object.keys(vanGo).length === 0) {
     // Vẫn bỏ key rỗng nếu còn.
-    if (!unitPricesByColor['Vân Gỗ']) return unitPricesByColor;
-    const { ['Vân Gỗ']: _drop, ...rest } = unitPricesByColor;
+    if (!Object.prototype.hasOwnProperty.call(unitPricesByColor, 'Vân Gỗ')) return unitPricesByColor;
+    const rest = { ...unitPricesByColor };
+    delete rest['Vân Gỗ'];
     return rest;
   }
 
