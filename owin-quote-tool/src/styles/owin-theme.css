@@ -3274,13 +3274,13 @@ textarea.input:focus {
   text-align: left;
   font-weight: 850;
 }
+/* Cột: Hình · Mã · Mô tả · SL · Đơn giá · Thành tiền (đã bỏ STT) */
 .aluminum-table-compact th:first-child,
-.aluminum-table-compact th:nth-child(2),
-.aluminum-table-compact th:nth-child(5) {
+.aluminum-table-compact th:nth-child(4) {
   text-align: center;
 }
-.aluminum-table-compact th:nth-child(6),
-.aluminum-table-compact th:nth-child(7) {
+.aluminum-table-compact th:nth-child(5),
+.aluminum-table-compact th:nth-child(6) {
   text-align: right;
 }
 .aluminum-table tbody tr:hover {
