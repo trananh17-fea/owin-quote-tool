@@ -219,6 +219,55 @@ export function applyLinkedUnitPrice(
 }
 
 /**
+ * Đổi mốc Ghi: scale mọi đơn giá (Ghi + Vân gỗ) theo
+ *   giá_mới = giá_cũ / mốc_ghi_cũ × mốc_ghi_mới
+ * (không recompute lại theo mốc Vân — giữ đúng tỷ lệ giảm/tăng).
+ */
+export function scaleUnitPricesByGhiBaseChange(
+  unitPricesByColor: AluminumEstimatorUnitPricesByColor,
+  oldGhiBase: number,
+  newGhiBase: number,
+): AluminumEstimatorUnitPricesByColor {
+  const oldBase = Number(oldGhiBase);
+  const newBase = Number(newGhiBase);
+  if (!Number.isFinite(oldBase) || oldBase <= 0) return unitPricesByColor;
+  if (!Number.isFinite(newBase) || newBase <= 0) return unitPricesByColor;
+  if (oldBase === newBase) return unitPricesByColor;
+
+  let scaled: AluminumEstimatorUnitPricesByColor = {};
+  for (const color of Object.keys(unitPricesByColor)) {
+    const systems = unitPricesByColor[color] ?? {};
+    for (const [systemId, rows] of Object.entries(systems)) {
+      for (const [rowId, cell] of Object.entries(rows)) {
+        const p = parseEstimatorNumber(cell?.unitPrice ?? '');
+        const note = cell?.note ?? '';
+        if (p > 0) {
+          const nextPrice = convertAluminumUnitPrice(p, oldBase, newBase);
+          scaled = writePriceOnColorBook(
+            scaled,
+            normalizeAluminumColor(color),
+            systemId,
+            rowId,
+            formatAluminumPriceInput(nextPrice),
+            note,
+          );
+        } else if (note) {
+          scaled = writePriceOnColorBook(
+            scaled,
+            normalizeAluminumColor(color),
+            systemId,
+            rowId,
+            '',
+            note,
+          );
+        }
+      }
+    }
+  }
+  return scaled;
+}
+
+/**
  * Tính lại toàn bộ cặp giá theo mốc hiện tại.
  * Ưu tiên sổ Ghi - Cafe; dòng chỉ có Vân Gỗ thì quy đổi ngược.
  */

@@ -9,6 +9,7 @@ import {
   normalizeAluminumColor,
   normalizeAluminumEstimatorState,
   recomputeLinkedPricesFromBases,
+  scaleUnitPricesByGhiBaseChange,
   type AluminumEstimatorPageState,
 } from './aluminumEstimatorStorage';
 
@@ -125,6 +126,17 @@ describe('convertAluminumUnitPrice / applyLinkedUnitPrice', () => {
       'Vân Gỗ': 200_000,
     });
     expect(recomputed['Vân Gỗ']?.sys?.r?.unitPrice).toBe('200000');
+  });
+
+  it('scales all Ghi and Vân prices when Ghi base drops', () => {
+    // Ghi 147k → 140k: mọi giá × (140/147)
+    const books = applyLinkedUnitPrice({}, 'Ghi - Cafe', 'sys', 'r', '147000', '');
+    expect(books['Vân Gỗ']?.sys?.r?.unitPrice).toBe('154000');
+
+    const scaled = scaleUnitPricesByGhiBaseChange(books, 147_000, 140_000);
+    expect(scaled['Ghi - Cafe']?.sys?.r?.unitPrice).toBe('140000');
+    // 154000 / 147000 * 140000 = 146667 (rounded)
+    expect(scaled['Vân Gỗ']?.sys?.r?.unitPrice).toBe('146667');
   });
 });
 

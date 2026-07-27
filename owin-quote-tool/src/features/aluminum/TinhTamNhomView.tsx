@@ -35,6 +35,7 @@ import {
   ALUMINUM_COLORS,
   applyLinkedUnitPrice,
   createDefaultAluminumEstimatorState,
+  convertAluminumUnitPrice,
   DEFAULT_COLOR_BASE_RATES,
   getAluminumEstimatorInput,
   loadAluminumEstimatorStorage,
@@ -43,6 +44,7 @@ import {
   normalizeColorBaseRates,
   recomputeLinkedPricesFromBases,
   saveAluminumEstimatorStorage,
+  scaleUnitPricesByGhiBaseChange,
   touchAluminumEstimatorState,
   type AluminumColor,
   type AluminumEstimatorInputState,
@@ -399,11 +401,33 @@ export function TinhTamNhomView() {
 
   const updateBaseRate = (color: AluminumColor, raw: number) => {
     updatePageState((current) => {
+      const rates = normalizeColorBaseRates(current.colorBaseRates);
       const fallback = DEFAULT_COLOR_BASE_RATES[color];
       const value = Number.isFinite(raw) && raw > 0 ? Math.round(raw) : fallback;
+      if (value === rates[color]) return current;
+
+      if (color === 'Ghi - Cafe') {
+        // Đổi mốc Ghi: mọi đơn giá (Ghi + Vân) = cũ / mốcGhiCũ × mốcGhiMới
+        // Mốc Vân cũng scale cùng tỷ lệ để cặp mốc vẫn khớp.
+        const oldGhi = rates['Ghi - Cafe'];
+        const newGhi = value;
+        const newVan = convertAluminumUnitPrice(rates['Vân Gỗ'], oldGhi, newGhi) || rates['Vân Gỗ'];
+        const unitPricesByColor = scaleUnitPricesByGhiBaseChange(
+          current.unitPricesByColor,
+          oldGhi,
+          newGhi,
+        );
+        return touchAluminumEstimatorState({
+          ...current,
+          colorBaseRates: { 'Ghi - Cafe': newGhi, 'Vân Gỗ': newVan },
+          unitPricesByColor,
+        });
+      }
+
+      // Đổi mốc Vân gỗ: giữ Ghi, chỉ tính lại Vân từ Ghi theo mốc mới
       const colorBaseRates = normalizeColorBaseRates({
-        ...current.colorBaseRates,
-        [color]: value,
+        ...rates,
+        'Vân Gỗ': value,
       });
       const unitPricesByColor = recomputeLinkedPricesFromBases(
         current.unitPricesByColor,
