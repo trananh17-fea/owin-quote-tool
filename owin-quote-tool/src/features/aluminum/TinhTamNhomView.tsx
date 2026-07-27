@@ -70,13 +70,27 @@ function normalizeInput(input: AluminumEstimatorInputState) {
 }
 
 function buildRowsForSystem(systemId: string, pageState: AluminumEstimatorPageState): AluminumEstimatorRowViewModel[] {
-  return getDefaultAluminumEstimatorRows(systemId).map((raw) => {
+  const rows = getDefaultAluminumEstimatorRows(systemId).map((raw, order) => {
     // Màu áp cho tất cả thanh theo lựa chọn ở trên.
     const source = { ...raw, color: pageState.color };
     const input = getAluminumEstimatorInput(pageState, source.systemId, source.rowId);
     const calculated = calculateAluminumEstimatorRow(source, normalizeInput(input));
-    return { source, input, calculated };
+    return { source, input, calculated, order };
   });
+  // Ưu tiên: đã có đơn giá → đã có SL → còn lại (giữ order gốc trong nhóm).
+  rows.sort((a, b) => {
+    const rank = (row: (typeof rows)[number]) => {
+      const price = parseEstimatorNumber(row.input.unitPrice);
+      const qty = parseEstimatorNumber(row.input.quantity);
+      if (price > 0) return 0;
+      if (qty > 0) return 1;
+      return 2;
+    };
+    const byRank = rank(a) - rank(b);
+    if (byRank !== 0) return byRank;
+    return a.order - b.order;
+  });
+  return rows.map(({ source, input, calculated }) => ({ source, input, calculated }));
 }
 
 function summarizeSystems(pageState: AluminumEstimatorPageState): AluminumEstimatorSystemTotals[] {
@@ -97,8 +111,9 @@ function buildPrintInputSystems(pageState: AluminumEstimatorPageState): Aluminum
       systemId: system.id,
       systemName: system.name,
       color: pageState.color,
-      rows: rows.map((row) => ({
-        stt: row.source.stt,
+      // STT xuất = thứ tự sau khi ưu tiên (đơn giá / SL), không dùng STT catalogue gốc.
+      rows: rows.map((row, index) => ({
+        stt: index + 1,
         color: pageState.color,
         systemId: row.source.systemId,
         systemName: row.source.systemName,
@@ -662,7 +677,6 @@ function AluminumTable({
         <table className="aluminum-table aluminum-table-compact">
           <thead>
             <tr>
-              <th>STT</th>
               <th>Hình</th>
               <th>Mã cây</th>
               <th>Mô tả</th>
@@ -680,7 +694,6 @@ function AluminumTable({
 
               return (
                 <tr key={source.rowId} className={isActive ? 'active' : ''}>
-                  <td className="center">{source.stt}</td>
                   <td>{renderImage(source)}</td>
                   <td className="code">{source.code}</td>
                   <td className="description">{source.description}</td>
@@ -712,7 +725,6 @@ function AluminumTable({
               className={`aluminum-card${isActive ? ' active' : ''}`}
             >
               <div className="aluminum-card-top">
-                <span className="aluminum-card-stt">{source.stt}</span>
                 {renderImage(source)}
                 <div className="aluminum-card-meta">
                   <strong className="aluminum-card-code">{source.code}</strong>

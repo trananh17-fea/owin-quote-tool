@@ -27,7 +27,8 @@ export type {
 /** Hai màu chọn được; mỗi màu có bảng đơn giá riêng. */
 export const ALUMINUM_COLORS = ['Ghi - Cafe', 'Vân Gỗ'] as const;
 export type AluminumColor = (typeof ALUMINUM_COLORS)[number];
-export const DEFAULT_ALUMINUM_COLOR: AluminumColor = 'Vân Gỗ';
+/** Mặc định Ghi - Cafe (đã chuyển đơn giá Vân Gỗ sang đây). */
+export const DEFAULT_ALUMINUM_COLOR: AluminumColor = 'Ghi - Cafe';
 
 export interface AluminumEstimatorPageState {
   selectedSystemId: string;
@@ -171,6 +172,75 @@ function migrateLegacyInputRows(
   return Object.keys(systemMap).length > 0 ? { [color]: systemMap } : {};
 }
 
+/**
+ * Chuyển toàn bộ đơn giá đã nhập ở Vân Gỗ → Ghi - Cafe (ghi đè khi Vân Gỗ có giá),
+ * rồi xoá sổ Vân Gỗ. Chạy idempotent mỗi lần normalize.
+ */
+export function transferVanGoPricesToGhiCafe(
+  unitPricesByColor: AluminumEstimatorUnitPricesByColor,
+): AluminumEstimatorUnitPricesByColor {
+  const vanGo = unitPricesByColor['Vân Gỗ'];
+  if (!vanGo || Object.keys(vanGo).length === 0) {
+    // Vẫn bỏ key rỗng nếu còn.
+    if (!unitPricesByColor['Vân Gỗ']) return unitPricesByColor;
+    const { ['Vân Gỗ']: _drop, ...rest } = unitPricesByColor;
+    return rest;
+  }
+
+  const ghi: Record<string, Record<string, AluminumEstimatorPriceState>> = {
+    ...(unitPricesByColor['Ghi - Cafe'] ?? {}),
+  };
+
+  Object.entries(vanGo).forEach(([systemId, rows]) => {
+    const systemRows: Record<string, AluminumEstimatorPriceState> = { ...(ghi[systemId] ?? {}) };
+    Object.entries(rows).forEach(([rowId, price]) => {
+      const unitPrice = String(price?.unitPrice ?? '').trim();
+      const note = String(price?.note ?? '').trim();
+      // Chỉ chuyển dòng có đơn giá (hoặc note).
+      if (!unitPrice && !note) return;
+      systemRows[rowId] = {
+        unitPrice: unitPrice || systemRows[rowId]?.unitPrice || '',
+        note: note || systemRows[rowId]?.note || '',
+      };
+    });
+    if (Object.keys(systemRows).length > 0) ghi[systemId] = systemRows;
+  });
+
+  const next: AluminumEstimatorUnitPricesByColor = { ...unitPricesByColor, 'Ghi - Cafe': ghi };
+  delete next['Vân Gỗ'];
+  return next;
+}
+
+/** Có đơn giá nhập (chuỗi số > 0). */
+export function aluminumRowHasUnitPrice(unitPrice: string | undefined): boolean {
+  const n = parseEstimatorNumber(unitPrice ?? '');
+  return Number.isFinite(n) && n > 0;
+}
+
+/** Có SL nhập > 0. */
+export function aluminumRowHasQuantity(quantity: string | undefined): boolean {
+  const n = parseEstimatorNumber(quantity ?? '');
+  return Number.isFinite(n) && n > 0;
+}
+
+/**
+ * Ưu tiên: đã nhập đơn giá → đã nhập SL → còn lại.
+ * Trong cùng nhóm giữ thứ tự gốc (index).
+ */
+export function compareAluminumRowsByPriority(
+  left: { unitPrice: string; quantity: string; order: number },
+  right: { unitPrice: string; quantity: string; order: number },
+): number {
+  const rank = (row: { unitPrice: string; quantity: string }) => {
+    if (aluminumRowHasUnitPrice(row.unitPrice)) return 0;
+    if (aluminumRowHasQuantity(row.quantity)) return 1;
+    return 2;
+  };
+  const byRank = rank(left) - rank(right);
+  if (byRank !== 0) return byRank;
+  return left.order - right.order;
+}
+
 function priceEquals(
   left: AluminumEstimatorPriceState | undefined,
   right: AluminumEstimatorPriceState | undefined,
@@ -291,13 +361,18 @@ export function normalizeAluminumEstimatorState(value: unknown): AluminumEstimat
   const parsed = value as Partial<AluminumEstimatorPageState & AluminumCalculationRecord>;
   if (!parsed.selectedSystemId) return null;
 
-  const color = normalizeAluminumColor(parsed.color);
+  let color = normalizeAluminumColor(parsed.color);
   let unitPricesByColor = normalizeUnitPricesByColor(parsed.unitPricesByColor);
 
   // Bản cũ chỉ có inputRows + 1 màu: chuyển đơn giá sang màu đó, bỏ SL.
   if (Object.keys(unitPricesByColor).length === 0 && parsed.inputRows) {
     unitPricesByColor = migrateLegacyInputRows(parsed.inputRows, color);
   }
+
+  // One-shot (idempotent): dồn đơn giá Vân Gỗ → Ghi - Cafe.
+  unitPricesByColor = transferVanGoPricesToGhiCafe(unitPricesByColor);
+  // Sau khi chuyển, mặc định xem Ghi - Cafe (nơi có giá).
+  if (color === 'Vân Gỗ') color = 'Ghi - Cafe';
 
   return {
     selectedSystemId: parsed.selectedSystemId,

@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import type { AluminumEstimatorPriceState } from '@/types/models';
 import {
   aluminumEstimatorStateContentEquals,
+  compareAluminumRowsByPriority,
   getAluminumEstimatorInput,
   mergeAluminumEstimatorStates,
   normalizeAluminumColor,
   normalizeAluminumEstimatorState,
+  transferVanGoPricesToGhiCafe,
   type AluminumEstimatorPageState,
 } from './aluminumEstimatorStorage';
 
@@ -61,24 +63,52 @@ describe('normalizeAluminumEstimatorState', () => {
     });
   });
 
-  it('keeps separate price books per color', () => {
+  it('transfers Vân Gỗ unit prices into Ghi - Cafe and drops Vân Gỗ book', () => {
     const normalized = normalizeAluminumEstimatorState({
       selectedSystemId: 'thuy-luc',
       color: 'Vân Gỗ',
       unitPricesByColor: {
-        'Ghi - Cafe': { 'thuy-luc': { a: price('100') } },
-        'Vân Gỗ': { 'thuy-luc': { a: price('200') } },
+        'Ghi - Cafe': { 'thuy-luc': { a: price('100'), b: price('50') } },
+        'Vân Gỗ': { 'thuy-luc': { a: price('200'), c: price('300') } },
       },
       updatedAt: BASE_TIME,
     });
 
-    expect(normalized?.unitPricesByColor['Ghi - Cafe']?.['thuy-luc']?.a).toEqual(price('100'));
-    expect(normalized?.unitPricesByColor['Vân Gỗ']?.['thuy-luc']?.a).toEqual(price('200'));
+    // a: Vân Gỗ 200 ghi đè 100; b: giữ 50; c: nhận từ Vân Gỗ
+    expect(normalized?.color).toBe('Ghi - Cafe');
+    expect(normalized?.unitPricesByColor['Vân Gỗ']).toBeUndefined();
+    expect(normalized?.unitPricesByColor['Ghi - Cafe']?.['thuy-luc']).toEqual({
+      a: price('200'),
+      b: price('50'),
+      c: price('300'),
+    });
     expect(getAluminumEstimatorInput(normalized!, 'thuy-luc', 'a')).toEqual({
       quantity: '',
       unitPrice: '200',
       note: '',
     });
+  });
+});
+
+describe('compareAluminumRowsByPriority', () => {
+  it('ranks unit price first, then quantity, then empty', () => {
+    const priced = { unitPrice: '100', quantity: '', order: 2 };
+    const qtyOnly = { unitPrice: '', quantity: '3', order: 0 };
+    const empty = { unitPrice: '', quantity: '', order: 1 };
+    const list = [empty, qtyOnly, priced].sort(compareAluminumRowsByPriority);
+    expect(list.map((r) => r.order)).toEqual([2, 0, 1]);
+  });
+});
+
+describe('transferVanGoPricesToGhiCafe', () => {
+  it('is idempotent when Vân Gỗ is already empty', () => {
+    const once = transferVanGoPricesToGhiCafe({
+      'Ghi - Cafe': { s: { r: price('1') } },
+      'Vân Gỗ': { s: { r: price('9') } },
+    });
+    const twice = transferVanGoPricesToGhiCafe(once);
+    expect(twice).toEqual(once);
+    expect(twice['Ghi - Cafe']?.s?.r).toEqual(price('9'));
   });
 });
 
