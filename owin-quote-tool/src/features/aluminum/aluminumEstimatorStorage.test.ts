@@ -97,9 +97,11 @@ describe('compareAluminumRowsByPriority', () => {
 });
 
 describe('convertAluminumUnitPrice / applyLinkedUnitPrice', () => {
-  it('converts Ghi → Vân gỗ by fixed 147k / 154k', () => {
+  it('converts Ghi → Vân gỗ by fixed 147k / 154k and rounds to 1.000', () => {
     expect(convertAluminumUnitPrice(147_000, 147_000, 154_000)).toBe(154_000);
     expect(convertAluminumUnitPrice(73_500, 147_000, 154_000)).toBe(77_000);
+    // 100000/147000*154000 ≈ 104761.9 → 105000
+    expect(convertAluminumUnitPrice(100_000, 147_000, 154_000)).toBe(105_000);
   });
 
   it('writes both color books when editing one price', () => {
@@ -135,8 +137,8 @@ describe('convertAluminumUnitPrice / applyLinkedUnitPrice', () => {
 
     const scaled = scaleUnitPricesByGhiBaseChange(books, 147_000, 140_000);
     expect(scaled['Ghi - Cafe']?.sys?.r?.unitPrice).toBe('140000');
-    // 154000 / 147000 * 140000 = 146667 (rounded)
-    expect(scaled['Vân Gỗ']?.sys?.r?.unitPrice).toBe('146667');
+    // 154000 / 147000 * 140000 ≈ 146666.7 → làm tròn 1.000 = 147000
+    expect(scaled['Vân Gỗ']?.sys?.r?.unitPrice).toBe('147000');
   });
 });
 

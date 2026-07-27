@@ -125,7 +125,13 @@ export function normalizeColorBaseRates(value: unknown): AluminumColorBaseRates 
   };
 }
 
-/** Quy đổi đơn giá giữa 2 màu theo mốc: target = source / sourceBase × targetBase. */
+/** Làm tròn đơn giá về bội 1.000 (đồng). */
+export function roundAluminumPriceToThousand(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  return Math.round(value / 1000) * 1000;
+}
+
+/** Quy đổi đơn giá giữa 2 màu theo mốc: target = source / sourceBase × targetBase (làm tròn 1.000). */
 export function convertAluminumUnitPrice(
   sourcePrice: number,
   sourceBase: number,
@@ -134,12 +140,13 @@ export function convertAluminumUnitPrice(
   if (!Number.isFinite(sourcePrice) || sourcePrice <= 0) return 0;
   if (!Number.isFinite(sourceBase) || sourceBase <= 0) return 0;
   if (!Number.isFinite(targetBase) || targetBase <= 0) return 0;
-  return Math.round((sourcePrice / sourceBase) * targetBase);
+  return roundAluminumPriceToThousand((sourcePrice / sourceBase) * targetBase);
 }
 
 export function formatAluminumPriceInput(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return '';
-  return String(Math.round(value));
+  const rounded = roundAluminumPriceToThousand(value);
+  return rounded > 0 ? String(rounded) : '';
 }
 
 export function otherAluminumColor(color: AluminumColor): AluminumColor {
