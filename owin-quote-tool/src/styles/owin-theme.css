@@ -3283,6 +3283,34 @@ textarea.input:focus {
 .aluminum-table-compact th:nth-child(6) {
   text-align: right;
 }
+
+/* Chip màu + ô mốc ngay dưới mỗi màu */
+.aluminum-color-pair-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+  align-items: start;
+}
+.aluminum-color-pair {
+  display: grid;
+  gap: 6px;
+  justify-items: stretch;
+}
+.aluminum-color-pair .aluminum-color-chip {
+  width: 100%;
+  justify-content: center;
+}
+.aluminum-base-rate-input {
+  min-height: 36px;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+@media (max-width: 480px) {
+  .aluminum-color-pair-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .aluminum-table tbody tr:hover {
   background: #f8fafc;
 }

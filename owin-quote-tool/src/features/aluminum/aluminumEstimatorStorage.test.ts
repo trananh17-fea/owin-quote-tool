@@ -115,6 +115,17 @@ describe('convertAluminumUnitPrice / applyLinkedUnitPrice', () => {
     expect(recomputed['Ghi - Cafe']?.sys?.r?.unitPrice).toBe('147000');
     expect(recomputed['Vân Gỗ']?.sys?.r?.unitPrice).toBe('154000');
   });
+
+  it('uses custom base rates when recomputing', () => {
+    const books = {
+      'Ghi - Cafe': { sys: { r: price('100000') } },
+    };
+    const recomputed = recomputeLinkedPricesFromBases(books, {
+      'Ghi - Cafe': 100_000,
+      'Vân Gỗ': 200_000,
+    });
+    expect(recomputed['Vân Gỗ']?.sys?.r?.unitPrice).toBe('200000');
+  });
 });
 
 describe('mergeAluminumEstimatorStates', () => {

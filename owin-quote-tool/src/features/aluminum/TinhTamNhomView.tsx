@@ -35,12 +35,16 @@ import {
   ALUMINUM_COLORS,
   applyLinkedUnitPrice,
   createDefaultAluminumEstimatorState,
+  DEFAULT_COLOR_BASE_RATES,
   getAluminumEstimatorInput,
   loadAluminumEstimatorStorage,
   mergeAluminumEstimatorStates,
   normalizeAluminumColor,
+  normalizeColorBaseRates,
+  recomputeLinkedPricesFromBases,
   saveAluminumEstimatorStorage,
   touchAluminumEstimatorState,
+  type AluminumColor,
   type AluminumEstimatorInputState,
   type AluminumEstimatorPageState,
   type AluminumEstimatorStorageSnapshot,
@@ -365,12 +369,13 @@ export function TinhTamNhomView() {
         next = { ...next, quantities };
       }
 
-      // Đơn giá / note — quy đổi Ghi ↔ Vân gỗ theo mốc cố định 147k / 154k.
+      // Đơn giá / note — quy đổi Ghi ↔ Vân gỗ theo mốc (2 ô dưới chip màu).
       if (patch.unitPrice !== undefined || patch.note !== undefined) {
         const color = normalizeAluminumColor(current.color);
         const prev = current.unitPricesByColor[color]?.[systemId]?.[rowId];
         const unitPrice = patch.unitPrice !== undefined ? patch.unitPrice : (prev?.unitPrice ?? '');
         const note = patch.note !== undefined ? patch.note : (prev?.note ?? '');
+        const colorBaseRates = normalizeColorBaseRates(current.colorBaseRates);
         const unitPricesByColor = applyLinkedUnitPrice(
           current.unitPricesByColor,
           color,
@@ -378,15 +383,37 @@ export function TinhTamNhomView() {
           rowId,
           unitPrice,
           note,
+          colorBaseRates,
         );
         next = touchAluminumEstimatorState({
           ...next,
           color,
+          colorBaseRates,
           unitPricesByColor,
         });
       }
 
       return next;
+    });
+  };
+
+  const updateBaseRate = (color: AluminumColor, raw: number) => {
+    updatePageState((current) => {
+      const fallback = DEFAULT_COLOR_BASE_RATES[color];
+      const value = Number.isFinite(raw) && raw > 0 ? Math.round(raw) : fallback;
+      const colorBaseRates = normalizeColorBaseRates({
+        ...current.colorBaseRates,
+        [color]: value,
+      });
+      const unitPricesByColor = recomputeLinkedPricesFromBases(
+        current.unitPricesByColor,
+        colorBaseRates,
+      );
+      return touchAluminumEstimatorState({
+        ...current,
+        colorBaseRates,
+        unitPricesByColor,
+      });
     });
   };
 
@@ -477,22 +504,31 @@ export function TinhTamNhomView() {
           />
         </div>
         <div className="aluminum-control-card aluminum-color-block">
-          <span className="aluminum-control-label aluminum-color-label">Màu (đơn giá riêng)</span>
-          <div className="aluminum-color-chips" role="group" aria-label="Chọn màu nhôm">
+          <span className="aluminum-control-label aluminum-color-label">Màu</span>
+          <div className="aluminum-color-pair-grid" role="group" aria-label="Màu và mốc quy đổi">
             {ALUMINUM_COLORS.map((color) => (
-              <button
-                key={color}
-                type="button"
-                className={`aluminum-color-chip${pageState.color === color ? ' active' : ''}`}
-                onClick={() => updatePageState((current) => {
-                  const nextColor = normalizeAluminumColor(color);
-                  if (normalizeAluminumColor(current.color) === nextColor) return current;
-                  // Đổi màu: đơn giá theo màu mới (đã lưu sẵn); SL session giữ nguyên.
-                  return touchAluminumEstimatorState({ ...current, color: nextColor });
-                })}
-              >
-                {color}
-              </button>
+              <div key={color} className="aluminum-color-pair">
+                <button
+                  type="button"
+                  className={`aluminum-color-chip${pageState.color === color ? ' active' : ''}`}
+                  onClick={() => updatePageState((current) => {
+                    const nextColor = normalizeAluminumColor(color);
+                    if (normalizeAluminumColor(current.color) === nextColor) return current;
+                    return touchAluminumEstimatorState({ ...current, color: nextColor });
+                  })}
+                >
+                  {color}
+                </button>
+                <SmartNumberInput
+                  className="input aluminum-base-rate-input"
+                  mode="int"
+                  min={1}
+                  value={pageState.colorBaseRates?.[color] ?? DEFAULT_COLOR_BASE_RATES[color]}
+                  onChange={(n) => updateBaseRate(color, n)}
+                  placeholder={String(DEFAULT_COLOR_BASE_RATES[color])}
+                  aria-label={`Mốc ${color}`}
+                />
+              </div>
             ))}
           </div>
         </div>
