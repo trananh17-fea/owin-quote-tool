@@ -16,8 +16,14 @@ export interface FixedAccessoryDraft {
   unitPrice: number;
   total: number;
   /**
-   * true = user đã sửa tay SL bộ PK; không auto-ghi đè bằng tổng SL hạng mục
-   * cho đến khi tổng SL cửa thay đổi (khi đó clear flag và sync lại).
+   * SL gốc từ SP kho (mỗi 1 cửa / 1 bộ).
+   * Auto: packageQuantity = packageQuantityPerUnit × tổng SL hạng mục.
+   * VD: cửa 3 cánh có sẵn 3 PK, 2 dòng → 6.
+   */
+  packageQuantityPerUnit?: number;
+  /**
+   * true = user đã sửa tay SL bộ PK.
+   * Giữ số tay cho đến khi tổng SL cửa đổi (force sync → clear flag + auto lại).
    */
   packageQuantityManual?: boolean;
 }
@@ -96,11 +102,37 @@ export function calculateFixedAccessoryDraftTotal(
   return Math.round(numberOr(draft.packageQuantity, 1) * numberOr(draft.unitPrice, 0));
 }
 
-export function createEmptyFixedAccessoryDraft(packageQuantity = 1): FixedAccessoryDraft {
+/** SL gốc tối thiểu 1 (số nguyên). */
+export function normalizePackageQuantityPerUnit(value: unknown, fallback = 1): number {
+  const n = Math.round(numberOr(value, fallback));
+  if (!Number.isFinite(n) || n <= 0) return Math.max(1, Math.round(numberOr(fallback, 1)) || 1);
+  return n;
+}
+
+/** Tổng SL hạng mục (số cái), tối thiểu 1 khi auto. */
+export function normalizeDoorTotalSl(totalSl: unknown): number {
+  return Math.max(1, Math.round(Number(totalSl) || 0) || 1);
+}
+
+/**
+ * SL bộ PK auto = SL_gốc_SP × tổng SL dòng hạng mục.
+ * VD: perUnit 3 × doorSl 2 → 6.
+ */
+export function computeAutoPackageQuantity(perUnit: unknown, totalSl: unknown): number {
+  return normalizePackageQuantityPerUnit(perUnit, 1) * normalizeDoorTotalSl(totalSl);
+}
+
+export function createEmptyFixedAccessoryDraft(
+  packageQuantity = 1,
+  packageQuantityPerUnit = 1,
+): FixedAccessoryDraft {
+  const perUnit = normalizePackageQuantityPerUnit(packageQuantityPerUnit, 1);
+  const qty = Math.max(1, numberOr(packageQuantity, perUnit));
   return {
     name: '',
     items: [{ id: newId(), name: '', quantity: 0 }],
-    packageQuantity: Math.max(1, packageQuantity),
+    packageQuantity: qty,
+    packageQuantityPerUnit: perUnit,
     unit: 'BO',
     unitPrice: 0,
     total: 0,
@@ -160,11 +192,21 @@ export function parseFixedAccessoriesJson(
       ? DEFAULT_FIXED_ACCESSORY_NAME
       : String(rawName).trim();
   const packageQuantityManual = Boolean(parsed.packageQuantityManual);
+  // Chỉ set perUnit khi JSON có field — thiếu thì undefined để seedFromProduct
+  // còn lấy packageQuantity (SL có sẵn trên SP) làm gốc.
+  const hasPerUnitField =
+    parsed.packageQuantityPerUnit !== undefined &&
+    parsed.packageQuantityPerUnit !== null &&
+    String(parsed.packageQuantityPerUnit).trim() !== '';
+  const packageQuantityPerUnit = hasPerUnitField
+    ? normalizePackageQuantityPerUnit(parsed.packageQuantityPerUnit, 1)
+    : undefined;
 
   return {
     name,
     items: items.length > 0 ? items : [{ id: newId(), name: '', quantity: 0 }],
     packageQuantity,
+    packageQuantityPerUnit,
     unit: 'BO',
     unitPrice,
     total: numberOr(parsed.total ?? parsed.totalVnd, packageQuantity * unitPrice),
@@ -209,6 +251,10 @@ export function serializeFixedAccessoriesJson(
     total,
     totalVnd: total,
   };
+  // Chỉ ghi perUnit khi đã biết (seed từ SP / đã sync) — product form không bắt buộc.
+  if (value.packageQuantityPerUnit != null && value.packageQuantityPerUnit > 0) {
+    payload.packageQuantityPerUnit = normalizePackageQuantityPerUnit(value.packageQuantityPerUnit, 1);
+  }
   if (value.packageQuantityManual) payload.packageQuantityManual = true;
   return JSON.stringify(payload);
 }
@@ -223,34 +269,93 @@ export function updateFixedAccessoryDraft(
 }
 
 /**
- * Gắn SL bộ PK = tổng SL hạng mục (số cái).
- * Dùng khi user đổi SL/dòng kích thước; xoá cờ manual để lần sau vẫn auto.
- * createIfMissing: tạo shell bộ PK rỗng (keepEmpty) để UI hiện đúng SL bộ.
+ * Gắn SL bộ PK = packageQuantityPerUnit × tổng SL hạng mục.
+ * - respectManual true (mặc định): giữ SL tay.
+ * - respectManual false (khi SL cửa đổi): clear manual + auto lại.
+ * - createIfMissing: shell PK rỗng với perUnit=1.
  */
 export function syncFixedPackageQuantityToTotalSl(
   fixedAccessoryPackage: string | null | undefined,
   totalSl: number,
-  options?: { keepEmpty?: boolean; createIfMissing?: boolean },
+  options?: {
+    keepEmpty?: boolean;
+    createIfMissing?: boolean;
+    /** true = giữ packageQuantityManual; false = xoá cờ và auto lại */
+    respectManual?: boolean;
+  },
 ): string | null | undefined {
-  const qty = Math.max(1, Math.round(Number(totalSl) || 0) || 1);
+  const doorSl = normalizeDoorTotalSl(totalSl);
   const keepEmpty = options?.keepEmpty ?? true;
+  const respectManual = options?.respectManual ?? true;
+
   if (fixedAccessoryPackage == null || fixedAccessoryPackage === '') {
     if (!options?.createIfMissing) return fixedAccessoryPackage;
-    return serializeFixedAccessoriesJson(createEmptyFixedAccessoryDraft(qty), { keepEmpty: true });
+    // Shell mới: perUnit = 1 → SL bộ = SL cửa.
+    return serializeFixedAccessoriesJson(
+      createEmptyFixedAccessoryDraft(doorSl, 1),
+      { keepEmpty: true },
+    );
   }
-  const draft = parseFixedAccessoriesJson(fixedAccessoryPackage, qty);
-  // Đã sửa tay → giữ nguyên
-  if (draft.packageQuantityManual) {
-    return serializeFixedAccessoriesJson(draft, { keepEmpty });
-  }
-  if (draft.packageQuantity === qty && !draft.packageQuantityManual) {
+
+  const draft = parseFixedAccessoriesJson(fixedAccessoryPackage, doorSl);
+  // Đã seed → dùng perUnit; legacy không có field → 1 (SL bộ = SL cửa).
+  const perUnit = normalizePackageQuantityPerUnit(draft.packageQuantityPerUnit, 1);
+
+  if (respectManual && draft.packageQuantityManual) {
     return fixedAccessoryPackage;
   }
+
+  const expected = computeAutoPackageQuantity(perUnit, doorSl);
+  const alreadyOk =
+    draft.packageQuantity === expected &&
+    !draft.packageQuantityManual &&
+    (draft.packageQuantityPerUnit == null || draft.packageQuantityPerUnit === perUnit);
+  if (alreadyOk) {
+    // Đảm bảo perUnit được ghi để lần sau không mất base.
+    if (draft.packageQuantityPerUnit == null) {
+      return serializeFixedAccessoriesJson(
+        updateFixedAccessoryDraft(draft, {
+          packageQuantity: expected,
+          packageQuantityPerUnit: perUnit,
+          packageQuantityManual: false,
+        }),
+        { keepEmpty },
+      );
+    }
+    return fixedAccessoryPackage;
+  }
+
   const next = updateFixedAccessoryDraft(draft, {
-    packageQuantity: qty,
+    packageQuantity: expected,
+    packageQuantityPerUnit: perUnit,
     packageQuantityManual: false,
   });
   return serializeFixedAccessoriesJson(next, { keepEmpty });
+}
+
+/**
+ * Gắn SL gốc từ SP kho vào bộ PK khi đưa SP vào báo giá.
+ * packageQuantity (trên SP) = SL có sẵn mỗi 1 cửa → packageQuantityPerUnit.
+ */
+export function seedFixedPackageFromProduct(
+  fixedAccessoryPackage: string | null | undefined,
+  doorSl = 1,
+): string | null {
+  if (fixedAccessoryPackage == null || fixedAccessoryPackage === '') return null;
+  const draft = parseFixedAccessoriesJson(fixedAccessoryPackage, 1);
+  // Ưu tiên perUnit đã lưu; không thì lấy packageQuantity trên SP làm SL gốc.
+  const perUnit = normalizePackageQuantityPerUnit(
+    draft.packageQuantityPerUnit ?? draft.packageQuantity,
+    1,
+  );
+  const expected = computeAutoPackageQuantity(perUnit, doorSl);
+  return serializeFixedAccessoriesJson(
+    updateFixedAccessoryDraft(draft, {
+      packageQuantityPerUnit: perUnit,
+      packageQuantity: expected,
+      packageQuantityManual: false,
+    }),
+  );
 }
 
 export function addEmptyFixedAccessoryItem(draft: FixedAccessoryDraft): FixedAccessoryDraft {

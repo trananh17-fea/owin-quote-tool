@@ -100,15 +100,21 @@ export function enrichFixedAccessoryPackageValue(
 
   const hasExistingManualItems = hasManualItems(pkg);
   const totalSl = Math.max(1, Number(totalQuantity) || 1);
-  // Auto SL bộ = tổng SL hạng mục, trừ khi user đã sửa tay (packageQuantityManual).
+  const rawPerUnit = Number(pkg.packageQuantityPerUnit);
+  const perUnit =
+    Number.isFinite(rawPerUnit) && rawPerUnit > 0
+      ? Math.round(rawPerUnit)
+      : 1;
+  // Auto SL bộ = SL_gốc_SP × tổng SL hạng mục; manual giữ nguyên.
   const packageQuantity = pkg.packageQuantityManual
-    ? Number(pkg.packageQuantity ?? pkg.quantity ?? totalSl) || 1
-    : totalSl;
+    ? Number(pkg.packageQuantity ?? pkg.quantity ?? perUnit * totalSl) || 1
+    : perUnit * totalSl;
   const unitPrice = Number(pkg.unitPrice ?? pkg.unitPriceVnd ?? 0);
   const next: FixedAccessoryPackageLike = {
     ...pkg,
     packageQuantity,
     quantity: packageQuantity,
+    packageQuantityPerUnit: perUnit,
     packageQuantityManual: pkg.packageQuantityManual ? true : undefined,
     unit: pkg.unit || 'BO',
     unitPrice,

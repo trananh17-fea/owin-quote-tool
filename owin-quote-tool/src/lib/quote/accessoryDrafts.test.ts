@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   addEmptyAccessoryDraft,
   addEmptyFixedAccessoryItem,
+  computeAutoPackageQuantity,
   createEmptyFixedAccessoryDraft,
   DEFAULT_FIXED_ACCESSORY_ITEMS,
   parseExtraAccessoriesJson,
   parseFixedAccessoriesJson,
+  seedFixedPackageFromProduct,
   serializeExtraAccessoriesJson,
   serializeFixedAccessoriesJson,
   syncFixedPackageQuantityToTotalSl,
@@ -134,21 +136,60 @@ describe('fixed accessory draft normalization', () => {
   });
 });
 
-describe('syncFixedPackageQuantityToTotalSl', () => {
-  it('creates shell with package qty = total door SL when missing', () => {
-    const json = syncFixedPackageQuantityToTotalSl(null, 3, { createIfMissing: true, keepEmpty: true });
-    expect(json).toBeTruthy();
-    const draft = parseFixedAccessoriesJson(json, 1);
+describe('computeAutoPackageQuantity', () => {
+  it('multiplies product base SL by door SL (3 × 2 = 6)', () => {
+    expect(computeAutoPackageQuantity(3, 2)).toBe(6);
+    expect(computeAutoPackageQuantity(1, 5)).toBe(5);
+    expect(computeAutoPackageQuantity(3, 1)).toBe(3);
+  });
+});
+
+describe('seedFixedPackageFromProduct', () => {
+  it('uses product packageQuantity as per-unit base', () => {
+    const productPkg = JSON.stringify({
+      name: 'Bộ PK cửa 3 cánh',
+      items: [{ name: 'Bản lề', quantity: 3 }],
+      packageQuantity: 3,
+      unitPrice: 500000,
+    });
+    const seeded = seedFixedPackageFromProduct(productPkg, 1);
+    const draft = parseFixedAccessoriesJson(seeded, 1);
+    expect(draft.packageQuantityPerUnit).toBe(3);
     expect(draft.packageQuantity).toBe(3);
     expect(draft.packageQuantityManual).toBeFalsy();
   });
 
-  it('updates non-manual package qty when door SL changes', () => {
+  it('scales seeded base by door SL when seeding at qty>1', () => {
+    const productPkg = JSON.stringify({
+      name: 'Bộ PK',
+      items: [{ name: 'Khóa', quantity: 1 }],
+      packageQuantity: 3,
+      unitPrice: 100000,
+    });
+    const seeded = seedFixedPackageFromProduct(productPkg, 2);
+    const draft = parseFixedAccessoriesJson(seeded, 1);
+    expect(draft.packageQuantityPerUnit).toBe(3);
+    expect(draft.packageQuantity).toBe(6);
+  });
+});
+
+describe('syncFixedPackageQuantityToTotalSl', () => {
+  it('creates shell with package qty = total door SL when missing (perUnit=1)', () => {
+    const json = syncFixedPackageQuantityToTotalSl(null, 3, { createIfMissing: true, keepEmpty: true });
+    expect(json).toBeTruthy();
+    const draft = parseFixedAccessoriesJson(json, 1);
+    expect(draft.packageQuantity).toBe(3);
+    expect(draft.packageQuantityPerUnit).toBe(1);
+    expect(draft.packageQuantityManual).toBeFalsy();
+  });
+
+  it('updates non-manual package qty when door SL changes (perUnit × SL)', () => {
     const base = serializeFixedAccessoriesJson(
       {
         name: 'Bộ PK',
         items: [{ id: '1', name: 'Khóa', quantity: 0 }],
         packageQuantity: 1,
+        packageQuantityPerUnit: 1,
         unit: 'BO',
         unitPrice: 100000,
         total: 100000,
@@ -159,12 +200,32 @@ describe('syncFixedPackageQuantityToTotalSl', () => {
     expect(parseFixedAccessoriesJson(next, 1).packageQuantity).toBe(5);
   });
 
-  it('keeps manual package qty when door SL changes', () => {
+  it('scales product base 3 × door SL 2 → 6', () => {
+    const seeded = seedFixedPackageFromProduct(
+      JSON.stringify({
+        name: 'Bộ PK 3 cánh',
+        items: [{ name: 'Bản lề', quantity: 3 }],
+        packageQuantity: 3,
+        unitPrice: 200000,
+      }),
+      1,
+    );
+    const next = syncFixedPackageQuantityToTotalSl(seeded, 2, {
+      keepEmpty: true,
+      respectManual: false,
+    });
+    const draft = parseFixedAccessoriesJson(next, 1);
+    expect(draft.packageQuantityPerUnit).toBe(3);
+    expect(draft.packageQuantity).toBe(6);
+  });
+
+  it('keeps manual package qty when respectManual (auto path)', () => {
     const base = serializeFixedAccessoriesJson(
       {
         name: 'Bộ PK',
         items: [{ id: '1', name: 'Khóa', quantity: 0 }],
         packageQuantity: 2,
+        packageQuantityPerUnit: 3,
         packageQuantityManual: true,
         unit: 'BO',
         unitPrice: 100000,
@@ -172,9 +233,36 @@ describe('syncFixedPackageQuantityToTotalSl', () => {
       },
       { keepEmpty: true },
     );
-    const next = syncFixedPackageQuantityToTotalSl(base, 9, { keepEmpty: true });
+    const next = syncFixedPackageQuantityToTotalSl(base, 9, {
+      keepEmpty: true,
+      respectManual: true,
+    });
     const draft = parseFixedAccessoriesJson(next, 1);
     expect(draft.packageQuantity).toBe(2);
     expect(draft.packageQuantityManual).toBe(true);
+  });
+
+  it('clears manual and re-autos when force (door SL changed)', () => {
+    const base = serializeFixedAccessoriesJson(
+      {
+        name: 'Bộ PK',
+        items: [{ id: '1', name: 'Khóa', quantity: 0 }],
+        packageQuantity: 5,
+        packageQuantityPerUnit: 3,
+        packageQuantityManual: true,
+        unit: 'BO',
+        unitPrice: 100000,
+        total: 500000,
+      },
+      { keepEmpty: true },
+    );
+    const next = syncFixedPackageQuantityToTotalSl(base, 2, {
+      keepEmpty: true,
+      respectManual: false,
+    });
+    const draft = parseFixedAccessoriesJson(next, 1);
+    expect(draft.packageQuantity).toBe(6);
+    expect(draft.packageQuantityManual).toBeFalsy();
+    expect(draft.packageQuantityPerUnit).toBe(3);
   });
 });

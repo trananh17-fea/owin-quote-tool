@@ -39,7 +39,9 @@ import { ImageLightbox } from '@/components/ImageLightbox';
 import { resolveImageUrl } from '@/utils/imagePaths';
 import { compressAndUploadQuoteImage, ImageError } from '@/utils/imageStorage';
 import {
+  computeAutoPackageQuantity,
   createEmptyFixedAccessoryDraft,
+  normalizePackageQuantityPerUnit,
   parseExtraAccessoriesJson,
   parseFixedAccessoriesJson,
   serializeExtraAccessoriesJson,
@@ -574,7 +576,11 @@ export function QuoteView() {
       if (i !== index) return item;
       let merged: QuoteItemInput = { ...item, ...patch };
       if (patch.dimensions) {
-        merged = withSyncedPackageQuantity({ ...merged, dimensions: patch.dimensions });
+        const prevSl = sumItemDimensionQuantity(item);
+        merged = { ...merged, dimensions: patch.dimensions };
+        const nextSl = sumItemDimensionQuantity(merged);
+        // Chỉ force (xoá manual + auto lại) khi tổng SL cửa đổi — đổi KT không đụng SL tay.
+        merged = withSyncedPackageQuantity(merged, prevSl !== nextSl ? 'force' : 'auto');
       }
       return merged;
     });
@@ -649,8 +655,11 @@ export function QuoteView() {
   const updateDimension = (itemIndex: number, lineIndex: number, patch: Partial<DimensionInput>) => {
     const nextItems = items.map((item, i) => {
       if (i !== itemIndex) return item;
+      const prevSl = sumItemDimensionQuantity(item);
       const dimensions = item.dimensions.map((line, j) => (j === lineIndex ? { ...line, ...patch } : line));
-      return withSyncedPackageQuantity({ ...item, dimensions });
+      const next = { ...item, dimensions };
+      const nextSl = sumItemDimensionQuantity(next);
+      return withSyncedPackageQuantity(next, prevSl !== nextSl ? 'force' : 'auto');
     });
     const sorted = sortQuoteItemsWithKeys(nextItems, itemUiKeys);
     setItems(sorted.items);
@@ -1851,9 +1860,9 @@ function TotalLine({ label, value, strong }: { label: string; value: number; str
 }
 
 /**
- * Tổng SL cửa → SL bộ phụ kiện cố định.
- * - force: luôn ghi đè khi đổi SL/dòng KT (tạo shell PK nếu chưa có); xoá cờ manual
- * - auto: chỉ sync khi đã có bộ PK và user chưa sửa tay SL bộ
+ * SL bộ PK = packageQuantityPerUnit × tổng SL hạng mục.
+ * - force: SL cửa đổi hoặc seed item — clear manual, auto lại (tạo shell nếu force + thiếu PK)
+ * - auto: chỉ sync khi đã có bộ PK và chưa sửa tay
  */
 function withSyncedPackageQuantity(
   item: QuoteItemInput,
@@ -1868,8 +1877,9 @@ function withSyncedPackageQuantity(
   }
   const nextPackage = syncFixedPackageQuantityToTotalSl(item.fixedAccessoryPackage, totalSl, {
     keepEmpty: true,
-    // Khi gõ SL kích thước: luôn có shell bộ PK để "Số lượng bộ" bám theo.
     createIfMissing: mode === 'force',
+    // force = SL cửa đổi → bỏ manual; auto = giữ manual
+    respectManual: mode === 'auto',
   });
   if (nextPackage === item.fixedAccessoryPackage) return item;
   return { ...item, fixedAccessoryPackage: nextPackage ?? null };
@@ -2159,16 +2169,20 @@ function QuoteItemCard({
   dragHandleProps: Record<string, unknown>;
   products: ProductRecord[];
 }) {
-  // SL bộ PK mặc định = tổng SL cửa; shell rỗng / JSON cũ qty=1 vẫn hiện đúng số.
+  // SL bộ PK auto = perUnit × tổng SL cửa (manual giữ nguyên).
   const totalDoorSl = Math.max(1, sumItemDimensionQuantity(item) || 1);
   const fixedDraft = (() => {
     if (item.fixedAccessoryPackage == null || item.fixedAccessoryPackage === '') {
-      return createEmptyFixedAccessoryDraft(totalDoorSl);
+      return createEmptyFixedAccessoryDraft(totalDoorSl, 1);
     }
     const draft = parseFixedAccessoriesJson(item.fixedAccessoryPackage, totalDoorSl);
-    if (!draft.packageQuantityManual && draft.packageQuantity !== totalDoorSl) {
+    const perUnit = normalizePackageQuantityPerUnit(draft.packageQuantityPerUnit, 1);
+    if (draft.packageQuantityManual) return draft;
+    const expected = computeAutoPackageQuantity(perUnit, totalDoorSl);
+    if (draft.packageQuantity !== expected || draft.packageQuantityPerUnit !== perUnit) {
       return updateFixedAccessoryDraft(draft, {
-        packageQuantity: totalDoorSl,
+        packageQuantity: expected,
+        packageQuantityPerUnit: perUnit,
         packageQuantityManual: false,
       });
     }

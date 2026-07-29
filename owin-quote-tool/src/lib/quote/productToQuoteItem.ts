@@ -2,7 +2,7 @@ import type { ProductRecord, ProductUnit, QuoteItemInput } from '@/types/models'
 import { calculateExtraAccessoryLineTotal, normalizeUnit, roundQuantity3 } from '@/lib/quote-engine';
 import { normalizeCategoryName } from '@/config/categoryOrder';
 import { titleCaseVi } from '@/utils/titleCase';
-import { parseFixedAccessoriesJson, serializeFixedAccessoriesJson } from './accessoryDrafts';
+import { seedFixedPackageFromProduct } from './accessoryDrafts';
 
 export function parseProductSizeText(rawSizeText: string | null | undefined): {
   width: number | null;
@@ -127,9 +127,8 @@ export function createQuoteItemFromProduct(
       note: accessory.note,
       isEnabled: true,
     })),
-    fixedAccessoryPackage: product.fixedAccessoryPackage
-      ? serializeFixedAccessoriesJson(parseFixedAccessoriesJson(product.fixedAccessoryPackage, 1))
-      : null,
+    // SL gốc SP (packageQuantity) × SL dòng — seed perUnit để auto không mất base.
+    fixedAccessoryPackage: seedFixedPackageFromProduct(product.fixedAccessoryPackage, 1),
     extraAccessories: normalizeExtraAccessoriesJson(product.extraAccessories),
     numericId: product.numericId,
   };

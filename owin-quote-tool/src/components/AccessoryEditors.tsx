@@ -40,6 +40,11 @@ function newItemId(): string {
   return `row-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function normalizePerUnitLabel(value: FixedAccessoryDraft): number {
+  const n = Number(value.packageQuantityPerUnit);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : 1;
+}
+
 function applyPackageName(
   draft: FixedAccessoryDraft,
   name: string,
@@ -200,7 +205,17 @@ export function FixedAccessoryPackageEditor({
 
       <div className="fixed-package-grid">
         <div className="field">
-          <label>Số lượng bộ</label>
+          <label>
+            Số lượng bộ
+            {value.packageQuantityManual ? (
+              <span className="field-hint-inline"> · sửa tay</span>
+            ) : (
+              <span className="field-hint-inline">
+                {' '}
+                · auto {normalizePerUnitLabel(value)}×SL cửa
+              </span>
+            )}
+          </label>
           <SmartNumberInput
             className="input"
             mode="int"

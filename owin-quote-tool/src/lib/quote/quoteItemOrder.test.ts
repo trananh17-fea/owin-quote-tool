@@ -122,7 +122,7 @@ describe('sortQuoteItemsByMaxLineAmount', () => {
 });
 
 describe('fixed package auto quantity', () => {
-  it('uses total SL when not manual', () => {
+  it('uses perUnit × total SL when not manual (legacy perUnit=1)', () => {
     const raw = JSON.stringify({
       name: 'Bộ PK',
       items: [{ name: 'Khóa', quantity: 1 }],
@@ -133,12 +133,26 @@ describe('fixed package auto quantity', () => {
     expect(enriched.packageQuantity).toBe(7);
   });
 
+  it('uses product base × total SL (3 × 2 = 6)', () => {
+    const raw = JSON.stringify({
+      name: 'Bộ PK 3 cánh',
+      items: [{ name: 'Bản lề', quantity: 3 }],
+      packageQuantity: 3,
+      packageQuantityPerUnit: 3,
+      unitPrice: 100_000,
+    });
+    const enriched = JSON.parse(enrichFixedAccessoryPackageValue(raw, 2) || '{}');
+    expect(enriched.packageQuantity).toBe(6);
+    expect(enriched.packageQuantityPerUnit).toBe(3);
+  });
+
   it('keeps manual package quantity', () => {
     const raw = JSON.stringify({
       name: 'Bộ PK',
       items: [{ name: 'Khóa', quantity: 1 }],
       packageQuantity: 2,
       packageQuantityManual: true,
+      packageQuantityPerUnit: 3,
       unitPrice: 100_000,
     });
     const enriched = JSON.parse(enrichFixedAccessoryPackageValue(raw, 7) || '{}');
