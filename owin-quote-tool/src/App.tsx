@@ -38,13 +38,16 @@ function App() {
 
   return (
     <SupabaseGate>
-      <div className="tool-shell">
+      <div className="tool-shell" data-active-tab={tab}>
         <header className="tool-topnav no-print">
-          <button type="button" className="tool-brand" onClick={() => activateTab('products')}>
+          <button type="button" className="tool-brand" onClick={() => activateTab('products')} aria-label="OWIN — về sản phẩm">
             <img
               className="tool-brand-logo"
               src={`${import.meta.env.BASE_URL}owin-user-assets/logo/logo.webp`}
-              alt="OWIN"
+              alt=""
+              width={36}
+              height={36}
+              decoding="async"
             />
             <span className="tool-brand-text">
               <strong>OWIN</strong>
@@ -52,18 +55,23 @@ function App() {
             </span>
           </button>
 
-          <nav className="tool-nav" aria-label="Menu chính">
-            {menuItems.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                className={`tool-nav-item ${tab === item.key ? 'active' : ''}`}
-                onClick={() => activateTab(item.key)}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </button>
-            ))}
+          <nav className="tool-nav" aria-label="Menu chính" role="tablist">
+            {menuItems.map((item) => {
+              const active = tab === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className={`tool-nav-item${active ? ' active' : ''}`}
+                  onClick={() => activateTab(item.key)}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
           </nav>
 
           <div className="tool-topnav-actions">
@@ -71,24 +79,24 @@ function App() {
           </div>
         </header>
 
-        <main className="tool-content">
+        <main className="tool-content" id="tool-main" tabIndex={-1}>
           {visitedTabs.has('products') && (
-            <div hidden={tab !== 'products'}>
+            <div hidden={tab !== 'products'} role="tabpanel" aria-label="Sản phẩm">
               <ProductsView onOpenCatalogue={() => activateTab('catalogue')} />
             </div>
           )}
           {visitedTabs.has('quotes') && (
-            <div hidden={tab !== 'quotes'}>
+            <div hidden={tab !== 'quotes'} role="tabpanel" aria-label="Báo giá">
               <QuoteView />
             </div>
           )}
           {visitedTabs.has('aluminum') && (
-            <div hidden={tab !== 'aluminum'}>
+            <div hidden={tab !== 'aluminum'} role="tabpanel" aria-label="Tính nhôm">
               <TinhTamNhomView />
             </div>
           )}
           {visitedTabs.has('catalogue') && (
-            <div hidden={tab !== 'catalogue'}>
+            <div hidden={tab !== 'catalogue'} role="tabpanel" aria-label="Bảng giá">
               <BangGiaView />
             </div>
           )}
