@@ -77,8 +77,7 @@
   --ios-radius-sm: var(--r-sm);
   --ios-shadow: var(--shadow-sm), var(--shadow-md);
 
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
-    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: var(--fs-md);
   line-height: 1.45;
   color: var(--owin-ink);
@@ -1588,7 +1587,7 @@ textarea.input:focus {
 }
 .summary-metric strong {
   color: var(--owin-primary);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: 'Inter', sans-serif;
   font-size: var(--fs-lg);
 }
 .summary-metric small {
@@ -1713,7 +1712,7 @@ textarea.input:focus {
   color: var(--owin-primary);
   font-weight: 800;
   font-size: var(--fs-md);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: 'Inter', sans-serif;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -2529,7 +2528,7 @@ textarea.input:focus {
 }
 .quote-item-locked-code {
   color: var(--owin-ink-muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 12px;
   font-weight: 750;
   letter-spacing: 0.02em;
@@ -2983,7 +2982,7 @@ textarea.input:focus {
   min-width: 900px;
   border-collapse: collapse;
   table-layout: fixed;
-  font-family: 'Times New Roman', Times, serif;
+  font-family: 'Inter', sans-serif;
   font-size: 12px;
 }
 .bang-gia-table th,
@@ -5095,3 +5094,4 @@ textarea.input:focus {
     /* Legacy class no longer used by quote/catalogue exporters. */
   }
 }
+

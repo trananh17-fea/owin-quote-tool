@@ -13,8 +13,7 @@
   --ios-radius: 24px; /* rounded-3xl ~ 1.5rem */
   --ios-radius-sm: 12px;
   --ios-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.05);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
-    Helvetica, Arial, sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -274,3 +273,4 @@ body {
   .row-actions { justify-content: stretch; }
   .row-actions .btn { flex: 1 1 160px; justify-content: center; }
 }
+
