@@ -1,0 +1,110 @@
+/*
+ * DESIGN TOKENS — iOS (nguồn duy nhất cho màu / bo / chữ / shadow).
+ * Import ĐẦU TIÊN trong main.tsx, trước mọi stylesheet khác.
+ *
+ * Bảng màu lấy đúng theo màn đăng nhập (features/auth/login.css) để cả app
+ * là một hệ: nền xám iOS, thẻ trắng, accent xanh hệ thống, hairline mảnh.
+ *
+ * Các biến `--owin-*` giữ nguyên TÊN nhưng trỏ sang giá trị iOS: nhờ vậy phần
+ * CSS chưa kịp chuyển (báo giá / bảng giá / tính nhôm) đổi màu theo mà không
+ * phải sửa từng dòng. Khi cả 4 tab đã có stylesheet riêng thì bỏ nhóm alias.
+ */
+:root {
+  /* ─── iOS system palette ─── */
+  --ios-bg: #f2f2f7; /* secondarySystemBackground — nền app */
+  --ios-card: #ffffff; /* systemBackground — mặt thẻ */
+  --ios-fill: #f0f0f5; /* secondarySystemFill — nền input */
+  --ios-fill-strong: #e5e5ea; /* tertiarySystemFill — track segmented */
+  --ios-separator: #e5e5ea; /* opaqueSeparator — hairline */
+  --ios-label: #1c1c1e; /* label */
+  --ios-label2: #55555e; /* secondaryLabel */
+  --ios-label3: #8e8e93; /* tertiaryLabel */
+  --ios-blue: #007aff; /* systemBlue */
+  --ios-blue-ink: #0a70f0; /* systemBlue đậm hơn cho chữ trên nền sáng */
+  --ios-blue-soft: rgba(0, 122, 255, 0.1);
+  --ios-green: #248a3d; /* systemGreen (biến thể đọc được trên nền sáng) */
+  --ios-green-soft: rgba(52, 199, 89, 0.12);
+  --ios-red: #d70015; /* systemRed (biến thể chữ) */
+  --ios-red-soft: rgba(255, 59, 48, 0.1);
+  --ios-orange: #c93400; /* systemOrange (biến thể chữ) */
+
+  /* ─── Radius — thang bo góc iOS ─── */
+  --r-xs: 8px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-pill: 999px;
+  --ios-radius: var(--r-lg);
+  --ios-radius-sm: var(--r-md);
+
+  /* ─── Type scale — giữ nguyên như bản cũ để layout 3 tab chưa chuyển không xê dịch ─── */
+  --fs-xs: 11.5px;
+  --fs-sm: 13px;
+  --fs-md: 14.5px;
+  --fs-lg: 16px;
+  --fs-xl: 19px;
+  --fs-2xl: 24px;
+  --fs-title: clamp(20px, 2vw, 26px);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --track-tight: -0.02em;
+
+  /* ─── Spacing / chiều cao control ─── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --control-h: 42px;
+  --control-h-sm: 36px;
+  --icon-btn: 38px;
+  --touch: 44px;
+
+  /* ─── Shadow — iOS mềm, gần như phẳng ─── */
+  --shadow-sm: 0 1px 2px rgba(28, 28, 40, 0.04);
+  --shadow-md: 0 1px 2px rgba(28, 28, 40, 0.04), 0 8px 24px rgba(28, 28, 40, 0.05);
+  --shadow-lg: 0 1px 2px rgba(28, 28, 40, 0.04), 0 22px 48px rgba(28, 28, 40, 0.07);
+  --shadow-glow: 0 0 0 4px var(--ios-blue-soft);
+  --ios-shadow: var(--shadow-md);
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* ─── Alias cho phần CSS chưa chuyển sang token iOS ─── */
+  --owin-primary: var(--ios-label);
+  --owin-primary-soft: var(--ios-label2);
+  --owin-action: var(--ios-blue);
+  --owin-action-hover: var(--ios-blue-ink);
+  --owin-action-soft: var(--ios-blue-soft);
+  --owin-ink: var(--ios-label);
+  --owin-ink-muted: var(--ios-label2);
+  --owin-muted: var(--ios-label3);
+  --owin-bg: var(--ios-bg);
+  --owin-bg-accent: var(--ios-bg);
+  --owin-border: var(--ios-separator);
+  --owin-border-strong: #d8d8de;
+  --owin-surface: var(--ios-card);
+  --owin-soft: var(--ios-fill);
+  --owin-success: var(--ios-green);
+  --owin-success-soft: var(--ios-green-soft);
+  --owin-danger: var(--ios-red);
+  --owin-danger-soft: var(--ios-red-soft);
+  --owin-warning: var(--ios-orange);
+  --owin-shadow: var(--shadow-md);
+  /* Vàng đồng của theme cũ đã bỏ; alias trỏ về accent iOS cho chỗ nào còn sót. */
+  --owin-gold: var(--ios-blue);
+  --owin-gold-soft: var(--ios-blue-soft);
+
+  /* Tên rút gọn từng bị dùng mà chưa khai báo (border/surface của modal giá hàng loạt). */
+  --border: var(--ios-separator);
+  --surface: var(--ios-card);
+  --surface-subtle: var(--ios-bg);
+  --text-muted: var(--ios-label2);
+
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  color: var(--ios-label);
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}

@@ -3,6 +3,7 @@ import { ChevronDown, LogOut, UserRound } from 'lucide-react';
 import { signOut, useAuthenticatedSession } from '@/features/auth/authSession';
 import { OWIN_LOGIN_EMAIL, OWIN_LOGIN_USERNAME } from '@/features/auth/authIdentifier';
 import { flushPendingWork } from '@/lib/browser/pendingWork';
+import './accountMenu.css';
 
 export function AccountMenu() {
   const { session } = useAuthenticatedSession();

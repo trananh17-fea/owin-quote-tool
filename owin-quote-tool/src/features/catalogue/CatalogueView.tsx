@@ -1,7 +1,7 @@
 import { FileDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useProducts } from '@/features/products/useProducts';
-import { ProductThumb } from '@/features/products/ProductThumb';
+import { useProducts } from '@/features/products';
+import { ProductThumb } from '@/components/ProductThumb';
 import { buildCatalogueBlockRows, type CatalogueBlockRow } from '@/lib/catalogue/catalogueRows';
 import { formatVND } from '@/lib/format/currency';
 

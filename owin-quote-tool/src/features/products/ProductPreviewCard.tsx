@@ -3,14 +3,9 @@ import type { ProductRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
 import { titleCaseVi } from '@/lib/format/titleCase';
-import { ProductThumb } from '@/features/products/ProductThumb';
+import { ProductThumb } from '@/components/ProductThumb';
 import { parseExtraAccessoriesJson, parseFixedAccessoriesJson } from '@/lib/quote/accessoryDrafts';
-
-function unitLabel(unit: ProductRecord['unit']): string {
-  if (unit === 'BO') return 'Bộ';
-  if (unit === 'METER') return 'md';
-  return 'm²';
-}
+import { unitLabel } from '@/features/products/productUnits';
 
 function parseFixedItems(product: ProductRecord): Array<{ name: string; quantity: number }> {
   if (!product.fixedAccessoryPackage) {

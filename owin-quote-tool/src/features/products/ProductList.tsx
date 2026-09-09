@@ -4,7 +4,8 @@ import { formatVND } from '@/lib/format/currency';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
 import { titleCaseVi } from '@/lib/format/titleCase';
 import { DragHandle, useDragReorder } from '@/components/DragReorder';
-import { ProductThumb } from '@/features/products/ProductThumb';
+import { ProductThumb } from '@/components/ProductThumb';
+import { unitLabel } from '@/features/products/productUnits';
 
 interface Props {
   products: ProductRecord[];
@@ -18,12 +19,6 @@ interface Props {
   onDelete: (p: ProductRecord) => void;
   onDuplicate: (p: ProductRecord) => void;
   onPreview: (p: ProductRecord) => void;
-}
-
-function unitLabel(unit: ProductRecord['unit']): string {
-  if (unit === 'BO') return 'Bộ';
-  if (unit === 'METER') return 'md';
-  return 'm²';
 }
 
 export function ProductList({

@@ -12,7 +12,7 @@ import type {
   QuoteItemInput,
   QuoteRecord,
 } from '@/types/models';
-import { useProducts } from '@/features/products/useProducts';
+import { useProducts, ProductPreviewCard } from '@/features/products';
 import { formatVND } from '@/lib/format/currency';
 import { titleCaseVi } from '@/lib/format/titleCase';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
@@ -33,8 +33,7 @@ import {
 } from '@/features/suggestions/suggestionStore';
 import { useSuggestions } from '@/features/suggestions/useSuggestions';
 
-import { ProductThumb, OWIN_LOGO } from '@/features/products/ProductThumb';
-import { ProductPreviewCard } from '@/features/products/ProductPreviewCard';
+import { ProductThumb, OWIN_LOGO } from '@/components/ProductThumb';
 import { ImageLightbox } from '@/components/ImageLightbox';
 import { resolveImageUrl } from '@/lib/media/imagePaths';
 import { compressAndUploadQuoteImage, ImageError } from '@/lib/media/imageStorage';

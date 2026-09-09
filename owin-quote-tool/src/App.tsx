@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { BookOpen, Calculator, FileText, Package } from 'lucide-react';
 import { AuthGate } from '@/features/auth/AuthGate';
 import { AccountMenu } from '@/features/auth/AccountMenu';
-import { ProductsView } from '@/features/products/ProductsView';
+import { ProductsView } from '@/features/products';
 import { QuoteView } from '@/features/quote/QuoteView';
 import { CatalogueView } from '@/features/catalogue/CatalogueView';
 import { AluminumEstimatorView } from '@/features/aluminum/AluminumEstimatorView';

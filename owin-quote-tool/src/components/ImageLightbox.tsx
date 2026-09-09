@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Maximize2, X, ZoomIn, ZoomOut } from 'lucide-react';
-import { OWIN_LOGO } from '@/features/products/ProductThumb';
+import { OWIN_LOGO } from '@/components/ProductThumb';
 import {
   closeImageLightbox,
   getImageLightboxSrc,
