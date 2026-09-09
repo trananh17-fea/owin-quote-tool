@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { BookOpen, Calculator, FileText, Package } from 'lucide-react';
-import { SupabaseGate } from '@/features/supabase/SupabaseGate';
-import { AccountMenu } from '@/features/supabase/AccountMenu';
+import { AuthGate } from '@/features/auth/AuthGate';
+import { AccountMenu } from '@/features/auth/AccountMenu';
 import { ProductsView } from '@/features/products/ProductsView';
 import { QuoteView } from '@/features/quote/QuoteView';
-import { BangGiaView } from '@/features/catalogue/BangGiaView';
-import { TinhTamNhomView } from '@/features/aluminum/TinhTamNhomView';
+import { CatalogueView } from '@/features/catalogue/CatalogueView';
+import { AluminumEstimatorView } from '@/features/aluminum/AluminumEstimatorView';
 import { GlobalImageLightbox } from '@/components/ImageLightbox';
 
 type Tab = 'products' | 'quotes' | 'catalogue' | 'aluminum';
@@ -37,7 +37,7 @@ function App() {
   };
 
   return (
-    <SupabaseGate>
+    <AuthGate>
       <div className="tool-shell" data-active-tab={tab}>
         <header className="tool-topnav no-print">
           <button type="button" className="tool-brand" onClick={() => activateTab('products')} aria-label="OWIN — về sản phẩm">
@@ -92,18 +92,18 @@ function App() {
           )}
           {visitedTabs.has('aluminum') && (
             <div hidden={tab !== 'aluminum'} role="tabpanel" aria-label="Tính nhôm">
-              <TinhTamNhomView />
+              <AluminumEstimatorView />
             </div>
           )}
           {visitedTabs.has('catalogue') && (
             <div hidden={tab !== 'catalogue'} role="tabpanel" aria-label="Bảng giá">
-              <BangGiaView />
+              <CatalogueView />
             </div>
           )}
         </main>
       </div>
       <GlobalImageLightbox />
-    </SupabaseGate>
+    </AuthGate>
   );
 }
 

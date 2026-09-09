@@ -13,9 +13,9 @@ import type {
   QuoteRecord,
 } from '@/types/models';
 import { useProducts } from '@/features/products/useProducts';
-import { formatVND } from '@/utils/format';
-import { titleCaseVi } from '@/utils/titleCase';
-import { normalizeCategoryName } from '@/config/categoryOrder';
+import { formatVND } from '@/lib/format/currency';
+import { titleCaseVi } from '@/lib/format/titleCase';
+import { normalizeCategoryName } from '@/lib/products/categoryOrder';
 import { AutoSuggestInput } from '@/components/AutoSuggestInput';
 import { CurrencyInput } from '@/components/CurrencyInput';
 import { SmartNumberInput } from '@/components/SmartNumberInput';
@@ -30,14 +30,14 @@ import {
   mergeSuggestionLists,
   rememberQuoteSuggestions,
   suggestionTypesForSpecKey,
-} from '@/lib/suggestions';
-import { useSuggestions } from '@/lib/useSuggestions';
+} from '@/features/suggestions/suggestionStore';
+import { useSuggestions } from '@/features/suggestions/useSuggestions';
 
 import { ProductThumb, OWIN_LOGO } from '@/features/products/ProductThumb';
 import { ProductPreviewCard } from '@/features/products/ProductPreviewCard';
 import { ImageLightbox } from '@/components/ImageLightbox';
-import { resolveImageUrl } from '@/utils/imagePaths';
-import { compressAndUploadQuoteImage, ImageError } from '@/utils/imageStorage';
+import { resolveImageUrl } from '@/lib/media/imagePaths';
+import { compressAndUploadQuoteImage, ImageError } from '@/lib/media/imageStorage';
 import {
   computeAutoPackageQuantity,
   createEmptyFixedAccessoryDraft,
@@ -58,10 +58,10 @@ import {
   buildAccessoryPackageCatalog,
   findOrphanAccessoryNames,
   type AccessoryPackageTemplate,
-} from '@/lib/accessoryPackages';
-import { deleteQuote, getAllQuotes, saveQuoteRecord } from './quoteStore';
-import { subscribeToQuotes } from '@/features/supabase/quotesRepo';
-import { documentsEqual } from '@/features/supabase/threeWayMerge';
+} from '@/lib/quote/accessoryPackages';
+import { deleteQuote, getAllQuotes, saveQuoteRecord } from '@/features/quote/quoteStore';
+import { subscribeToQuotes } from '@/services/supabase/quotesRepo';
+import { documentsEqual } from '@/services/supabase/threeWayMerge';
 
 const QUOTE_SUGGESTION_TYPES = [
   'customer_name',

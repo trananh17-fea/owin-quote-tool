@@ -5,7 +5,7 @@ import {
   parseSmartNumber,
   sanitizeSmartDraft,
   type SmartNumberMode,
-} from '@/utils/smartNumber';
+} from '@/lib/format/smartNumber';
 
 type Props = Omit<
   InputHTMLAttributes<HTMLInputElement>,

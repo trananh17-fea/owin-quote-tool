@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductRecord } from '@/types/models';
-import { productCatalogueTotalVnd, productColorRank, sortProductsForCatalog } from './productSort';
+import { productCatalogueTotalVnd, productColorRank, sortProductsForCatalog } from '@/lib/products/productSort';
 
 function product(partial: Partial<ProductRecord> & Pick<ProductRecord, 'id' | 'name' | 'category' | 'unitPriceVnd'>): ProductRecord {
   return {

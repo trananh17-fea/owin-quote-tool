@@ -2,11 +2,7 @@
  * NGUỒN CHÂN LÝ KIỂU DỮ LIỆU — Owin Quote Tool.
  *
  * ProductRecord / QuoteRecord are the complete documents persisted in Supabase.
- * Product / QuoteLine remain compatibility views used by a few UI/export helpers.
  */
-
-/** Hệ đơn vị tính legacy trong TARGET cũ. */
-export type DVT = 'm²' | 'md' | 'Bộ';
 
 /** Hệ đơn vị tính theo REFERENCE. */
 export type ProductUnit = 'BO' | 'M2' | 'METER';
@@ -63,32 +59,6 @@ export interface ProductRecord extends SyncEntity {
   sortOrder?: number;
   folderPath?: string | null;
   createdAt: string;
-}
-
-/** Phụ kiện legacy cho UI TARGET cũ. */
-export interface Accessory {
-  id: string;
-  ten: string;
-  donGia: number;
-  sl: number;
-  enabled: boolean;
-}
-
-/** Sản phẩm compatibility view. ProductRecord trong Supabase là nguồn dữ liệu chính. */
-export interface Product extends SyncEntity {
-  dvt: DVT;
-  ten: string;
-  ma: string;
-  donGiaGoc: number;
-  rongMacDinh?: number;
-  caoMacDinh?: number;
-  imageId?: string;
-  mau?: string;
-  heNhom?: string;
-  khungBao?: string;
-  banCanh?: string;
-  kinh?: string;
-  accessories: Accessory[];
 }
 
 export interface DimensionInput {
@@ -340,37 +310,6 @@ export interface QuoteRecord extends SyncEntity {
   createdAt: string;
 }
 
-/**
- * Một dòng legacy trên bảng báo giá. Snapshot từ Product cũ, giữ cho UI hiện tại
- * compile cho tới Phase 4.
- */
-export interface QuoteLine extends SyncEntity {
-  productId: string;
-  dvt: DVT;
-  ten: string;
-  ma: string;
-  rong?: number;
-  cao?: number;
-  sl: number;
-  donGia: number;
-  accessories: Accessory[];
-  imageId?: string;
-  moTa?: string;
-}
-
-/** Thông tin khách hàng đầu báo giá legacy. */
-export interface Customer {
-  ten: string;
-  sdt: string;
-  diaChi: string;
-  email: string;
-}
-
-/** Một hệ sản phẩm legacy. */
-export interface ProductSystem extends SyncEntity {
-  ten: string;
-  productIds?: string[];
-}
 
 export interface SuggestionRecord extends SyncEntity {
   type: string;
@@ -424,14 +363,4 @@ export interface AluminumCalculationRecord extends SyncEntity {
     'Vân Gỗ'?: number;
   };
   createdAt: string;
-}
-
-/** Aggregate tương thích; dữ liệu bền vững và metadata nằm trong Supabase. */
-export interface OwinDB {
-  schemaVersion: number;
-  systems: ProductSystem[];
-  products: ProductRecord[];
-  quotes?: QuoteRecord[];
-  suggestions?: SuggestionRecord[];
-  aluminumCalculations?: AluminumCalculationRecord[];
 }

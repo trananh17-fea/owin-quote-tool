@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProductRecord } from '@/types/models';
-import { saveImage, imageStore } from '@/utils/imageStorage';
-import { resolveItemImage } from './itemImageResolver';
+import { saveImage, imageStore } from '@/lib/media/imageStorage';
+import { resolveItemImage } from '@/lib/media/itemImageResolver';
 
 const product = { id: 'p1', code: 'A-01', name: 'Cửa A', slug: 'cua-a', coverImagePath: 'products/a/cover.webp' } as ProductRecord;
 

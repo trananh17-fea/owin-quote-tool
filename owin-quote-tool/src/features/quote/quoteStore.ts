@@ -13,12 +13,12 @@ import {
   subscribeToQuotes,
   upsertQuote,
   upsertQuotesBatch,
-} from '@/features/supabase/quotesRepo';
+} from '@/services/supabase/quotesRepo';
 import {
   documentsEqual,
   mergeAppendOnlyById,
   mergeTopLevel,
-} from '@/features/supabase/threeWayMerge';
+} from '@/services/supabase/threeWayMerge';
 
 type QuoteInput = Partial<QuoteRecord>;
 

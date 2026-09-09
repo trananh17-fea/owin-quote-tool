@@ -1,10 +1,10 @@
 import { Copy, Eye, Package, Pencil, Trash2 } from 'lucide-react';
 import type { ProductRecord } from '@/types/models';
-import { formatVND } from '@/utils/format';
-import { normalizeCategoryName } from '@/config/categoryOrder';
-import { titleCaseVi } from '@/utils/titleCase';
+import { formatVND } from '@/lib/format/currency';
+import { normalizeCategoryName } from '@/lib/products/categoryOrder';
+import { titleCaseVi } from '@/lib/format/titleCase';
 import { DragHandle, useDragReorder } from '@/components/DragReorder';
-import { ProductThumb } from './ProductThumb';
+import { ProductThumb } from '@/features/products/ProductThumb';
 
 interface Props {
   products: ProductRecord[];

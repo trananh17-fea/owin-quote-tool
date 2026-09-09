@@ -1,5 +1,5 @@
 import type { ProductUnit } from '@/types/models';
-import { calculateExtraAccessoryLineTotal, normalizeUnit } from '@/lib/quote-engine';
+import { calculateExtraAccessoryLineTotal, normalizeUnit } from '@/lib/quoteEngine/index';
 
 export interface FixedAccessoryItemDraft {
   /** Stable UI key — never derive from name so clear-value cannot remount/delete the row. */

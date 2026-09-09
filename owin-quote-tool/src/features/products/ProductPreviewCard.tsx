@@ -1,9 +1,9 @@
 import { Pencil, X } from 'lucide-react';
 import type { ProductRecord } from '@/types/models';
-import { formatVND } from '@/utils/format';
-import { normalizeCategoryName } from '@/config/categoryOrder';
-import { titleCaseVi } from '@/utils/titleCase';
-import { ProductThumb } from './ProductThumb';
+import { formatVND } from '@/lib/format/currency';
+import { normalizeCategoryName } from '@/lib/products/categoryOrder';
+import { titleCaseVi } from '@/lib/format/titleCase';
+import { ProductThumb } from '@/features/products/ProductThumb';
 import { parseExtraAccessoriesJson, parseFixedAccessoriesJson } from '@/lib/quote/accessoryDrafts';
 
 function unitLabel(unit: ProductRecord['unit']): string {

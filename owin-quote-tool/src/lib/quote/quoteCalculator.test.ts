@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateQuote } from './quoteCalculator';
+import { calculateQuote } from '@/lib/quote/quoteCalculator';
 
 describe('reference quote calculation engine', () => {
   it('calculates M2 rows with rounded KL', () => {

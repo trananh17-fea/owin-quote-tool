@@ -5,8 +5,8 @@ import {
   rankingAmountForQuoteItem,
   sortQuoteItemsByMaxLineAmount,
   sumItemDimensionQuantity,
-} from './quoteItemOrder';
-import { enrichFixedAccessoryPackageValue } from '@/lib/quote-engine/fixed-accessory-rules';
+} from '@/lib/quote/quoteItemOrder';
+import { enrichFixedAccessoryPackageValue } from '@/lib/quoteEngine/fixedAccessoryRules';
 
 function item(
   partial: Partial<QuoteItemInput> & Pick<QuoteItemInput, 'productCode' | 'itemName' | 'dimensions'>,

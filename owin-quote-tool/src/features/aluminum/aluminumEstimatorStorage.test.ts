@@ -11,7 +11,7 @@ import {
   recomputeLinkedPricesFromBases,
   scaleUnitPricesByGhiBaseChange,
   type AluminumEstimatorPageState,
-} from './aluminumEstimatorStorage';
+} from '@/features/aluminum/aluminumEstimatorStorage';
 
 const BASE_TIME = '2026-07-13T01:00:00.000Z';
 const LOCAL_TIME = '2026-07-13T01:01:00.000Z';

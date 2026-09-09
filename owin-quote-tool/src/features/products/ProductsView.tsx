@@ -1,22 +1,22 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, BookOpen, Plus, Search, X, Percent } from 'lucide-react';
 import type { ProductRecord } from '@/types/models';
-import { useProducts } from './useProducts';
-import { bulkAdjustProductPrices, getProductRecord, reorderProducts } from './productStore';
+import { useProducts } from '@/features/products/useProducts';
+import { bulkAdjustProductPrices, getProductRecord, reorderProducts } from '@/features/products/productStore';
 import { reorderList } from '@/components/DragReorder';
 import { sortProductsForCatalog } from '@/lib/products/productSort';
-import { ProductForm, type ProductFormSaveOptions } from './ProductForm';
-import { ProductList } from './ProductList';
-import { ProductPreviewCard } from './ProductPreviewCard';
-import { rememberProductSuggestions } from '@/lib/suggestions';
+import { ProductForm, type ProductFormSaveOptions } from '@/features/products/ProductForm';
+import { ProductList } from '@/features/products/ProductList';
+import { ProductPreviewCard } from '@/features/products/ProductPreviewCard';
+import { rememberProductSuggestions } from '@/features/suggestions/suggestionStore';
 import { generateProductCode } from '@/lib/products/productCode';
-import { useSuggestions } from '@/lib/useSuggestions';
+import { useSuggestions } from '@/features/suggestions/useSuggestions';
 import {
   buildAccessoryPackageCatalog,
   findOrphanAccessoryNames,
-} from '@/lib/accessoryPackages';
-import { formatVND } from '@/utils/format';
-import { sortCategoryNames } from '@/config/categoryOrder';
+} from '@/lib/quote/accessoryPackages';
+import { formatVND } from '@/lib/format/currency';
+import { sortCategoryNames } from '@/lib/products/categoryOrder';
 
 const PRODUCT_SUGGESTION_TYPES = [
   'accessory_package_name',
@@ -348,8 +348,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     if (options?.learnSuggestions !== false) {
       void (async () => {
         try {
-          const record = saved.record ?? (await getProductRecord(saved.id));
-          if (record) await rememberProductSuggestions(record);
+          await rememberProductSuggestions(saved);
           await refreshSuggestions();
         } catch {
           // Autocomplete ranking is secondary; the product save already succeeded.

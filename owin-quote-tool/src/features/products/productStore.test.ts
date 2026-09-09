@@ -3,7 +3,7 @@ import type { ProductRecord } from '@/types/models';
 
 const productDb = vi.hoisted(() => new Map<string, ProductRecord>());
 
-vi.mock('@/features/supabase/productsRepo', () => ({
+vi.mock('@/services/supabase/productsRepo', () => ({
   listProducts: vi.fn(async () =>
     Array.from(productDb.values()).filter((product) => !product.deleted && !product.deletedAt),
   ),
@@ -40,13 +40,17 @@ vi.mock('@/features/supabase/productsRepo', () => ({
 
 import {
   seedIfEmpty,
-  getAllProducts,
   getAllProductsRaw,
-  getProduct,
+  getProductRecord,
   saveProduct,
   deleteProduct,
   bulkAdjustProductPrices,
 } from '@/features/products/productStore';
+
+/** Sản phẩm còn sống — cùng bộ lọc tombstone mà useProducts áp dụng. */
+async function listAliveProducts() {
+  return (await getAllProductsRaw()).filter((item) => !item.deleted && !item.deletedAt);
+}
 
 beforeEach(() => {
   productDb.clear();
@@ -55,16 +59,16 @@ beforeEach(() => {
 describe('Supabase-only catalogue', () => {
   it('does not repopulate an intentionally empty remote catalogue', async () => {
     await seedIfEmpty();
-    expect(await getAllProducts()).toEqual([]);
+    expect(await listAliveProducts()).toEqual([]);
     expect(await getAllProductsRaw()).toEqual([]);
   });
 
   it('normalizes and persists products through the remote repository', async () => {
     const product = await saveProduct({
-      dvt: 'm²', ten: 'Test', ma: 's9', donGiaGoc: 1000, accessories: [],
+      unit: 'M2', name: 'Test', code: 's9', unitPriceVnd: 1000, accessories: [],
     });
 
-    expect(product.ma).toBe('S9');
+    expect(product.code).toBe('S9');
     expect(productDb.get(product.id)).toEqual(expect.objectContaining({ code: 'S9' }));
     expect((await getAllProductsRaw()).find((item) => item.id === product.id)?.code).toBe('S9');
   });
@@ -73,24 +77,24 @@ describe('Supabase-only catalogue', () => {
 describe('soft deletes and timestamps', () => {
   it('hides a deleted product but retains its Supabase tombstone', async () => {
     const product = await saveProduct({
-      dvt: 'm²', ten: 'X', ma: 'X1', donGiaGoc: 1000, accessories: [],
+      unit: 'M2', name: 'X', code: 'X1', unitPriceVnd: 1000, accessories: [],
     });
     await deleteProduct(product.id);
 
-    expect((await getAllProducts()).find((item) => item.id === product.id)).toBeUndefined();
-    expect((await getProduct(product.id))?.deleted).toBe(true);
+    expect((await listAliveProducts()).find((item) => item.id === product.id)).toBeUndefined();
+    expect((await getProductRecord(product.id))?.deleted).toBe(true);
     expect((await getAllProductsRaw()).find((item) => item.id === product.id)?.deleted).toBe(true);
   });
 
   it('moves updatedAt forward when editing a price', async () => {
     const product = await saveProduct({
-      dvt: 'm²', ten: 'Y', ma: 'Y1', donGiaGoc: 2_000_000, accessories: [],
+      unit: 'M2', name: 'Y', code: 'Y1', unitPriceVnd: 2_000_000, accessories: [],
     });
     await new Promise((resolve) => setTimeout(resolve, 5));
     const edited = await saveProduct({ ...product, unitPriceVnd: 1_900_000 });
 
     expect(edited.id).toBe(product.id);
-    expect(edited.donGiaGoc).toBe(1_900_000);
+    expect(edited.unitPriceVnd).toBe(1_900_000);
     expect(new Date(edited.updatedAt).getTime()).toBeGreaterThan(new Date(product.updatedAt).getTime());
   });
 

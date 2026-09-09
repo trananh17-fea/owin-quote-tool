@@ -5,7 +5,7 @@ import {
   closeImageLightbox,
   getImageLightboxSrc,
   subscribeImageLightbox,
-} from './imageLightboxStore';
+} from '@/components/imageLightboxStore';
 
 interface Props {
   src: string | null;

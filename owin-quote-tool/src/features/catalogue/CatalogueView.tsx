@@ -1,0 +1,276 @@
+import { FileDown } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useProducts } from '@/features/products/useProducts';
+import { ProductThumb } from '@/features/products/ProductThumb';
+import { buildCatalogueBlockRows, type CatalogueBlockRow } from '@/lib/catalogue/catalogueRows';
+import { formatVND } from '@/lib/format/currency';
+
+function Lines({ text }: { text: string }) {
+  if (!text) return null;
+  return (
+    <>
+      {text.split('\n').map((line, index) => (
+        <div key={index}>{line}</div>
+      ))}
+    </>
+  );
+}
+
+function Money({ value }: { value: number | null }) {
+  return value ? <>{formatVND(value)}</> : null;
+}
+
+export function CatalogueView() {
+  const { productRecords, loading, error: productsError, retry } = useProducts();
+  const [exporting, setExporting] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportError, setExportError] = useState('');
+  // Xuất theo loại cửa: 'all' = tất cả, hoặc 1 danh mục cụ thể.
+  const [exportCategory, setExportCategory] = useState('all');
+  const categories = useMemo(
+    () => Array.from(new Set(productRecords.map((p) => p.category).filter(Boolean))),
+    [productRecords],
+  );
+  const shownRecords = useMemo(
+    () => (exportCategory === 'all' ? productRecords : productRecords.filter((p) => p.category === exportCategory)),
+    [productRecords, exportCategory],
+  );
+  const rows = useMemo(() => buildCatalogueBlockRows(shownRecords), [shownRecords]);
+  // Group so category stays with first product and accessories stay with product.
+  const blocks = useMemo(() => {
+    const out: CatalogueBlockRow[][] = [];
+    let current: CatalogueBlockRow[] | null = null;
+    let hasProduct = false;
+    rows.forEach((row) => {
+      if (row.rowType === 'category') {
+        if (current) out.push(current);
+        current = [row];
+        hasProduct = false;
+        return;
+      }
+      if (row.rowType === 'product') {
+        if (current && hasProduct) {
+          out.push(current);
+          current = [row];
+        } else if (current) {
+          current.push(row);
+        } else {
+          current = [row];
+        }
+        hasProduct = true;
+        return;
+      }
+      if (!current) current = [];
+      current.push(row);
+    });
+    if (current) out.push(current);
+    return out;
+  }, [rows]);
+
+  const exportWord = async () => {
+    setExporting(true);
+    setExportError('');
+    try {
+      const { exportCatalogueWord } = await import('@/features/export/wordExport');
+      await exportCatalogueWord(shownRecords);
+    } catch {
+      setExportError('Không thể xuất bảng giá Word. Vui lòng kiểm tra mạng và thử lại.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exportExcel = async () => {
+    setExportingExcel(true);
+    setExportError('');
+    try {
+      const { exportCatalogueExcel } = await import('@/features/export/catalogueExcelExport');
+      await exportCatalogueExcel(shownRecords);
+    } catch {
+      setExportError('Không thể xuất bảng giá Excel. Vui lòng thử lại.');
+    } finally {
+      setExportingExcel(false);
+    }
+  };
+
+  const exportPdf = async () => {
+    setExportingPdf(true);
+    setExportError('');
+    try {
+      // File download only — never window.print / browser "Save as PDF".
+      const { exportCataloguePdf } = await import('@/features/export/cataloguePdfExport');
+      const fileName = await exportCataloguePdf(shownRecords);
+      if (!fileName) throw new Error('PDF rỗng');
+    } catch (error) {
+      const detail = error instanceof Error && error.message ? `: ${error.message}` : '';
+      setExportError(`Không thể xuất bảng giá PDF${detail}. Dùng nút PDF (không in trình duyệt).`);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  return (
+    <section className="admin-page catalogue-page">
+      <div className="toolbar catalogue-toolbar no-print">
+        <div className="catalogue-toolbar-text">
+          <h1 className="app-title">Bảng giá</h1>
+          <p className="app-subtitle">
+            {loading
+              ? 'Đang tải…'
+              : exportCategory === 'all'
+                ? `${productRecords.length} sản phẩm`
+                : `${shownRecords.length} SP · ${exportCategory}`}
+          </p>
+        </div>
+        <div className="catalogue-toolbar-actions">
+          <label className="catalogue-filter-label">
+            <span>Xuất theo</span>
+            <select
+              className="input"
+              value={exportCategory}
+              onChange={(e) => setExportCategory(e.target.value)}
+            >
+              <option value="all">Tất cả</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          <div className="catalogue-export-actions">
+            <button
+              className="btn btn-ghost"
+              disabled={shownRecords.length === 0 || exporting}
+              onClick={() => void exportWord()}
+            >
+              <FileDown size={17} style={{ verticalAlign: '-3px' }} /> {exporting ? '…' : 'Word'}
+            </button>
+            <button
+              className="btn btn-ghost"
+              disabled={shownRecords.length === 0 || exportingExcel}
+              onClick={() => void exportExcel()}
+            >
+              <FileDown size={17} style={{ verticalAlign: '-3px' }} /> {exportingExcel ? '…' : 'Excel'}
+            </button>
+            <button
+              className="btn btn-primary"
+              type="button"
+              disabled={shownRecords.length === 0 || exportingPdf}
+              onClick={() => void exportPdf()}
+              title="Tải file PDF (không mở hộp thoại in)"
+            >
+              <FileDown size={17} style={{ verticalAlign: '-3px' }} /> {exportingPdf ? 'Đang xuất…' : 'PDF'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {(productsError || exportError) && (
+        <div className="product-data-error no-print" role="alert">
+          <span>{exportError || productsError}</span>
+          {productsError && (
+            <button type="button" className="btn btn-ghost" onClick={() => void retry()}>
+              Thử tải lại
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="preview-doc bang-gia-doc">
+        <table className="bang-gia-table">
+          <colgroup>
+            <col style={{ width: '3%' }} />
+            <col style={{ width: '16%' }} />
+            <col style={{ width: '26%' }} />
+            <col style={{ width: '3.5%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '5%' }} />
+            <col style={{ width: '8.5%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '11%' }} />
+          </colgroup>
+          <thead>
+            <tr>
+              <th colSpan={2} className="logo-cell">
+                <img src={`${import.meta.env.BASE_URL}owin-user-assets/logo/logo.webp`} alt="OWIN" />
+              </th>
+              <th colSpan={8} className="company-cell">HOÀNG ANH OWIN</th>
+            </tr>
+            <tr>
+              <th colSpan={10} className="title-cell">BẢNG GIÁ NHÔM OWIN LẮP ĐẶT HOÀN THIỆN</th>
+            </tr>
+            <tr>
+              <th>STT</th>
+              <th>Hình ảnh</th>
+              <th>Mô tả chi tiết</th>
+              <th>DV</th>
+              <th>Rộng</th>
+              <th>Cao</th>
+              <th>KL</th>
+              <th>Đơn giá</th>
+              <th>Thành tiền</th>
+              <th>Tổng tiền</th>
+            </tr>
+          </thead>
+          {rows.length === 0 ? (
+            <tbody>
+              <tr>
+                <td colSpan={10}>Chưa có sản phẩm.</td>
+              </tr>
+            </tbody>
+          ) : (
+            blocks.map((block, index) => <CatalogueBlock key={`${block[0].productCode}-${index}`} block={block} />)
+          )}
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function CatalogueBlock({ block }: { block: CatalogueBlockRow[] }) {
+  return (
+    <tbody className="catalogue-item-block">
+      {block.map((row, index) => (
+        <CatalogueRow key={`${row.productCode}-${row.rowType}-${index}`} row={row} />
+      ))}
+    </tbody>
+  );
+}
+
+function CatalogueRow({ row }: { row: CatalogueBlockRow }) {
+  if (row.rowType === 'category') {
+    return (
+      <tr className="category-row">
+        <td colSpan={10}>{row.categoryName}</td>
+      </tr>
+    );
+  }
+
+  const isProduct = row.rowType === 'product';
+  return (
+    <tr className={row.rowType}>
+      {isProduct && <td rowSpan={row.sttRowSpan}>{row.stt}</td>}
+        {isProduct && (
+          <td rowSpan={row.imageRowSpan} className="image-cell">
+            <div className="bang-gia-image-frame">
+              {/* fill + CSS contain 95% ô: scale tới khi chạm ngang/dọc. Thumb nhẹ; PDF/Word dùng master. */}
+              <ProductThumb imagePath={row.imagePath} fill thumb />
+            </div>
+          </td>
+        )}
+      <td className="description-cell"><Lines text={row.description} /></td>
+      <td className="unit-cell">{row.unit}</td>
+      <td className="dim-cell">{row.width || (row.rowType !== 'product' ? '—' : '')}</td>
+      <td className="dim-cell">{row.height || (row.rowType !== 'product' ? '—' : '')}</td>
+      <td className="kl-cell">{row.weight}</td>
+      <td className="num"><Money value={row.unitPriceVnd} /></td>
+      <td className="num"><Money value={row.amountVnd} /></td>
+      {isProduct && (
+        <td rowSpan={row.completedTotalRowSpan} className="num total-cell">
+          <Money value={row.completedTotalVnd} />
+        </td>
+      )}
+    </tr>
+  );
+}

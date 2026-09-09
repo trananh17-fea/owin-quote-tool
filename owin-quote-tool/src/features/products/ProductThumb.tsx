@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { openImageLightbox } from '@/components/imageLightboxStore';
-import { resolveImageUrl, thumbUrlFor } from '@/utils/imagePaths';
+import { resolveImageUrl, thumbUrlFor } from '@/lib/media/imagePaths';
 import { resolveItemImage, type ImageItem } from '@/lib/media/itemImageResolver';
 import type { ProductRecord } from '@/types/models';
 

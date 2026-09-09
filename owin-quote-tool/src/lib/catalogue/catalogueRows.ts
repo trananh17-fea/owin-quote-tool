@@ -1,8 +1,8 @@
 import type { ProductRecord } from '@/types/models';
-import { normalizeCategoryName, sortCategoryNames } from '@/config/categoryOrder';
+import { normalizeCategoryName, sortCategoryNames } from '@/lib/products/categoryOrder';
 import { sortProductsForCatalog } from '@/lib/products/productSort';
-import { titleCaseVi as titleCase } from '@/utils/titleCase';
-import { buildCatalogueMoneyBlocks, formatCatalogueDecimal } from './catalogueMoney';
+import { titleCaseVi as titleCase } from '@/lib/format/titleCase';
+import { buildCatalogueMoneyBlocks, formatCatalogueDecimal } from '@/lib/catalogue/catalogueMoney';
 
 export type CatalogueBlockRowType = 'category' | 'product' | 'accessory' | 'extraAccessory';
 

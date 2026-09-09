@@ -1,8 +1,8 @@
 import type { ProductRecord, ProductUnit, QuoteItemInput } from '@/types/models';
-import { calculateExtraAccessoryLineTotal, normalizeUnit, roundQuantity3 } from '@/lib/quote-engine';
-import { normalizeCategoryName } from '@/config/categoryOrder';
-import { titleCaseVi } from '@/utils/titleCase';
-import { seedFixedPackageFromProduct } from './accessoryDrafts';
+import { calculateExtraAccessoryLineTotal, normalizeUnit, roundQuantity3 } from '@/lib/quoteEngine/index';
+import { normalizeCategoryName } from '@/lib/products/categoryOrder';
+import { titleCaseVi } from '@/lib/format/titleCase';
+import { seedFixedPackageFromProduct } from '@/lib/quote/accessoryDrafts';
 
 export function parseProductSizeText(rawSizeText: string | null | undefined): {
   width: number | null;

@@ -1,15 +1,15 @@
 import { Plus, Sparkles, Trash2 } from 'lucide-react';
 import type { ProductUnit } from '@/types/models';
-import { AutoSuggestInput } from './AutoSuggestInput';
-import { CurrencyInput } from './CurrencyInput';
-import { SmartNumberInput } from './SmartNumberInput';
-import { DragHandle, reorderList, useDragReorder } from './DragReorder';
-import { formatVND } from '@/utils/format';
+import { AutoSuggestInput } from '@/components/AutoSuggestInput';
+import { CurrencyInput } from '@/components/CurrencyInput';
+import { SmartNumberInput } from '@/components/SmartNumberInput';
+import { DragHandle, reorderList, useDragReorder } from '@/components/DragReorder';
+import { formatVND } from '@/lib/format/currency';
 import {
   isBlankOrDefaultPackageItems,
   resolvePackageItemsByName,
   type AccessoryPackageTemplate,
-} from '@/lib/accessoryPackages';
+} from '@/lib/quote/accessoryPackages';
 import {
   addEmptyAccessoryDraft,
   addEmptyFixedAccessoryItem,

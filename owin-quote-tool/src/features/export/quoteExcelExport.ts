@@ -1,8 +1,8 @@
 import ExcelJS from 'exceljs';
 import type { CalculatedQuote, CalculatedQuoteItem, ProductRecord, ProductUnit } from '@/types/models';
 import { resolveItemImage } from '@/lib/media/itemImageResolver';
-import { toExcelImage } from '@/utils/excelImage';
-import { downloadBlob } from '@/utils/download';
+import { toExcelImage } from '@/features/export/excelImage';
+import { downloadBlob } from '@/lib/browser/download';
 
 type QuoteExcelRowKind = 'dimension' | 'accessory';
 
@@ -156,7 +156,7 @@ function buildExtraAccessoryRows(item: CalculatedQuoteItem): QuoteExcelRow[] {
       const quantity = safeNumber(entry.quantity ?? entry.quantityPerSet, 1);
       const weight = safeNumber(entry.weight ?? entry.kl, 0);
       const unitPrice = safeNumber(entry.unitPrice ?? entry.unitPriceVnd, 0);
-      // SL = số cái; md/m² nhân KL (fallback SL nếu KL trống) — khớp quote-engine.
+      // SL = số cái; md/m² nhân KL (fallback SL nếu KL trống) — khớp quoteEngine.
       const basis = unit === 'BO' ? quantity : weight > 0 ? weight : quantity;
       return {
         stt: '',

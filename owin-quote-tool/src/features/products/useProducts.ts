@@ -1,17 +1,15 @@
 import { useSyncExternalStore } from 'react';
-import type { Product, ProductRecord } from '@/types/models';
+import type { ProductRecord } from '@/types/models';
 import {
   seedIfEmpty,
   getAllProductsRaw,
-  toLegacyProduct,
   saveProduct as saveProductStore,
   deleteProduct as deleteProductStore,
 } from '@/features/products/productStore';
 import { PRODUCTS_CHANGED_EVENT } from '@/features/products/productEvents';
-import { subscribeToProducts } from '@/features/supabase/productsRepo';
+import { subscribeToProducts } from '@/services/supabase/productsRepo';
 
 interface ProductCacheSnapshot {
-  products: Product[];
   productRecords: ProductRecord[];
   loading: boolean;
   error: string | null;
@@ -22,7 +20,6 @@ type SaveProductOptions = Parameters<typeof saveProductStore>[1];
 
 const listeners = new Set<() => void>();
 let snapshot: ProductCacheSnapshot = {
-  products: [],
   productRecords: [],
   loading: true,
   error: null,
@@ -66,7 +63,6 @@ async function loadProducts(requestId: number): Promise<void> {
     }
     hasLoaded = true;
     publish({
-      products: active.map(toLegacyProduct).sort((a, b) => a.ma.localeCompare(b.ma)),
       productRecords: active,
       loading: false,
       error: null,

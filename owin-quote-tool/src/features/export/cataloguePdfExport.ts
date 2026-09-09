@@ -10,8 +10,8 @@ import { buildCatalogueBlockRows, type CatalogueBlockRow } from '@/lib/catalogue
 import { ensureVietnamesePdfFonts, PDF_FONT_FAMILY } from '@/features/export/pdfFonts';
 import { lightPdfImageDataUrl } from '@/features/export/pdfImage';
 import { cellImageMaxBox, containFitSize } from '@/lib/media/containFit';
-import { downloadBlob } from '@/utils/download';
-import { formatSoVND } from '@/utils/format';
+import { downloadBlob } from '@/lib/browser/download';
+import { formatVndNumber } from '@/lib/format/currency';
 
 const TITLE = 'BẢNG GIÁ NHÔM OWIN LẮP ĐẶT HOÀN THIỆN';
 const MARGIN = 8;
@@ -39,7 +39,7 @@ type PdfBlock = ProductBlock | CategoryBlock;
 
 function money(value: number | null | undefined): string {
   if (value === null || value === undefined || !Number.isFinite(value) || value === 0) return '';
-  return formatSoVND(value);
+  return formatVndNumber(value);
 }
 
 function colWidths(usable: number): number[] {
@@ -128,7 +128,7 @@ function lineCells(row: CatalogueBlockRow): string[] {
   ];
 }
 
-export async function exportBangGiaPdf(products: ProductRecord[]): Promise<string> {
+export async function exportCataloguePdf(products: ProductRecord[]): Promise<string> {
   const rows = buildCatalogueBlockRows(products);
   const blocks = groupCatalogueBlocks(rows);
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });

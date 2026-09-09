@@ -1,12 +1,12 @@
 import type { DimensionInput, ProductUnit, QuoteItemInput } from '@/types/models';
-import { calculateDimensionLine } from './quoteCalculator';
+import { calculateDimensionLine } from '@/lib/quote/quoteCalculator';
 import {
   calculateExtraAccessoryLineTotal,
   calculateLegacyAccessoryLineTotal,
   normalizeUnit,
   roundMoneyToVnd,
   roundQuantity3,
-} from '@/lib/quote-engine';
+} from '@/lib/quoteEngine/index';
 
 /** Tổng SL (số cái) của mọi dòng kích thước trong 1 hạng mục. */
 export function sumItemDimensionQuantity(item: Pick<QuoteItemInput, 'dimensions'>): number {

@@ -1,6 +1,6 @@
 import type { ProductRecord } from '@/types/models';
-import { getImage, getQuoteImage } from '@/utils/imageStorage';
-import { imageStoreKeyFromPath, normalizeImagePath } from '@/utils/imagePaths';
+import { getImage, getQuoteImage } from '@/lib/media/imageStorage';
+import { imageStoreKeyFromPath, normalizeImagePath } from '@/lib/media/imagePaths';
 
 export type ImageItem = {
   productId?: string | null;
@@ -93,8 +93,4 @@ export async function resolveItemImage(
     if (blob) return { url: URL.createObjectURL(blob), blob, path: normalized, source: candidate.source, revoke: true };
   }
   return EMPTY;
-}
-
-export function imageReferenceForProduct(product: ProductRecord): string | null {
-  return normalizeImagePath(product.coverImagePath);
 }

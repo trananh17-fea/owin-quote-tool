@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { generateProductCode } from './products/productCode';
-import { generateQuoteCode } from './quote/quoteCode';
+import { generateProductCode } from '@/lib/products/productCode';
+import { generateQuoteCode } from '@/lib/quote/quoteCode';
 
 describe('multi-client code generation', () => {
   it('adds enough entropy to product codes created in the same millisecond', () => {

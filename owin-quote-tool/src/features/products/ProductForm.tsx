@@ -9,11 +9,11 @@ import type {
 import { AutoSuggestInput } from '@/components/AutoSuggestInput';
 import { CurrencyInput } from '@/components/CurrencyInput';
 import { SmartNumberInput } from '@/components/SmartNumberInput';
-import { parseSmartNumber } from '@/utils/smartNumber';
+import { parseSmartNumber } from '@/lib/format/smartNumber';
 import { ExtraAccessoriesEditor, FixedAccessoryPackageEditor } from '@/components/AccessoryEditors';
 import { ImageDropzone } from '@/components/ImageDropzone';
 import { SegmentedControl } from '@/components/SegmentedControl';
-import { formatVND } from '@/utils/format';
+import { formatVND } from '@/lib/format/currency';
 import {
   calculateFixedAccessoryDraftTotal,
   parseExtraAccessoriesJson,
@@ -21,11 +21,11 @@ import {
   serializeExtraAccessoriesJson,
   serializeFixedAccessoriesJson,
 } from '@/lib/quote/accessoryDrafts';
-import { DEFAULT_SPEC_KEYS, suggestionTypesForSpecKey } from '@/lib/suggestions';
-import type { AccessoryPackageTemplate } from '@/lib/accessoryPackages';
+import { DEFAULT_SPEC_KEYS, suggestionTypesForSpecKey } from '@/features/suggestions/suggestionStore';
+import type { AccessoryPackageTemplate } from '@/lib/quote/accessoryPackages';
 import { generateProductCode } from '@/lib/products/productCode';
 import { DragHandle, reorderList, useDragReorder } from '@/components/DragReorder';
-import { SerialTaskQueue } from './serialTaskQueue';
+import { SerialTaskQueue } from '@/features/products/serialTaskQueue';
 
 type SpecDraft = ProductSpecRecord & { id: string };
 
@@ -317,7 +317,7 @@ export function ProductForm({ editing, suggestions, onSave, onCancel, registerCl
           baseRecord: acknowledgedBaseRef.current,
         });
       });
-      acknowledgedBaseRef.current = saved.record;
+      acknowledgedBaseRef.current = saved;
       acknowledgedDraftRef.current = input;
       lastSavedFingerprintRef.current = fingerprint;
       if (mountedRef.current) {

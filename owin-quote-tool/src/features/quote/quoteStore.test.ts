@@ -3,7 +3,7 @@ import type { QuoteRecord } from '@/types/models';
 
 const quoteDb = vi.hoisted(() => new Map<string, QuoteRecord>());
 
-vi.mock('@/features/supabase/quotesRepo', () => ({
+vi.mock('@/services/supabase/quotesRepo', () => ({
   listQuotes: vi.fn(async () =>
     Array.from(quoteDb.values()).filter((quote) => !quote.deleted && !quote.deletedAt),
   ),
@@ -30,7 +30,7 @@ import {
   getAllQuotesRaw,
   getQuote,
   saveQuoteRecord,
-} from './quoteStore';
+} from '@/features/quote/quoteStore';
 
 beforeEach(() => {
   quoteDb.clear();
