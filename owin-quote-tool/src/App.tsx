@@ -80,26 +80,28 @@ function App() {
         </header>
 
         <main className="tool-content" id="tool-main" tabIndex={-1}>
-          {visitedTabs.has('products') && (
-            <div hidden={tab !== 'products'} role="tabpanel" aria-label="Sản phẩm">
-              <ProductsView onOpenCatalogue={() => activateTab('catalogue')} />
-            </div>
-          )}
-          {visitedTabs.has('quotes') && (
-            <div hidden={tab !== 'quotes'} role="tabpanel" aria-label="Báo giá">
-              <QuoteView />
-            </div>
-          )}
-          {visitedTabs.has('aluminum') && (
-            <div hidden={tab !== 'aluminum'} role="tabpanel" aria-label="Tính nhôm">
-              <AluminumEstimatorView />
-            </div>
-          )}
-          {visitedTabs.has('catalogue') && (
-            <div hidden={tab !== 'catalogue'} role="tabpanel" aria-label="Bảng giá">
-              <CatalogueView />
-            </div>
-          )}
+          <div className="tool-content-inner">
+            {visitedTabs.has('products') && (
+              <div hidden={tab !== 'products'} role="tabpanel" aria-label="Sản phẩm">
+                <ProductsView onOpenCatalogue={() => activateTab('catalogue')} />
+              </div>
+            )}
+            {visitedTabs.has('quotes') && (
+              <div hidden={tab !== 'quotes'} role="tabpanel" aria-label="Báo giá">
+                <QuoteView />
+              </div>
+            )}
+            {visitedTabs.has('aluminum') && (
+              <div hidden={tab !== 'aluminum'} role="tabpanel" aria-label="Tính nhôm">
+                <AluminumEstimatorView />
+              </div>
+            )}
+            {visitedTabs.has('catalogue') && (
+              <div hidden={tab !== 'catalogue'} role="tabpanel" aria-label="Bảng giá">
+                <CatalogueView />
+              </div>
+            )}
+          </div>
         </main>
       </div>
       <GlobalImageLightbox />

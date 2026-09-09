@@ -243,8 +243,13 @@ function formatShortDate(value?: string | null): string {
   return date.toLocaleDateString('vi-VN');
 }
 
+/** The app body is its own scroll container (#tool-main) — the window never scrolls. */
 function scrollPageTop() {
-  window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  window.requestAnimationFrame(() => {
+    const scroller = document.getElementById('tool-main');
+    if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' });
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 }
 
 /**
