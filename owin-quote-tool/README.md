@@ -1,62 +1,48 @@
-# OWIN Quote Tool — Dev
+# OWIN Quote Tool — phát triển
 
-Portfolio overview (không lộ kiến trúc source): **[README monorepo](../README.md)** · live: [saigonfox.online](https://saigonfox.online)
+Tài liệu đầy đủ về chức năng, công thức, kiến trúc, dữ liệu, đồng bộ, ảnh, xuất tài liệu, phân quyền và triển khai nằm tại **[README gốc](../README.md)**. Đây là điểm tra cứu chính để tránh hai bản mô tả nghiệp vụ khác nhau.
 
-## Local
+## Chạy local
 
-```bash
-cp .env.example .env
+Dùng Node.js 22 và npm, chạy trong thư mục chứa file này:
+
+```powershell
+Copy-Item .env.example .env
 npm ci
+```
+
+Điền `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` vào `.env`, áp dụng [schema](supabase/schema.sql) và cấu hình tài khoản theo [Supabase setup](supabase/SETUP.md), sau đó:
+
+```powershell
 npm run dev
 ```
 
-```text
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+## Kiểm tra
+
+```powershell
+npm run lint
+npm test
+npm run build
+npm run preview
 ```
 
-```bash
-npm run lint && npm test && npm run build
-```
+Build kiểm tra TypeScript và tạo `dist/`; preview phục vụ bản build local. `VITE_*` được nhúng vào frontend, chỉ dùng URL/anon key công khai.
 
-Supabase schema / secrets Pages: `supabase/SETUP.md`.  
-Chỉ `anon` key trên frontend — không `service_role`.
+## Bản đồ mã nguồn
 
-## Triển khai GitHub Pages
+| Phần | Vị trí |
+| --- | --- |
+| Shell/điều hướng | `src/App.tsx` |
+| Màn hình/store | `src/features/` |
+| Công thức báo giá | `src/lib/quoteEngine/`, `src/lib/quote/quoteCalculator.ts` |
+| Bảng giá/thứ tự | `src/lib/catalogue/`, `src/lib/products/`, `src/lib/quote/quoteItemOrder.ts` |
+| Tính nhôm | `src/lib/aluminumEstimator/`, `src/features/aluminum/` |
+| Dữ liệu/đồng bộ | `src/services/supabase/`, `supabase/schema.sql` |
+| Kiểu document | `src/types/models.ts` |
+| Ảnh | `src/lib/media/`, `src/services/supabase/imagesRepo.ts` |
+| Word/Excel/PDF | `src/features/export/`; Word/in nhôm ở `src/lib/aluminumEstimator/` |
+| Template | `src/assets/templates/` |
 
-- Source: GitHub Actions.
-- Production domain: `saigonfox.online`.
-- Build root: `owin-quote-tool`.
-- Required Actions secrets: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
-- Workflow chạy lint, test và production build trước khi deploy.
-- `service_role`, PAT và mật khẩu người dùng không được đưa vào repository hoặc bundle.
+Sửa công thức chạy `npx vitest run src/lib/quoteEngine src/lib/quote`; sửa template chạy `npx vitest run src/features/export` và kiểm tra trực quan file xuất. Giữ marker đúng hợp đồng DOCX, import bằng `@/`, component PascalCase và file logic camelCase.
 
-Dữ liệu nghiệp vụ nằm hoàn toàn trên Supabase; bản production không dùng browser database.
-
-## Cấu trúc & quy ước đặt tên
-
-```text
-src/
-  components/     UI dùng chung, không gắn nghiệp vụ
-  features/       theo màn hình: aluminum, auth, catalogue, export, products, quote, suggestions
-  lib/            logic thuần, không phụ thuộc React (quoteEngine, quote, products, media, format, browser…)
-  services/       hạ tầng ngoài: services/supabase (client + repo)
-  styles/ types/  CSS toàn cục và kiểu dữ liệu chung
-```
-
-Quy ước:
-
-- **File component React** → `PascalCase.tsx` (`ProductForm.tsx`). **Mọi file khác** → `camelCase.ts` (`quoteStore.ts`). **Thư mục** → `camelCase` (`lib/quoteEngine/`).
-- **Identifier tiếng Anh**; chuỗi hiển thị cho người dùng và comment/JSDoc giữ tiếng Việt.
-- **Import trong `src/` luôn dùng alias `@/`** (không dùng đường dẫn tương đối) — đổi vị trí file không phải sửa import.
-- `lib/` không được import từ `features/`; `features/` gọi xuống `lib/` và `services/`.
-- Hằng số nghiệp vụ BR-1/BR-2/BR-3/BR-1b/BR-6 mô tả ở đầu `src/lib/quoteEngine/index.ts`,
-  có test chặn hồi quy trong `src/lib/quoteEngine/*.test.ts` (81 assertion). Sửa công thức giá thì chạy
-  `npx vitest run src/lib/quoteEngine` trước.
-- Tên placeholder trong 2 file `.docx` là **dữ liệu** — phải khớp đúng marker có sẵn trong template,
-  không được tự đổi trong code. Danh sách marker thật ghi ở đầu `features/export/wordExport.ts`
-  (báo giá: `{nhom}`, `{stt}`/`{ma_sp}`/`{anh_sp}`, `{bo_pk_*}`, `{pk_*}`, `{ps_*}`;
-  bảng giá: `{category}`, `{product_info_block}`, `{accessory_block}`).
-  `features/export/templateContract.node.test.ts` khoá hợp đồng này: danh sách marker của
-  từng `.docx`, marker code dùng phải có thật trong template, và marker template không được
-  điền chỉ được là marker neo đã biết. Thay template hoặc đổi marker trong code là test đỏ ngay.
+Sản phẩm/báo giá lưu thủ công; xuất từ form báo giá không tự lưu. Đơn giá tính nhôm tự lưu còn số lượng chỉ trong phiên. Đọc quy tắc chi tiết trong README gốc trước khi sửa store/công thức.
