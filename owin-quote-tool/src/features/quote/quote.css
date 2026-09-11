@@ -275,6 +275,16 @@
   color: var(--ios-blue-ink);
 }
 .quote-actions .quote-edit-action:hover { background: var(--ios-blue-soft-strong); }
+.quote-actions .quote-copy-action {
+  border-color: var(--ios-separator);
+  background: var(--ios-card);
+  color: var(--ios-label2);
+}
+.quote-actions .quote-delete-action {
+  border-color: var(--ios-separator);
+  background: var(--ios-card);
+  color: var(--ios-red);
+}
 
 /* Footer phân trang — compact bar theo phong cách iOS. */
 .quote-list-pagination {
@@ -305,7 +315,8 @@
   white-space: nowrap;
 }
 .quote-pagination-summary .quote-page-size-select {
-  width: 82px;
+  width: 96px;
+  min-width: 96px;
   min-height: 36px !important; /* đè chiều cao control dùng chung để footer gọn */
   padding: 6px 30px 6px 10px !important; /* đè padding control dùng chung */
   border-radius: 10px !important; /* biến thể compact của control dùng chung */

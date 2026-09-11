@@ -192,7 +192,7 @@ export function QuoteListPanel({
                           <Pencil size={16} />
                         </button>
                         <button
-                          className="icon-btn"
+                          className="icon-btn quote-copy-action"
                           onClick={(event) => {
                             event.stopPropagation();
                             onDuplicate(quote);
@@ -203,7 +203,7 @@ export function QuoteListPanel({
                           <Copy size={16} />
                         </button>
                         <button
-                          className="icon-btn danger"
+                          className="icon-btn danger quote-delete-action"
                           onClick={(event) => {
                             event.stopPropagation();
                             onDelete(quote);
