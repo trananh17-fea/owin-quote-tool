@@ -143,6 +143,7 @@
   position: sticky;
   top: 0;
   z-index: 15;
+  isolation: isolate;
   display: grid;
   grid-template-columns: minmax(280px, 1fr) minmax(190px, 230px) auto;
   align-items: center;
@@ -153,6 +154,17 @@
   border-radius: 0;
   background: var(--quote-list-bg);
   box-shadow: none;
+}
+.quote-list-toolbar::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: var(--quote-list-bg);
 }
 .quote-toolbar-control {
   position: relative;
