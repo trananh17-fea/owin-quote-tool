@@ -1,6 +1,6 @@
 /** Phân trang dùng chung cho các màn danh sách (Báo giá, Sản phẩm…). */
 
-export type PageSize = 25 | 50 | 100;
+export type PageSize = 10 | 25 | 50 | 100;
 
 export const PAGE_SIZES: PageSize[] = [25, 50, 100];
 

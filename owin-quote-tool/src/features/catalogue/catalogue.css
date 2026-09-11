@@ -26,59 +26,290 @@
    đã đặt sẵn `min-width: 0` cho nó, nên bảng A4 vẫn cuộn ngang được). Class này chỉ
    còn là hook cho @media print ở cuối file. */
 
-/* ═══════════════ Thanh công cụ ═══════════════ */
+/* ═══════════════ Sticky offset — giống product-list / quote-list ═══════════════ */
 
-.catalogue-toolbar {
+.tool-content:has(.catalogue-page) {
+  --catalogue-sticky-offset: 24px;
+  --catalogue-bg: #f8f9fb;
+  background: var(--catalogue-bg);
+}
+
+.tool-content:has(.catalogue-page)::before {
+  content: '';
+  position: sticky;
+  top: 0;
+  z-index: 14;
+  display: block;
+  height: var(--catalogue-sticky-offset);
+  margin-bottom: calc(-1 * var(--catalogue-sticky-offset));
+  transform: translateY(calc(-1 * var(--catalogue-sticky-offset)));
+  background: var(--catalogue-bg);
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .tool-content:has(.catalogue-page) { --catalogue-sticky-offset: 16px; }
+}
+@media (max-width: 760px) {
+  .tool-content:has(.catalogue-page) { --catalogue-sticky-offset: 12px; }
+}
+
+/* ═══════════════ Heading — giống product-list-heading / quote-list-heading ═══════════════ */
+
+.catalogue-header-row {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  isolation: isolate;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 16px;
+  padding: 10px 0;
+  background: var(--catalogue-bg, #f8f9fb);
+}
+.catalogue-header-row::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: var(--catalogue-bg, #f8f9fb);
+}
+.catalogue-list-heading {
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 0;
+  padding-top: 2px;
+}
+.catalogue-list-title-row {
+  display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  /* flex-end: nhãn "Xuất theo" + select canh đáy với khối tiêu đề bên trái. */
-  align-items: flex-end;
-  gap: 12px;
-  padding: 6px 2px 18px;
-  border-bottom: 1px solid var(--ios-separator-opaque);
+  gap: 8px 10px;
+}
+.catalogue-list-title-row .app-title { margin-bottom: 0 !important; }
+.catalogue-list-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.catalogue-toolbar-text {
-  min-width: 0;
-  flex: 1 1 200px;
+/* ═══════════════ Sticky toolbar — giống product-list-toolbar / quote-list-toolbar ═══════════════ */
+
+.catalogue-list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: 0 0 auto;
 }
+
+.catalogue-list-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ios-separator);
+  border-top: 0;
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  background: var(--ios-card);
+  color: var(--ios-label2);
+  font-size: var(--fs-sm);
+}
+.catalogue-pagination-summary,
+.catalogue-pagination-controls,
+.catalogue-pagination-summary label {
+  display: flex;
+  align-items: center;
+}
+.catalogue-pagination-summary {
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+.catalogue-pagination-summary label {
+  gap: 8px;
+  color: var(--ios-label2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.catalogue-pagination-summary .catalogue-page-size-select {
+  width: 96px;
+  min-width: 96px;
+  min-height: 36px !important;
+  padding: 6px 30px 6px 10px !important;
+  border-radius: 10px !important;
+  font-size: var(--fs-sm) !important;
+  font-variant-numeric: tabular-nums;
+}
+.catalogue-pagination-controls {
+  flex: 0 0 auto;
+  gap: 10px;
+  color: var(--ios-label);
+  white-space: nowrap;
+}
+.catalogue-pagination-controls strong { font-weight: 600; }
+.catalogue-pagination-controls .icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--ios-card);
+}
+.catalogue-pagination-controls .icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+@media (max-width: 900px) {
+  .catalogue-header-row {
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
+
+/* ═══════════════ Custom dropdown — giống product-category / quote-status ═══════════════ */
+
+.catalogue-toolbar-control {
+  position: relative;
+  min-width: 0;
+}
+.catalogue-toolbar-control > svg {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  z-index: 1;
+  transform: translateY(-50%);
+  color: var(--ios-label3);
+  pointer-events: none;
+}
+.catalogue-toolbar-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.catalogue-category-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-width: 180px;
+  min-height: var(--control-h, 44px);
+  padding: 10px 12px 10px 42px;
+  border: 1px solid rgba(60, 60, 67, 0.16);
+  border-radius: var(--r-md, 9px);
+  background: var(--ios-card);
+  color: var(--ios-label);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s var(--ease-ios), box-shadow 0.16s var(--ease-ios), background 0.16s var(--ease-ios);
+}
+.catalogue-category-trigger > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.catalogue-category-trigger:hover,
+.catalogue-category-trigger[aria-expanded='true'] {
+  border-color: rgba(0, 122, 255, 0.28);
+  background: #fbfdff;
+}
+.catalogue-category-trigger[aria-expanded='true'] {
+  border-color: var(--ios-blue);
+  background: var(--ios-card);
+  box-shadow: var(--shadow-glow);
+}
+.catalogue-category-trigger > svg { flex: 0 0 auto; color: var(--ios-label3); }
+.catalogue-category-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 20;
+  display: grid;
+  gap: 3px;
+  max-height: min(320px, 46vh);
+  padding: 6px;
+  overflow-y: auto;
+  border: 1px solid rgba(60, 60, 67, 0.14);
+  border-radius: var(--r-lg, 10px);
+  background: var(--ios-card);
+  box-shadow: 0 8px 18px rgba(28, 28, 40, 0.1), 0 20px 44px rgba(28, 28, 40, 0.12);
+  animation: catalogue-menu-in 0.16s var(--ease-ios) both;
+}
+@keyframes catalogue-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.catalogue-category-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--r-sm, 7px);
+  background: transparent;
+  color: var(--ios-label);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.catalogue-category-option > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.catalogue-category-option:hover { background: var(--ios-blue-soft); }
+.catalogue-category-option.is-selected {
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+  font-weight: 600;
+}
+.catalogue-category-option.is-selected > svg { color: var(--ios-blue); }
+
+/* ═══════════════ Nhóm nút xuất ═══════════════ */
 
 .catalogue-toolbar-actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-left: auto;
-}
-
-/* Lớp chung .btn đặt border-radius/font-size bằng !important nên rule này hiện
-   KHÔNG có tác dụng. Chép lại nguyên ý định (13px + pill) mà không thêm !important:
-   thêm vào là thu nhỏ/bo tròn nút khác hôm nay — đó là đổi giao diện, không phải giữ. */
-.catalogue-toolbar .btn {
-  font-size: var(--fs-sm);
-  border-radius: var(--r-pill);
-}
-
-/* ═══════════════ Bộ lọc loại cửa + nhóm nút xuất ═══════════════ */
-
-.catalogue-filter-label {
-  display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--ios-label2);
-  font-size: var(--fs-sm);
-  font-weight: 500;
 }
-/* Select co theo nội dung thay vì chiếm hết hàng như .input mặc định. */
-.catalogue-filter-label .input {
-  width: auto;
-  min-width: 140px;
-}
-
-.catalogue-export-actions {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.catalogue-toolbar-actions > .btn {
+  min-height: var(--control-h, 44px);
+  padding-inline: 14px !important;
+  border-radius: var(--r-md, 9px) !important;
+  font-size: var(--fs-sm) !important;
+  white-space: nowrap;
 }
 
 /* ═══════════════ 2. Tài liệu A4 — khung ngoài ═══════════════ */
@@ -89,7 +320,7 @@
   overflow-x: auto;
   padding: 10px;
   border: 1px solid var(--ios-separator-opaque);
-  border-radius: var(--r-md);
+  border-radius: var(--r-md) var(--r-md) 0 0;
   background: var(--ios-card);
   box-shadow: var(--shadow-lg);
 }
@@ -277,6 +508,15 @@
 
 /* ─── Điện thoại dọc: thanh công cụ xếp dọc, 3 nút xuất thành lưới 3 cột ─── */
 @media (max-width: 720px) {
+  .catalogue-list-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .catalogue-pagination-summary,
+  .catalogue-pagination-controls {
+    justify-content: space-between;
+  }
+
   /* LƯU Ý sai khác có chủ đích so với bản đang chạy: trong lớp chung rule
      `.catalogue-toolbar { align-items: flex-end; gap: 12px }` nằm ở CUỐI file (sau
      block 720px) nên nó đè ngược lại `stretch`/`8px` của chính block này — hệ quả là
