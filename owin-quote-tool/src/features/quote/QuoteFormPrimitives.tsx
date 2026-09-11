@@ -46,12 +46,14 @@ export function Field({
   onChange,
   suggestions = [],
   fieldKey,
+  required = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   suggestions?: string[];
   fieldKey?: string;
+  required?: boolean;
 }) {
   if (suggestions.length > 0) {
     return (
@@ -61,12 +63,13 @@ export function Field({
         value={value}
         onChange={onChange}
         suggestions={suggestions}
+        required={required}
       />
     );
   }
   return (
     <div className="field">
-      <label>{label}</label>
+      <label>{label}{required && <span className="required-mark">*</span>}</label>
       <input className="input" value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );

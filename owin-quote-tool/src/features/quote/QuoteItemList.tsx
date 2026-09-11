@@ -11,7 +11,7 @@ import { normalizeCategoryName } from '@/lib/products/categoryOrder';
 import type { AccessoryPackageTemplate } from '@/lib/quote/accessoryPackages';
 import { QuoteItemCard } from '@/features/quote/QuoteItemCard';
 
-/** Thẻ "Chọn sản phẩm" + danh sách hạng mục báo giá (kèm tab lọc theo loại cửa). */
+/** Danh sách hạng mục báo giá (kèm tab lọc theo loại cửa). */
 export function QuoteItemList({
   items,
   itemUiKeys,
@@ -24,8 +24,6 @@ export function QuoteItemList({
   orphanAccessoryNames,
   itemDrag,
   onItemCategoryFilter,
-  onOpenPicker,
-  onAddCustom,
   onUpdateItem,
   onDimension,
   onAccessory,
@@ -45,8 +43,6 @@ export function QuoteItemList({
   orphanAccessoryNames: string[];
   itemDrag: ReturnType<typeof useDragReorder>;
   onItemCategoryFilter: (value: string) => void;
-  onOpenPicker: () => void;
-  onAddCustom: () => void;
   onUpdateItem: (index: number, patch: Partial<QuoteItemInput>) => void;
   onDimension: (index: number, lineIndex: number, patch: Partial<DimensionInput>) => void;
   onAccessory: (index: number, accIndex: number, patch: Partial<AccessoryInput>) => void;
@@ -56,24 +52,9 @@ export function QuoteItemList({
   onDelete: (index: number) => void;
 }) {
   return (
-    <>
-      <div className="card quote-add-products-card">
-        <div>
-          <div className="section-label">Chọn sản phẩm</div>
-          <div className="product-sub quote-add-hint">Mở kho để chọn bằng hình, hoặc thêm hạng mục tùy chỉnh.</div>
-        </div>
-        <div className="quote-add-actions">
-          <button className="btn btn-primary" onClick={() => onOpenPicker()}>
-            <Package size={17} style={{ verticalAlign: '-3px' }} /> Chọn từ kho
-          </button>
-          <button className="btn btn-ghost" onClick={onAddCustom}>
-            <Plus size={16} style={{ verticalAlign: '-3px' }} /> Tùy chỉnh
-          </button>
-        </div>
-      </div>
-
-      <div className="card" style={{ marginTop: 16 }}>
-        <div className="section-label">Hạng mục báo giá ({items.length})</div>
+    <div className="quote-section-block quote-items-section">
+      <div className="quote-section-label">Hạng mục báo giá ({items.length})</div>
+      <div className="card" style={{ marginTop: 0 }}>
         {(() => {
           // Title Case + gộp trùng (Cửa chính / Cửa Chính → 1 tab).
           const uniqueCats = Array.from(
@@ -144,6 +125,34 @@ export function QuoteItemList({
           </div>
         )}
       </div>
-    </>
+    </div>
+  );
+}
+
+/** Card chọn sản phẩm đặt cạnh thông tin khách hàng ở đầu flow. */
+export function QuoteAddProductsCard({
+  onOpenPicker,
+  onAddCustom,
+}: {
+  onOpenPicker: () => void;
+  onAddCustom: () => void;
+}) {
+  return (
+    <div className="quote-section-block quote-products-section">
+      <div className="quote-section-label">Chọn sản phẩm</div>
+      <div className="card quote-add-products-card">
+      <div>
+        <div className="product-sub quote-add-hint">Mở kho để chọn bằng hình, hoặc thêm hạng mục tùy chỉnh.</div>
+      </div>
+      <div className="quote-add-actions">
+        <button className="btn btn-primary" onClick={onOpenPicker}>
+          <Package size={17} style={{ verticalAlign: '-3px' }} /> Chọn từ kho
+        </button>
+        <button className="btn btn-ghost" onClick={onAddCustom}>
+          <Plus size={16} style={{ verticalAlign: '-3px' }} /> Tùy chỉnh
+        </button>
+      </div>
+      </div>
+    </div>
   );
 }

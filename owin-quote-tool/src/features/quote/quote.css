@@ -18,6 +18,18 @@
  * chỗ đều có ghi chú lý do ngay tại rule.
  */
 
+/* Màn báo giá dùng thang bo tiết chế hơn: card rõ khối, control gọn, badge vẫn
+   giữ dạng pill khi cần biểu thị trạng thái. */
+.quote-workflow-page {
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --ios-radius: 14px;
+  --ios-radius-sm: 10px;
+}
+
 /* ═══════════════ Danh sách báo giá ═══════════════ */
 
 /* Chỉ làm sáng nền màn danh sách; form và chi tiết báo giá giữ nền app chung. */
@@ -40,7 +52,7 @@
   align-items: center;
   min-height: 26px;
   padding: 4px 10px;
-  border-radius: var(--r-pill);
+  border-radius: 8px;
   background: var(--ios-blue-soft);
   color: var(--ios-blue-ink);
   font-size: var(--fs-xs);
@@ -56,7 +68,7 @@
   margin-bottom: 16px;
   padding: 10px;
   border: 1px solid rgba(60, 60, 67, 0.14);
-  border-radius: var(--r-lg);
+  border-radius: 12px;
   background: var(--ios-card);
   box-shadow: 0 2px 5px rgba(28, 28, 40, 0.05), 0 10px 28px rgba(28, 28, 40, 0.07);
 }
@@ -77,7 +89,7 @@
   min-height: 44px;
   padding-left: 42px !important; /* chừa chỗ cho icon, đè padding control chung */
   border-color: rgba(60, 60, 67, 0.16) !important;
-  border-radius: 12px !important; /* biến thể toolbar gọn hơn input form */
+  border-radius: 9px !important; /* biến thể toolbar gọn hơn input form */
   background: var(--ios-card) !important;
   font-size: var(--fs-sm) !important;
   font-weight: 500;
@@ -105,7 +117,7 @@
   min-height: 44px;
   padding: 10px 12px 10px 42px;
   border: 1px solid rgba(60, 60, 67, 0.16);
-  border-radius: 12px;
+  border-radius: 9px;
   background: var(--ios-card);
   color: var(--ios-label);
   font: inherit;
@@ -136,7 +148,7 @@
   gap: 3px;
   padding: 6px;
   border: 1px solid rgba(60, 60, 67, 0.14);
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--ios-card);
   box-shadow: 0 8px 18px rgba(28, 28, 40, 0.1), 0 20px 44px rgba(28, 28, 40, 0.12);
   animation: quote-status-menu-in 0.16s var(--ease-ios) both;
@@ -154,7 +166,7 @@
   min-height: 38px;
   padding: 8px 10px;
   border: 0;
-  border-radius: 9px;
+  border-radius: 7px;
   background: transparent;
   color: var(--ios-label);
   font: inherit;
@@ -183,7 +195,7 @@
 .quote-create-button {
   min-height: 44px;
   padding-inline: 18px !important;
-  border-radius: 12px !important;
+  border-radius: 9px !important;
   box-shadow: 0 6px 16px rgba(0, 122, 255, 0.2);
 }
 .quote-create-button:active { transform: scale(0.98); }
@@ -196,7 +208,7 @@
 .quote-list-table-card {
   margin-top: 0;
   border: 1px solid rgba(60, 60, 67, 0.14);
-  border-radius: var(--r-lg);
+  border-radius: 12px;
   background: var(--ios-card);
   box-shadow: 0 2px 5px rgba(28, 28, 40, 0.05), 0 12px 32px rgba(28, 28, 40, 0.07);
 }
@@ -342,6 +354,7 @@
   gap: 6px;
   white-space: nowrap;
 }
+.quote-actions .icon-btn { border-radius: 8px; }
 .quote-actions .quote-edit-action {
   border-color: transparent;
   background: var(--ios-blue-soft);
@@ -367,6 +380,7 @@
   gap: 16px;
   padding: 12px 14px;
   border-top: 1px solid var(--ios-separator);
+  border-radius: 0 0 12px 12px;
   background: var(--ios-card);
   color: var(--ios-label2);
   font-size: var(--fs-sm);
@@ -472,36 +486,513 @@
 
 /* ═══════════════ Đầu form + thẻ tổng tiền ═══════════════ */
 
+/* ─── Nav bar đầu form: phẳng hoàn toàn, chỉ hairline dưới, không thẻ/không shadow ─── */
 .quote-form-heading {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 0 2px 12px;
+  border-bottom: 1px solid rgba(60, 60, 67, 0.13);
 }
-.quote-form-heading-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
+.quote-form-back {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: rgba(120, 120, 128, 0.12);
+  color: var(--ios-label);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s var(--ease-ios);
+}
+.quote-form-back:hover {
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+}
+.quote-form-back:active { transform: scale(0.92); }
+
+.quote-form-heading-text {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 6px;
   min-width: 0;
-  flex: 1 1 240px;
 }
-.quote-form-heading-text { min-width: 0; }
-.quote-form-actions {
+.quote-form-title {
+  margin: 0;
+  color: var(--ios-label);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  letter-spacing: var(--track-tight);
+  line-height: 1.2;
+}
+.quote-form-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  gap: 6px;
+}
+/* Chip số liệu: nền tint phẳng, không viền, không shadow. */
+.quote-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: var(--r-pill);
+  background: rgba(120, 120, 128, 0.12);
+  color: var(--ios-label2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.quote-meta-chip svg { flex: 0 0 auto; opacity: 0.7; }
+.quote-meta-chip.is-accent {
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+}
+.quote-meta-chip.is-accent svg { opacity: 1; }
+
+.quote-form-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
   gap: 8px;
   margin-left: auto;
 }
+/* Nút pill phẳng: phân cấp bằng độ đậm của nền, không dùng shadow hay viền. */
+.quote-form-actions > .btn,
+.quote-form-actions .quote-export-trigger {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: none;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s var(--ease-ios);
+}
+.quote-form-actions > .btn:active:not(:disabled),
+.quote-form-actions .quote-export-trigger:active:not(:disabled) {
+  filter: none;
+  transform: scale(0.96);
+}
+.quote-new-button {
+  background: rgba(120, 120, 128, 0.12);
+  color: var(--ios-label);
+}
+.quote-new-button:hover:not(:disabled) { background: rgba(120, 120, 128, 0.18); }
+.quote-save-button {
+  min-width: 92px;
+  background: var(--ios-blue);
+  color: #fff;
+}
+.quote-save-button:hover:not(:disabled) { background: var(--ios-blue-ink); }
+.quote-export-dropdown {
+  position: relative;
+  z-index: 5;
+  flex: 0 0 auto;
+}
+.quote-export-trigger {
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+}
+.quote-export-trigger:hover:not(:disabled) { background: var(--ios-blue-soft-strong); }
+.quote-export-trigger[aria-expanded='true'] {
+  background: var(--ios-surface-muted);
+  color: var(--ios-blue-ink);
+}
+.quote-export-chevron {
+  transition: transform 0.2s var(--ease-ios);
+}
+.quote-export-trigger[aria-expanded='true'] .quote-export-chevron { transform: rotate(180deg); }
+.quote-export-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(252px, calc(100vw - 40px));
+  padding: 6px;
+  border: 1px solid rgba(60, 60, 67, 0.12);
+  border-radius: var(--r-lg);
+  background: var(--ios-card);
+  box-shadow: 0 8px 28px rgba(28, 28, 40, 0.12);
+  transform-origin: top right;
+  animation: quote-export-menu-in 0.18s var(--ease-ios) both;
+}
+.quote-export-menu > button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ios-label);
+  text-align: left;
+  cursor: pointer;
+}
+.quote-export-menu > button:hover,
+.quote-export-menu > button:focus-visible { background: var(--ios-row-hover); }
+.quote-export-menu > button > svg {
+  width: 30px;
+  height: 30px;
+  padding: 7px;
+  border-radius: var(--r-pill);
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+}
+.quote-export-menu > button > span { display: grid; gap: 1px; min-width: 0; }
+.quote-export-menu strong { font-size: var(--fs-sm); font-weight: 700; }
+.quote-export-menu small { color: var(--ios-label3); font-size: var(--fs-xs); }
+@keyframes quote-export-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
-/* .quote-top-grid / .quote-customer-grid chỉ là "cột" của .two-col (lớp chung);
-   ở đây chỉ đặt lại hành vi theo breakpoint, xem phần Responsive. */
+/* Thông tin khách hàng đi trước flow chọn sản phẩm và hạng mục. */
+.quote-intro-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+  align-items: stretch;
+  gap: 16px;
+}
+.quote-section-block {
+  min-width: 0;
+}
+.quote-section-label {
+  margin: 0 0 7px 2px;
+  color: var(--ios-label2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.quote-items-section {
+  margin-top: 16px;
+}
+.quote-intro-side {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+.quote-customer-section {
+  display: flex;
+  flex-direction: column;
+}
+.quote-customer-section .quote-customer-card {
+  flex: 1;
+}
+.quote-intro-side .quote-summary-card {
+  margin-top: 0;
+  padding: 16px;
+}
+.quote-intro-side .quote-summary-heading {
+  margin-bottom: 10px;
+}
+.quote-intro-side .quote-section-label {
+  margin-bottom: 7px;
+}
+.quote-intro-side .quote-summary-badge {
+  display: none;
+}
+.quote-intro-side .quote-summary-lines {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.quote-intro-side .quote-summary-lines .switch-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 0;
+  padding: 9px 11px;
+}
+.quote-intro-side .quote-summary-lines .switch-row span:last-child {
+  font-size: var(--fs-md);
+}
+.quote-intro-grid .quote-customer-card,
+.quote-intro-grid .quote-add-products-card {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 16px;
+}
+.quote-intro-grid .quote-customer-form-shell {
+  max-width: none;
+  margin: 0;
+}
+.quote-intro-grid .quote-add-products-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+.quote-intro-grid .quote-add-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: auto;
+  gap: 8px;
+}
+.quote-intro-grid .quote-add-actions .btn {
+  width: auto;
+  min-height: 38px;
+  padding: 0 14px;
+  justify-content: center;
+  white-space: nowrap;
+}
+.quote-customer-card { margin-bottom: 16px; }
+.quote-customer-form-shell {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.quote-customer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  max-width: 820px;
+}
+.quote-customer-grid > :nth-child(5) {
+  grid-column: 1 / -1;
+}
+.quote-customer-grid .field {
+  display: block;
+  margin-bottom: 0;
+}
+.quote-customer-grid .field > label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ios-label2);
+  text-align: left;
+}
+.ios-combobox { position: relative; min-width: 0; }
+.ios-combobox-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 10px 14px;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-md);
+  background: var(--ios-fill);
+  color: var(--ios-label);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.18s var(--ease-ios), border-color 0.18s var(--ease-ios), box-shadow 0.18s var(--ease-ios);
+}
+.ios-combobox-trigger:hover:not(:disabled) {
+  border-color: rgba(0, 122, 255, 0.28);
+  background: #f8fbff;
+}
+.ios-combobox-trigger.is-open {
+  border-color: var(--ios-blue);
+  background: var(--ios-card);
+  box-shadow: var(--shadow-glow);
+}
+.ios-combobox-trigger > svg {
+  flex: 0 0 auto;
+  color: var(--ios-label3);
+  transition: transform 0.2s var(--ease-ios);
+}
+.ios-combobox-trigger.is-open > svg { transform: rotate(180deg); }
+.ios-combobox-trigger:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+.ios-combobox-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ios-combobox-value.is-placeholder { color: var(--ios-label3); }
+.ios-combobox-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  z-index: 30;
+  padding: 7px;
+  border: 1px solid rgba(60, 60, 67, 0.16);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow-lg);
+  animation: ios-combobox-in 0.18s var(--ease-ios) both;
+}
+.ios-combobox-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  margin-bottom: 6px;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  background: var(--ios-fill);
+  color: var(--ios-label3);
+}
+.ios-combobox-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ios-label);
+  font: inherit;
+  font-size: var(--fs-sm);
+}
+.ios-combobox-options {
+  max-height: min(280px, 38vh);
+  overflow-y: auto;
+}
+.ios-combobox-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ios-label);
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.ios-combobox-option:hover,
+.ios-combobox-option:focus-visible,
+.ios-combobox-option.is-selected { background: var(--ios-blue-soft); }
+.ios-combobox-option.is-selected {
+  color: var(--ios-blue-ink);
+  font-weight: 600;
+}
+.ios-combobox-option > svg { flex: 0 0 auto; color: var(--ios-blue); }
+.ios-combobox-empty {
+  padding: 14px 10px;
+  color: var(--ios-label3);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+@keyframes ios-combobox-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.required-mark {
+  margin-left: 3px;
+  color: var(--ios-red);
+  font-weight: 700;
+}
+.quote-country-control {
+  position: relative;
+}
+.quote-country-control > span {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  z-index: 1;
+  transform: translateY(-50%);
+  font-size: 18px;
+  line-height: 1;
+  pointer-events: none;
+}
+.quote-country-control .input { padding-left: 48px !important; }
+.quote-customer-secondary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 820px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ios-fill-strong);
+}
+.quote-address-status {
+  max-width: 820px;
+  margin-top: 10px;
+}
 
 .quote-totals-card {
   /* Đè gradient navy cũ còn `!important` trong lớp chung. */
   background: var(--ios-card);
   border-color: var(--ios-separator);
+}
+.quote-summary-card {
+  margin-top: 16px;
+  padding: 20px;
+}
+.quote-summary-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.quote-summary-heading .section-label { margin-bottom: 2px; }
+.quote-summary-badge {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: var(--r-pill);
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.quote-summary-lines {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.quote-summary-lines .switch-row {
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  min-height: 76px;
+  padding: 12px 14px;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-sm);
+  background: var(--ios-surface-muted);
+}
+.quote-summary-lines .switch-row span:first-child {
+  color: var(--ios-label3);
+  font-size: var(--fs-sm);
+}
+.quote-summary-lines .switch-row span:last-child {
+  color: var(--ios-label);
+  font-size: var(--fs-lg);
+}
+.quote-summary-lines .switch-row:last-child {
+  border-color: rgba(0, 122, 255, 0.28);
+  background: var(--ios-blue-soft);
+}
+.quote-summary-lines .switch-row:last-child span { color: var(--ios-blue-ink); }
+.quote-summary-lines .switch-row:last-child span:first-child { color: var(--ios-blue-ink); }
+@media (max-width: 760px) {
+  .quote-intro-grid { grid-template-columns: 1fr; }
+  .quote-summary-lines { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .quote-customer-grid { grid-template-columns: 1fr; gap: 9px; }
+  .quote-customer-grid > :nth-child(5) { grid-column: auto; }
+  .quote-customer-form-shell { max-width: none; }
+  .quote-customer-secondary-grid { grid-template-columns: 1fr; }
+  .quote-intro-grid .quote-add-products-card { grid-template-columns: 1fr; }
+  .quote-intro-grid .quote-add-actions { justify-content: stretch; }
+  .quote-intro-grid .quote-add-actions .btn { flex: 1; }
+  .quote-summary-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .quote-summary-lines { grid-template-columns: 1fr; }
 }
 .quote-totals-card .switch-row:last-of-type,
 .quote-totals-card .switch-row strong { color: var(--ios-label); }
@@ -533,85 +1024,150 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
-    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-  /* Đè nền navy cũ còn `!important` trong lớp chung. */
-  background: rgba(28, 28, 40, 0.4);
+  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+    max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  background: rgba(28, 28, 40, 0.48);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .quote-picker-modal {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  width: min(1120px, 100%);
-  max-width: 1120px;
-  max-height: min(86vh, 860px);
-  padding: 18px;
+  gap: 0;
+  width: min(1180px, 100%);
+  max-width: 1180px;
+  max-height: min(90vh, 900px);
   overflow: hidden;
-  /* Đè viền trắng mờ cũ còn `!important` trong lớp chung. */
-  border: 1px solid var(--ios-separator);
-  border-radius: var(--r-lg);
-  background: var(--ios-card);
+  border: 1px solid rgba(60, 60, 67, 0.18);
+  border-radius: 16px;
+  background: var(--ios-bg);
   box-shadow: var(--shadow-lg);
 }
 
 .quote-picker-header {
-  display: flex;
+  position: relative;
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: minmax(250px, 0.8fr) minmax(340px, 1.9fr) 44px;
+  grid-template-areas: 'title search close';
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--ios-separator);
+  column-gap: 16px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid rgba(60, 60, 67, 0.08);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbfd 100%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
 }
 .quote-picker-title {
+  grid-area: title;
   display: flex;
   align-items: center;
   gap: 12px;
+  align-self: center;
+  min-width: 0;
+}
+.quote-picker-title > div:last-child { min-width: 0; }
+.quote-picker-title-copy {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 .quote-picker-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: var(--r-md);
-  background: var(--ios-fill);
-  color: var(--ios-blue-ink);
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 122, 255, 0.1);
+  background: linear-gradient(145deg, #edf6ff 0%, #d9edff 100%);
+  color: var(--ios-blue);
+  box-shadow: 0 5px 12px rgba(0, 122, 255, 0.13), 0 1px 0 #fff inset;
 }
 .quote-picker-title h2 {
   margin: 0;
   color: var(--ios-label);
-  font-size: var(--fs-xl);
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   line-height: 1.2;
   letter-spacing: var(--track-tight);
 }
 .quote-picker-title p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   margin: 3px 0 0;
   color: var(--ios-label3);
-  font-size: var(--fs-sm);
+  font-size: 13px;
+  letter-spacing: 0.01em;
 }
+.quote-picker-footer-hint {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 16px;
+  border-top: 1px solid rgba(60, 60, 67, 0.08);
+  background: var(--ios-card);
+  color: #a16207;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.25;
+}
+.quote-picker-footer-hint::before {
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+  content: '';
+}
+.quote-picker-header > .icon-btn {
+  grid-area: close;
+  justify-self: end;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ios-red-soft);
+  color: var(--ios-red);
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.08), 0 1px 0 #fff inset;
+}
+.quote-picker-header > .icon-btn:hover {
+  background: rgba(255, 59, 48, 0.18);
+  box-shadow: 0 5px 14px rgba(255, 59, 48, 0.14), 0 1px 0 #fff inset;
+}
+.quote-picker-header > .icon-btn:active { background: var(--ios-red-fill); color: #fff; }
 
-/* Ô tìm: nền fill, không viền, focus mới lên ring xanh */
 .quote-picker-search {
+  grid-area: search;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 14px;
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  background: var(--ios-fill);
+  min-height: 46px;
+  min-width: 0;
+  margin: 0;
+  padding: 0 16px;
+  border: 1px solid rgba(60, 60, 67, 0.08);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f3f3f8 0%, #ededf2 100%);
   color: var(--ios-label3);
+  box-shadow: 0 2px 8px rgba(28, 28, 40, 0.04) inset, 0 1px 0 #fff;
 }
+.quote-picker-search > svg { color: var(--ios-blue); opacity: 0.82; }
+.quote-picker-search:hover { border-color: rgba(0, 122, 255, 0.18); }
 .quote-picker-search:focus-within {
-  border-color: var(--ios-blue);
-  background: var(--ios-card);
-  box-shadow: var(--shadow-glow);
+  border-color: rgba(0, 122, 255, 0.42);
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1), 0 3px 10px rgba(0, 122, 255, 0.08);
 }
 .quote-picker-search input {
   flex: 1;
-  min-height: 46px;
+  min-width: 0;
+  min-height: 42px;
   border: 0;
   outline: 0;
   background: transparent;
@@ -621,60 +1177,109 @@
 
 .quote-picker-categories {
   display: flex;
-  gap: 8px;
-  min-height: 40px;
-  padding-bottom: 8px;
+  flex: 0 0 auto;
+  align-items: center;
+  box-sizing: border-box;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 16px 8px;
+  border-top: 1px solid rgba(60, 60, 67, 0.06);
+  border-bottom: 1px solid rgba(60, 60, 67, 0.1);
+  background: var(--ios-bg);
   overflow-x: auto;
-  border-bottom: 1px solid var(--ios-separator);
+  overflow-y: visible;
+  scrollbar-width: none;
 }
-.quote-picker-categories.is-collapsed {
-  min-height: auto;
-  padding-bottom: 4px;
-}
+.quote-picker-categories::-webkit-scrollbar { display: none; }
 .quote-picker-categories button {
   flex: 0 0 auto;
-  padding: 7px 13px;
-  border: 1px solid transparent;
-  border-radius: var(--r-pill);
-  background: var(--ios-fill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--ios-label2);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 1.25;
   cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.16s var(--ease-ios), color 0.16s var(--ease-ios);
 }
+.quote-picker-categories button:hover { background: var(--ios-fill); }
 .quote-picker-categories button.active {
-  border-color: var(--ios-blue);
-  background: var(--ios-blue-ink);
+  background: var(--ios-blue);
   color: var(--ios-card);
-}
-/* Nút thu gọn danh mục: kém đặc hiệu hơn `.quote-picker-categories button`
-   VÀ lớp chung còn 4 khai báo `!important` cho nó. */
-.quote-picker-cat-toggle {
-  background: var(--ios-blue-soft);
-  border: 1px solid transparent;
-  color: var(--ios-blue-ink);
   font-weight: 600;
+  box-shadow: 0 3px 8px rgba(0, 122, 255, 0.2);
+}
+.quote-picker-categories button span {
+  margin-left: 3px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--ios-fill);
+  opacity: 0.9;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.quote-picker-categories button.active span {
+  background: rgba(255, 255, 255, 0.18);
+  opacity: 0.9;
 }
 
 .quote-picker-results {
   flex: 1;
   min-height: 0;
-  padding-right: 4px;
+  padding: 10px 22px 22px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.quote-picker-results-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  margin-bottom: 10px;
+  color: var(--ios-label3);
+  font-size: var(--fs-sm);
+}
+.quote-picker-results-head strong {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ios-blue-ink);
+  font-weight: 600;
+}
+.quote-picker-results-head strong::before {
+  content: '·';
+  margin-right: 8px;
+  color: var(--ios-label3);
+}
+.quote-picker-results-head small {
+  margin-left: auto;
+  color: var(--ios-label3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 .quote-picker-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 .quote-picker-card {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 10px;
-  padding: 10px;
+  align-self: start;
+  gap: 7px;
+  padding: 7px;
   overflow: hidden;
-  border: 1px solid var(--ios-separator);
-  border-radius: var(--r-lg);
+  border: 1px solid rgba(60, 60, 67, 0.14);
+  border-radius: 12px;
   background: var(--ios-card);
   text-align: left;
   cursor: pointer;
@@ -682,8 +1287,8 @@
     transform 0.14s var(--ease-ios);
 }
 .quote-picker-card:hover {
-  border-color: var(--ios-blue);
-  box-shadow: var(--shadow-md);
+  border-color: rgba(0, 122, 255, 0.42);
+  box-shadow: 0 5px 16px rgba(28, 28, 40, 0.1);
   transform: translateY(-1px);
 }
 .quote-picker-thumb {
@@ -691,13 +1296,14 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 160px;
-  aspect-ratio: 1.15 / 1;
+  min-height: 0;
+  aspect-ratio: 1.3 / 1;
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--ios-separator);
-  border-radius: var(--r-md);
-  background: var(--ios-bg);
+  border-radius: 8px;
+  border-color: transparent;
+  background: var(--ios-fill);
   cursor: zoom-in;
 }
 .quote-picker-thumb .ph {
@@ -706,15 +1312,15 @@
   max-width: 95%;
   max-height: 95%;
   object-fit: contain;
-  border-radius: var(--r-sm);
+  border-radius: 6px;
   background: var(--ios-bg);
 }
 .quote-picker-card-body {
-  display: grid;
-  gap: 6px;
-  justify-items: start;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   min-width: 0;
-  padding: 0 2px 2px;
+  padding: 1px 2px 2px;
   border: 0;
   background: transparent;
   text-align: left;
@@ -722,45 +1328,60 @@
 }
 .quote-picker-card-body strong {
   display: -webkit-box;
+  min-height: 2.6em;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   color: var(--ios-label);
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 .quote-picker-meta {
+  display: block;
+  min-height: 1.2em;
+  margin-top: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--ios-label3);
   font-size: var(--fs-xs);
-  font-weight: 600;
+  font-weight: 500;
 }
 .quote-picker-price {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-top: 6px;
   color: var(--ios-label);
-  font-size: var(--fs-lg);
+  font-size: var(--fs-md);
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: var(--track-tight);
   font-variant-numeric: tabular-nums;
 }
 .quote-picker-price small {
-  margin-left: 2px;
   color: var(--ios-label3);
   font-size: var(--fs-xs);
   font-weight: 500;
 }
 .quote-picker-choose {
-  margin-top: 2px;
-  padding: 5px 12px;
-  border-radius: var(--r-pill);
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
   background: var(--ios-blue-soft);
   color: var(--ios-blue-ink);
   font-size: var(--fs-xs);
   font-weight: 600;
+  text-align: center;
+  transition: background 0.16s var(--ease-ios), color 0.16s var(--ease-ios);
 }
 .quote-picker-card:hover .quote-picker-choose {
-  background: var(--ios-blue-ink);
+  background: var(--ios-blue);
   color: var(--ios-card);
 }
 
@@ -1164,18 +1785,8 @@
 
 /* ═══════════════ Responsive (kế thừa breakpoint của bản cũ) ═══════════════ */
 
-/* Desktop rộng: thẻ tổng tiền dính theo khi cuộn danh sách hạng mục.
-   Đặt TRƯỚC các block max-width để breakpoint hẹp (kể cả điện thoại ngang
-   901–960px) luôn thắng và trả về static. */
-@media (min-width: 901px) {
-  .quote-totals-card {
-    position: sticky;
-    top: 12px;
-  }
-}
-
 @media (max-width: 980px) {
-  .quote-picker-grid,
+  .quote-picker-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .quote-item-config-grid { grid-template-columns: 1fr; }
 }
 
@@ -1262,7 +1873,7 @@
     gap: 4px 8px;
     padding: 12px;
     border: 1px solid var(--ios-separator);
-    border-radius: var(--r-md);
+    border-radius: 10px;
     background: var(--ios-card);
     box-shadow: var(--shadow-sm);
   }
@@ -1319,7 +1930,7 @@
     margin-top: 8px;
     padding: 12px;
     border: 1px solid var(--ios-separator);
-    border-radius: var(--r-md);
+    border-radius: 10px;
     background: var(--ios-card);
     box-shadow: var(--shadow-sm);
   }
@@ -1347,24 +1958,28 @@
     grid-template-columns: 1fr;
     gap: 10px;
   }
+  /* Điện thoại: tiêu đề một hàng, ba thao tác chia đều hàng dưới, chạm 44px. */
   .quote-form-heading {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    padding-bottom: 10px;
   }
+  .quote-form-title { font-size: var(--fs-lg); }
   .quote-form-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
     width: 100%;
     margin-left: 0;
   }
-  .quote-form-actions .btn {
+  .quote-form-actions > .btn,
+  .quote-form-actions .quote-export-trigger {
     width: 100%;
-    min-height: 36px;
+    min-height: 44px;
+    padding: 0 10px;
     justify-content: center;
   }
-  .quote-form-actions .btn-primary { grid-column: 1 / -1; }
+  .quote-form-actions .quote-export-dropdown { width: 100%; }
 
   .quote-add-products-card {
     flex-direction: column;
@@ -1424,8 +2039,36 @@
   .quote-picker-modal {
     width: 100%;
     max-height: min(92dvh, 900px);
-    border-radius: var(--r-lg) var(--r-lg) var(--r-sm) var(--r-sm);
+    border-radius: 14px 14px 8px 8px;
   }
+  .quote-picker-header {
+    gap: 8px;
+    padding: 10px;
+    grid-template-columns: minmax(140px, 0.9fr) minmax(0, 1fr) 40px;
+    column-gap: 8px;
+  }
+  .quote-picker-title {
+    gap: 8px;
+  }
+  .quote-picker-title h2 { font-size: 17px; }
+  .quote-picker-title p { display: none; }
+  .quote-picker-footer-hint {
+    min-height: 32px;
+    padding: 7px 12px;
+    font-size: 11px;
+  }
+  .quote-picker-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+  }
+  .quote-picker-header > .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .quote-picker-search { margin: 0; }
+  .quote-picker-categories { padding-inline: 16px; }
+  .quote-picker-results { padding: 0 16px 16px; }
   .quote-picker-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
@@ -1455,23 +2098,24 @@
   }
 
   .quote-form-heading {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding-bottom: 8px;
   }
+  .quote-form-heading-text { gap: 4px; }
   .quote-form-actions {
     display: flex;
-    flex-wrap: wrap;
     gap: 6px;
     width: auto;
     margin-left: auto;
   }
-  .quote-form-actions .btn {
+  .quote-form-actions > .btn,
+  .quote-form-actions .quote-export-trigger {
     width: auto;
-    min-height: 30px;
+    min-height: 34px;
+    padding: 0 12px;
   }
-  .quote-form-actions .btn-primary { grid-column: auto; }
+  .quote-form-actions .quote-export-dropdown { width: auto; }
 
   .quote-totals-card { position: static; }
 
@@ -1522,7 +2166,7 @@
   .quote-picker-modal {
     width: min(920px, 100%);
     max-height: calc(100dvh - 12px);
-    border-radius: var(--r-sm);
+    border-radius: 8px;
   }
   .quote-picker-grid {
     /* `!important`: đè lưới 2 cột `!important` của breakpoint 720. */
@@ -1535,7 +2179,9 @@
 @media (max-width: 380px) {
   /* `!important`: đè lưới 2 cột `!important` của breakpoint 720. */
   .quote-picker-grid { grid-template-columns: 1fr; }
+  /* Màn hẹp: hai cột, nút Xuất chiếm trọn hàng dưới thay vì bị bóp chữ. */
   .quote-form-actions { grid-template-columns: 1fr 1fr; }
+  .quote-form-actions .quote-export-dropdown { grid-column: 1 / -1; }
 }
 
 /* ─── In trình duyệt bị chặn: người dùng xuất bằng nút Word / Excel / PDF ─── */

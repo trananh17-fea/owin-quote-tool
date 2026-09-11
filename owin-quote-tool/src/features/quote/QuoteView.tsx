@@ -44,10 +44,11 @@ import { useQuoteHistory } from '@/features/quote/useQuoteHistory';
 import { QuoteListPanel } from '@/features/quote/QuoteListPanel';
 import { QuoteDetailPanel } from '@/features/quote/QuoteDetailPanel';
 import { QuoteFormHeader } from '@/features/quote/QuoteFormHeader';
-import { QuoteFormTopGrid } from '@/features/quote/QuoteFormTopGrid';
-import { QuoteItemList } from '@/features/quote/QuoteItemList';
+import { QuoteFormTopGrid, QuoteTotalsCard } from '@/features/quote/QuoteFormTopGrid';
+import { QuoteAddProductsCard, QuoteItemList } from '@/features/quote/QuoteItemList';
 import { QuotePrintDocument } from '@/features/quote/QuotePrintDocument';
 import { QuoteProductPicker } from '@/features/quote/QuoteProductPicker';
+import { fetchVietnamAddresses, type VietnamProvince } from '@/features/quote/vietnamAddressApi';
 import './quote.css';
 
 interface DraftIdentity {
@@ -77,6 +78,10 @@ function scrollPageTop() {
     if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' });
     else window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+}
+
+function formatVietnamAddress(street: string, ward: string, province: string): string {
+  return [street.trim(), ward.trim(), province.trim()].filter(Boolean).join(', ');
 }
 
 export function QuoteView() {
@@ -110,6 +115,12 @@ export function QuoteView() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+  const [customerStreet, setCustomerStreet] = useState('');
+  const [customerProvinceCode, setCustomerProvinceCode] = useState('');
+  const [customerWardCode, setCustomerWardCode] = useState('');
+  const [addressProvinces, setAddressProvinces] = useState<VietnamProvince[]>([]);
+  const [addressLoading, setAddressLoading] = useState(true);
+  const [addressError, setAddressError] = useState('');
   const [quoteDate, setQuoteDate] = useState(todayInputValue());
   const [depositVnd, setDepositVnd] = useState(0);
   const [items, setItems] = useState<QuoteItemInput[]>([]);
@@ -143,6 +154,26 @@ export function QuoteView() {
   const [itemUiKeys, setItemUiKeys] = useState<string[]>([]);
   /** Expanded (editing) item keys. Missing key = locked compact card. */
   const [expandedItemKeys, setExpandedItemKeys] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    setAddressLoading(true);
+    setAddressError('');
+    void fetchVietnamAddresses()
+      .then((provinces) => {
+        if (cancelled) return;
+        setAddressProvinces(provinces);
+        setAddressLoading(false);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setAddressLoading(false);
+        setAddressError(error instanceof Error ? error.message : 'Không tải được dữ liệu địa chỉ.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const beginBusy = () => {
     busyCountRef.current += 1;
@@ -188,6 +219,24 @@ export function QuoteView() {
     });
   }, [categoryFilter, productRecords, search]);
 
+  const selectedProvince = addressProvinces.find((province) => String(province.code) === customerProvinceCode);
+  const selectedWard = selectedProvince?.wards.find((ward) => String(ward.code) === customerWardCode);
+  const handleCustomerStreet = (value: string) => {
+    setCustomerStreet(value);
+    setCustomerAddress(formatVietnamAddress(value, selectedWard?.name || '', selectedProvince?.name || ''));
+  };
+  const handleCustomerProvince = (value: string) => {
+    const province = addressProvinces.find((candidate) => String(candidate.code) === value);
+    setCustomerProvinceCode(value);
+    setCustomerWardCode('');
+    setCustomerAddress(formatVietnamAddress(customerStreet, '', province?.name || ''));
+  };
+  const handleCustomerWard = (value: string) => {
+    const ward = selectedProvince?.wards.find((candidate) => String(candidate.code) === value);
+    setCustomerWardCode(value);
+    setCustomerAddress(formatVietnamAddress(customerStreet, ward?.name || '', selectedProvince?.name || ''));
+  };
+
 
   const quoteInput: QuoteInput = useMemo(
     () => ({
@@ -221,6 +270,9 @@ export function QuoteView() {
     setCustomerPhone('');
     setCustomerEmail('');
     setCustomerAddress('');
+    setCustomerStreet('');
+    setCustomerProvinceCode('');
+    setCustomerWardCode('');
     setQuoteDate(todayInputValue());
     setDepositVnd(0);
     setItems([]);
@@ -804,6 +856,9 @@ export function QuoteView() {
     setCustomerPhone(quote.customerPhone);
     setCustomerEmail(quote.customerEmail || '');
     setCustomerAddress(quote.customerAddress);
+    setCustomerStreet(quote.customerAddress);
+    setCustomerProvinceCode('');
+    setCustomerWardCode('');
     setQuoteDate((quote.quoteDate || quote.createdAt).slice(0, 10));
     setDepositVnd(quote.depositVnd);
     const loaded = sortQuoteItemsByMaxLineAmount(
@@ -909,28 +964,40 @@ export function QuoteView() {
         onExportPdf={() => void exportPdf()}
       />
 
-      <QuoteFormTopGrid
-        customerName={customerName}
-        customerPhone={customerPhone}
-        customerEmail={customerEmail}
-        customerAddress={customerAddress}
-        quoteDate={quoteDate}
-        depositVnd={depositVnd}
-        quoteCode={quoteCode}
-        status={status}
-        suggestions={seededSuggestions}
-        saveUiState={saveUiState}
-        saveError={saveError}
-        message={message}
-        summary={calculated.summary}
-        onCustomerName={setCustomerName}
-        onCustomerPhone={setCustomerPhone}
-        onCustomerEmail={setCustomerEmail}
-        onCustomerAddress={setCustomerAddress}
-        onQuoteDate={setQuoteDate}
-        onDeposit={setDepositVnd}
-        onRetrySave={retryLastSave}
-      />
+      <div className="quote-intro-grid">
+        <QuoteFormTopGrid
+          customerName={customerName}
+          customerPhone={customerPhone}
+          customerEmail={customerEmail}
+          customerStreet={customerStreet}
+          customerProvinceCode={customerProvinceCode}
+          customerWardCode={customerWardCode}
+          addressProvinces={addressProvinces}
+          addressLoading={addressLoading}
+          addressError={addressError}
+          quoteDate={quoteDate}
+          depositVnd={depositVnd}
+          quoteCode={quoteCode}
+          status={status}
+          suggestions={seededSuggestions}
+          saveUiState={saveUiState}
+          saveError={saveError}
+          message={message}
+          onCustomerName={setCustomerName}
+          onCustomerPhone={setCustomerPhone}
+          onCustomerEmail={setCustomerEmail}
+          onCustomerStreet={handleCustomerStreet}
+          onCustomerProvince={handleCustomerProvince}
+          onCustomerWard={handleCustomerWard}
+          onQuoteDate={setQuoteDate}
+          onDeposit={setDepositVnd}
+          onRetrySave={retryLastSave}
+        />
+        <div className="quote-intro-side">
+          <QuoteAddProductsCard onOpenPicker={() => setProductPickerOpen(true)} onAddCustom={addCustom} />
+          <QuoteTotalsCard summary={calculated.summary} />
+        </div>
+      </div>
 
       <QuoteItemList
         items={items}
@@ -944,8 +1011,6 @@ export function QuoteView() {
         orphanAccessoryNames={orphanAccessoryNames}
         itemDrag={itemDrag}
         onItemCategoryFilter={setItemCategoryFilter}
-        onOpenPicker={() => setProductPickerOpen(true)}
-        onAddCustom={addCustom}
         onUpdateItem={updateItem}
         onDimension={updateDimension}
         onAccessory={updateAccessory}
