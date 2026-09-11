@@ -1,7 +1,11 @@
-import { Copy, Eye, FileDown, LoaderCircle, Plus, Search, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Copy, Eye, FileDown, LoaderCircle, Plus, Search, Trash2 } from 'lucide-react';
 import type { QuoteRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { formatShortDate, statusLabel } from '@/features/quote/quoteFormat';
+import { paginateItems, type QuotePageSize } from '@/features/quote/quotePagination';
+
+const QUOTE_PAGE_SIZES: QuotePageSize[] = [25, 50, 100];
 
 /** Màn danh sách báo giá: ô lọc, bảng lịch sử và các trạng thái rỗng / đang tải. */
 export function QuoteListPanel({
@@ -37,6 +41,23 @@ export function QuoteListPanel({
   onDelete: (quote: QuoteRecord) => void;
   onRetry: () => void;
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<QuotePageSize>(25);
+  const pagination = useMemo(
+    () => paginateItems(filteredHistory, currentPage, pageSize),
+    [currentPage, filteredHistory, pageSize],
+  );
+
+  const handleSearch = (value: string) => {
+    setCurrentPage(1);
+    onSearch(value);
+  };
+
+  const handleStatusFilter = (value: QuoteRecord['status'] | '') => {
+    setCurrentPage(1);
+    onStatusFilter(value);
+  };
+
   return (
     <section className="admin-page quote-list-page">
       <div className="admin-page-heading">
@@ -65,7 +86,7 @@ export function QuoteListPanel({
           <input
             className="input"
             value={quoteSearch}
-            onChange={(event) => onSearch(event.target.value)}
+            onChange={(event) => handleSearch(event.target.value)}
             placeholder="Tìm theo mã báo giá, tên khách, sđt..."
           />
         </div>
@@ -74,7 +95,7 @@ export function QuoteListPanel({
           <select
             className="input"
             value={quoteStatusFilter}
-            onChange={(event) => onStatusFilter(event.target.value as QuoteRecord['status'] | '')}
+            onChange={(event) => handleStatusFilter(event.target.value as QuoteRecord['status'] | '')}
           >
             <option value="">Tất cả trạng thái</option>
             <option value="DRAFT">Nháp</option>
@@ -100,55 +121,100 @@ export function QuoteListPanel({
             <p>Thử đổi từ khóa hoặc trạng thái lọc.</p>
           </div>
         ) : (
-          <table className="quote-history-table">
-            <thead>
-              <tr>
-                <th>Mã báo giá</th>
-                <th>Khách hàng</th>
-                <th>Giá trị nhôm</th>
-                <th>Phụ kiện</th>
-                <th>Tổng cộng</th>
-                <th>Trạng thái</th>
-                <th>Ngày tạo</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredHistory.map((quote) => (
-                <tr key={quote.id} className="quote-history-row">
-                  <td data-col="code">
-                    <button className="quote-code-button" onClick={() => onView(quote)}>
-                      {quote.code}
-                    </button>
-                    <div className="quote-history-mobile-date">{formatShortDate(quote.createdAt)}</div>
-                  </td>
-                  <td data-col="customer">
-                    <div className="quote-customer-name">{quote.customerName || 'Khách chưa đặt tên'}</div>
-                    <div className="quote-customer-meta">{quote.customerPhone || quote.customerAddress || ''}</div>
-                  </td>
-                  <td className="num" data-col="product">{formatVND(quote.subtotalProductVnd)}</td>
-                  <td className="num" data-col="accessory">{formatVND(quote.subtotalAccessoryVnd)}</td>
-                  <td className="num total-cell" data-col="total">{formatVND(quote.roundedTotalVnd)}</td>
-                  <td data-col="status"><span className={`quote-status-pill quote-status-${quote.status.toLowerCase()}`}>{statusLabel(quote.status)}</span></td>
-                  <td data-col="date">{formatShortDate(quote.createdAt)}</td>
-                  <td data-col="actions">
-                    <div className="quote-actions">
-                      <button className="icon-btn" onClick={() => onView(quote)} aria-label="Xem báo giá">
-                        <Eye size={16} />
-                      </button>
-                      <button className="btn btn-ghost" onClick={() => onEdit(quote)}>Sửa</button>
-                      <button className="icon-btn" onClick={() => onDuplicate(quote)} aria-label="Nhân bản">
-                        <Copy size={16} />
-                      </button>
-                      <button className="icon-btn danger" onClick={() => onDelete(quote)} aria-label="Xoá báo giá">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+          <>
+            <table className="quote-history-table">
+              <thead>
+                <tr>
+                  <th scope="col" data-col="code">Mã báo giá</th>
+                  <th scope="col" data-col="customer">Khách hàng</th>
+                  <th scope="col" data-col="product">Giá trị nhôm</th>
+                  <th scope="col" data-col="accessory">Phụ kiện</th>
+                  <th scope="col" data-col="total">Tổng cộng</th>
+                  <th scope="col" data-col="status">Trạng thái</th>
+                  <th scope="col" data-col="date">Ngày tạo</th>
+                  <th scope="col" data-col="actions">Thao tác</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pagination.items.map((quote) => (
+                  <tr key={quote.id} className="quote-history-row">
+                    <td data-col="code">
+                      <button className="quote-code-button" onClick={() => onView(quote)}>
+                        {quote.code}
+                      </button>
+                      <div className="quote-history-mobile-date">{formatShortDate(quote.createdAt)}</div>
+                    </td>
+                    <td data-col="customer">
+                      <div className="quote-customer-name">{quote.customerName || 'Khách chưa đặt tên'}</div>
+                      <div className="quote-customer-meta">{quote.customerPhone || quote.customerAddress || ''}</div>
+                    </td>
+                    <td className="num" data-col="product">{formatVND(quote.subtotalProductVnd)}</td>
+                    <td className="num" data-col="accessory">{formatVND(quote.subtotalAccessoryVnd)}</td>
+                    <td className="num total-cell" data-col="total">{formatVND(quote.roundedTotalVnd)}</td>
+                    <td data-col="status"><span className={`quote-status-pill quote-status-${quote.status.toLowerCase()}`}>{statusLabel(quote.status)}</span></td>
+                    <td data-col="date">{formatShortDate(quote.createdAt)}</td>
+                    <td data-col="actions">
+                      <div className="quote-actions">
+                        <button className="icon-btn" onClick={() => onView(quote)} aria-label="Xem báo giá">
+                          <Eye size={16} />
+                        </button>
+                        <button className="btn btn-ghost" onClick={() => onEdit(quote)}>Sửa</button>
+                        <button className="icon-btn" onClick={() => onDuplicate(quote)} aria-label="Nhân bản">
+                          <Copy size={16} />
+                        </button>
+                        <button className="icon-btn danger" onClick={() => onDelete(quote)} aria-label="Xoá báo giá">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <nav className="quote-list-pagination" aria-label="Phân trang danh sách báo giá">
+              <div className="quote-pagination-summary">
+                <span>
+                  Hiển thị {pagination.firstItemNumber}–{pagination.lastItemNumber} / {pagination.totalItems} báo giá
+                </span>
+                <label>
+                  Mỗi trang
+                  <select
+                    className="input quote-page-size-select"
+                    value={pageSize}
+                    onChange={(event) => {
+                      setPageSize(Number(event.target.value) as QuotePageSize);
+                      setCurrentPage(1);
+                    }}
+                    aria-label="Số báo giá mỗi trang"
+                  >
+                    {QUOTE_PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
+                  </select>
+                </label>
+              </div>
+              <div className="quote-pagination-controls">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => setCurrentPage(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  aria-label="Trang trước"
+                >
+                  <ChevronLeft size={17} />
+                </button>
+                <span aria-live="polite">Trang <strong>{pagination.page}</strong> / {pagination.totalPages}</span>
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => setCurrentPage(pagination.page + 1)}
+                  disabled={pagination.page === pagination.totalPages}
+                  aria-label="Trang sau"
+                >
+                  <ChevronRight size={17} />
+                </button>
+              </div>
+            </nav>
+          </>
         )}
       </div>
     </section>
