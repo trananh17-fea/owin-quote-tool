@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Copy, Eye, FileDown, LoaderCircle, Plus, Search, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Copy, Eye, FileDown, ListFilter, LoaderCircle, Plus, Search, Trash2 } from 'lucide-react';
 import type { QuoteRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { formatShortDate, statusLabel } from '@/features/quote/quoteFormat';
@@ -60,15 +60,13 @@ export function QuoteListPanel({
 
   return (
     <section className="admin-page quote-list-page">
-      <div className="admin-page-heading">
+      <div className="admin-page-heading quote-list-heading">
         <div>
-          <h1 className="app-title">Danh sách báo giá</h1>
-          <p className="app-subtitle">Hồ sơ báo giá chi tiết nhôm kính hệ OWIN · {history.length} báo giá</p>
-        </div>
-        <div className="page-actions">
-          <button className="btn btn-primary" onClick={onCreate}>
-            <Plus size={18} style={{ verticalAlign: '-3px' }} /> Tạo báo giá mới
-          </button>
+          <div className="quote-list-title-row">
+            <h1 className="app-title">Danh sách báo giá</h1>
+            <span className="quote-list-count">{history.length} báo giá</span>
+          </div>
+          <p className="app-subtitle">Hồ sơ báo giá chi tiết nhôm kính hệ OWIN</p>
         </div>
       </div>
 
@@ -80,19 +78,23 @@ export function QuoteListPanel({
         </div>
       )}
 
-      <div className="filter-card">
-        <div className="field filter-search">
-          <label><Search size={15} style={{ verticalAlign: '-2px' }} /> Tìm báo giá</label>
+      <div className="quote-list-toolbar" role="search" aria-label="Tìm và lọc báo giá">
+        <div className="quote-toolbar-control quote-toolbar-search">
+          <Search size={18} aria-hidden="true" />
+          <label className="quote-toolbar-label" htmlFor="quote-search">Tìm báo giá</label>
           <input
+            id="quote-search"
             className="input"
             value={quoteSearch}
             onChange={(event) => handleSearch(event.target.value)}
             placeholder="Tìm theo mã báo giá, tên khách, sđt..."
           />
         </div>
-        <div className="field">
-          <label>Trạng thái</label>
+        <div className="quote-toolbar-control quote-toolbar-status">
+          <ListFilter size={18} aria-hidden="true" />
+          <label className="quote-toolbar-label" htmlFor="quote-status">Lọc theo trạng thái</label>
           <select
+            id="quote-status"
             className="input"
             value={quoteStatusFilter}
             onChange={(event) => handleStatusFilter(event.target.value as QuoteRecord['status'] | '')}
@@ -103,6 +105,10 @@ export function QuoteListPanel({
             <option value="EXPORTED">Đã xuất</option>
           </select>
         </div>
+        <button type="button" className="btn btn-primary quote-create-button" onClick={onCreate}>
+          <Plus size={18} aria-hidden="true" />
+          Tạo báo giá mới
+        </button>
       </div>
 
       <div className="quote-history-table-wrap quote-list-table-card">
