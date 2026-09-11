@@ -79,7 +79,10 @@
    Offset bằng padding-top của vùng cuộn để toolbar sticky che kín tới sát top. */
 .tool-content:has(.quote-list-page) {
   --quote-list-sticky-offset: 24px;
-  background: #f8f9fb;
+  /* Nền màn danh sách dùng chung cho vùng cuộn, dải sticky phía trên và toolbar
+     — ba chỗ phải cùng màu, nên khai một biến duy nhất ở đây. */
+  --quote-list-bg: #f8f9fb;
+  background: var(--quote-list-bg);
 }
 
 /* Giữ khoảng thở với top nav nhưng che bảng đang cuộn qua khoảng đó. Phần tử
@@ -93,8 +96,14 @@
   height: var(--quote-list-sticky-offset);
   margin-bottom: calc(-1 * var(--quote-list-sticky-offset));
   transform: translateY(calc(-1 * var(--quote-list-sticky-offset)));
-  background: #f8f9fb;
+  background: var(--quote-list-bg);
   pointer-events: none;
+}
+
+/* Tablet và điện thoại: các dòng đứng rời nhau nên nền phải đậm hơn thẻ trắng,
+   không thì khe 6-8px giữa hai dòng trắng-trên-trắng coi như vô hình. */
+@media (max-width: 1024px) {
+  .tool-content:has(.quote-list-page) { --quote-list-bg: #e9edf3; }
 }
 
 @media (max-width: 900px) {
@@ -142,7 +151,7 @@
   padding: 10px 0;
   border: 0;
   border-radius: 0;
-  background: #f8f9fb;
+  background: var(--quote-list-bg);
   box-shadow: none;
 }
 .quote-toolbar-control {
@@ -393,7 +402,8 @@
   color: var(--ios-label3);
   font-size: var(--fs-sm);
 }
-/* Ngày chỉ để dành cho dạng thẻ trên điện thoại (desktop đã có cột "Ngày tạo"). */
+/* Ngày chỉ để dành cho dạng thẻ trên điện thoại (desktop đã có cột "Ngày tạo").
+   Nằm trong ô tổng tiền nên phải tắt hẳn ở desktop. */
 .quote-history-mobile-date { display: none; }
 
 /* Pill trạng thái — nền tint, chữ cùng tông (draft / saved / exported).
@@ -2325,6 +2335,48 @@
   }
 }
 
+/* ─── Tablet: mỗi dòng danh sách thành một dải riêng, cách nhau 6px ─── */
+@media (min-width: 721px) and (max-width: 1024px) {
+  /* Card bọc trở thành nền trong suốt để khe 6px giữa các dòng lộ nền trang. */
+  .quote-list-table-card {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .quote-history-table {
+    border-collapse: separate;
+    border-spacing: 0 6px;
+  }
+  .quote-history-table thead th { border-bottom: 0; }
+  .quote-history-table thead th:first-child { border-radius: 10px 0 0 10px; }
+  .quote-history-table thead th:last-child { border-radius: 0 10px 10px 0; }
+
+  /* Mỗi hàng là một dải bo góc có viền riêng; `:last-child` phải khai lại vì
+     rule gốc bỏ border-bottom của hàng cuối khi bảng còn border-collapse. */
+  .quote-history-row { background: var(--ios-card); }
+  .quote-history-table tbody td,
+  .quote-history-table tbody tr:last-child td {
+    border-top: 1px solid var(--ios-separator);
+    border-bottom: 1px solid var(--ios-separator);
+  }
+  .quote-history-table tbody td:first-child {
+    border-left: 1px solid var(--ios-separator);
+    border-radius: 10px 0 0 10px;
+  }
+  .quote-history-table tbody td:last-child {
+    border-right: 1px solid var(--ios-separator);
+    border-radius: 0 10px 10px 0;
+  }
+
+  /* Card bọc đã trong suốt nên footer phân trang tự mang viền và bo góc. */
+  .quote-list-pagination {
+    margin-top: 6px;
+    border: 1px solid var(--ios-separator);
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+  }
+}
+
 /* ─── Điện thoại dọc: bảng danh sách thành thẻ, nút trải hết bề ngang ─── */
 @media (max-width: 720px) {
   .quote-list-heading { margin-bottom: 10px; }
@@ -2347,19 +2399,21 @@
     min-width: 0;
     width: 100%;
     border-collapse: separate;
-    border-spacing: 0 8px;
+    border-spacing: 0 6px;
   }
   .quote-history-table thead { display: none; }
+  /* Thẻ gọn ba dòng: mã + trạng thái · khách + địa chỉ · tổng tiền + hành động.
+     Hàng cuối gộp tổng và nút để không sinh thêm một dải trống ngang thẻ. */
   .quote-history-table tbody tr.quote-history-row {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       'code status'
       'customer customer'
-      'total total'
-      'actions actions';
-    gap: 4px 8px;
-    padding: 12px;
+      'total actions';
+    align-items: center;
+    gap: 3px 8px;
+    padding: 9px 10px;
     border: 1px solid var(--ios-separator);
     border-radius: 10px;
     background: var(--ios-card);
@@ -2372,56 +2426,95 @@
   .quote-history-table td[data-col='product'],
   .quote-history-table td[data-col='accessory'],
   .quote-history-table td[data-col='date'] { display: none; }
+  /* Mã căn trái (desktop căn giữa theo cột bảng). */
   .quote-history-table td[data-col='code'] {
     grid-area: code;
     min-width: 0;
+    text-align: left;
   }
   .quote-history-table td[data-col='status'] {
     grid-area: status;
     justify-self: end;
   }
-  .quote-history-table td[data-col='customer'] { grid-area: customer; }
   .quote-history-table td[data-col='total'] {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
     grid-area: total;
+    min-width: 0;
     color: var(--ios-label);
     text-align: left;
     font-size: var(--fs-lg);
     font-weight: var(--quote-weight-semibold);
   }
-  .quote-history-table td[data-col='actions'] { grid-area: actions; }
+  .quote-history-table td[data-col='actions'] {
+    grid-area: actions;
+    justify-self: end;
+  }
   .quote-history-mobile-date {
-    display: block;
-    margin-top: 2px;
+    display: inline;
     color: var(--ios-label3);
     font-size: 11px;
+    font-weight: var(--quote-weight-regular);
+    white-space: nowrap;
+  }
+  .quote-history-mobile-date::before {
+    margin-right: 5px;
+    content: '·';
+  }
+  /* Tên khách và địa chỉ nằm cùng dòng, mỗi phần tự cắt bằng ellipsis; dấu chấm
+     phân cách chỉ hiện khi có địa chỉ / sđt (ô rỗng vẫn được render). */
+  .quote-history-table td[data-col='customer'] {
+    display: flex;
+    grid-area: customer;
+    align-items: baseline;
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-width: 0;
   }
   .quote-customer-name {
+    flex: 0 1 auto;
     max-width: none;
-    white-space: normal;
+    white-space: nowrap;
     font-size: var(--fs-md);
   }
   .quote-customer-meta {
+    flex: 1 1 auto;
+    min-width: 0;
     max-width: none;
-    white-space: normal;
+    white-space: nowrap;
     font-size: var(--fs-sm);
   }
-  .quote-actions {
-    flex-wrap: wrap;
-    padding-top: 8px;
-    border-top: 1px solid var(--ios-separator);
+  .quote-customer-meta:empty { display: none; }
+  .quote-customer-meta:not(:empty)::before {
+    margin-right: 5px;
+    color: var(--ios-label3);
+    content: '·';
   }
-  .quote-actions .btn { min-height: 34px; }
+  .quote-actions {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+  .quote-actions .icon-btn {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+  }
 
   .quote-list-pagination {
     flex-direction: column;
     align-items: stretch;
-    margin-top: 8px;
-    padding: 12px;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 8px 10px;
     border: 1px solid var(--ios-separator);
     border-radius: 10px;
     background: var(--ios-card);
     box-shadow: var(--shadow-sm);
   }
+  .quote-pagination-summary { gap: 6px 10px; }
   .quote-pagination-summary,
   .quote-pagination-controls {
     justify-content: space-between;
@@ -2676,6 +2769,16 @@
 }
 
 @media (max-width: 380px) {
+  /* Màn rất hẹp: mã báo giá 26 ký tự chỉ vừa một dòng khi nhỏ hơn một cỡ, và
+     nút hành động thu lại để tổng tiền + ngày còn đủ chỗ trên cùng hàng. */
+  .quote-code-button { font-size: 12px; }
+  .quote-actions .icon-btn {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    min-height: 30px;
+  }
+
   /* `!important`: đè lưới 2 cột `!important` của breakpoint 720. */
   .quote-picker-grid { grid-template-columns: 1fr; }
   /* Màn hẹp: hai cột, nút Xuất chiếm trọn hàng dưới thay vì bị bóp chữ. */
@@ -3300,4 +3403,187 @@
   .quote-workflow-page,
   .quote-detail-page,
   .quote-print-doc { display: none; }
+}
+
+/* ═══════════════ Phân lớp màu iOS cho panel sửa hạng mục ═══════════════
+   Bản trước để cả panel là một mặt phẳng trắng nên tiêu đề, ô nhập và các
+   nhóm nội dung trôi vào nhau. Ở đây quay lại mô hình "inset grouped" của
+   iOS: khay xám bao ngoài, mỗi nhóm nội dung là một thẻ trắng, ô nhập nền
+   xám nhạt. Khối này đặt ở CUỐI file để đè các khai báo màu nằm trong media
+   query phía trên (media query không tăng độ ưu tiên, chỉ thứ tự mới đè). */
+
+.quote-item-card-editing {
+  /* Khay sâu hơn nền trang (#f2f2f7) một bậc để thẻ trắng bên trong nổi lên. */
+  --quote-item-tray: #e9e9ef;
+  --quote-item-hairline: rgba(60, 60, 67, 0.14);
+  gap: 10px;
+  padding: 12px;
+  border-color: var(--ios-separator-opaque) !important;
+  background: var(--quote-item-tray);
+  box-shadow: var(--shadow-sm);
+}
+.quote-item-card-editing:focus-within {
+  border-color: var(--ios-separator-opaque) !important;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Mỗi nhóm nội dung = một thẻ trắng trên khay xám. */
+.quote-item-card-editing .quote-item-card-header,
+.quote-item-card-editing .quote-card-section,
+.quote-item-card-editing .editor-panel {
+  padding: 10px !important;
+  border: 1px solid var(--ios-separator) !important;
+  border-radius: var(--r-md) !important;
+  background: var(--ios-card) !important;
+  box-shadow: 0 1px 1px rgba(28, 28, 40, 0.04) !important;
+}
+.quote-item-card-editing .quote-item-config-grid {
+  gap: 10px;
+}
+/* Hai panel cạnh nhau đã có viền riêng — bỏ đường kẻ ngăn kiểu cũ. */
+.quote-item-card-editing .quote-item-config-grid > .editor-panel + .editor-panel {
+  margin: 0 !important;
+  padding: 10px !important;
+  border: 1px solid var(--ios-separator) !important;
+}
+
+/* Tiêu đề nhóm: chữ đậm màu label chính + hairline ngăn với vùng dữ liệu. */
+.quote-item-card-editing .quote-card-section > .toolbar,
+.quote-item-card-editing .editor-toolbar {
+  margin-bottom: 8px !important;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--quote-item-hairline);
+}
+.quote-item-card-editing .section-label {
+  color: var(--ios-label) !important;
+}
+.quote-item-card-editing .quote-lines-head,
+.quote-item-card-editing .spec-table-head,
+.quote-item-card-editing .extra-accessory-head,
+.quote-item-card-editing .extra-acc-metrics-head,
+.quote-item-card-editing .field > label,
+.quote-item-card-editing .summary-metric span {
+  color: var(--ios-label2) !important;
+}
+
+/* Ô nhập: nền xám nhạt (filled field kiểu iOS) — tách khỏi mặt thẻ trắng,
+   khi focus thì chuyển trắng kèm vòng xanh để thấy rõ đang nhập ở đâu. */
+.quote-item-card-editing .input,
+.quote-item-card-editing select.input,
+.quote-item-card-editing textarea.input {
+  border-color: var(--quote-item-hairline) !important;
+  background: var(--ios-fill) !important;
+}
+.quote-item-card-editing .input:hover {
+  border-color: rgba(60, 60, 67, 0.26) !important;
+}
+.quote-item-card-editing .input:focus,
+.quote-item-card-editing select.input:focus,
+.quote-item-card-editing textarea.input:focus {
+  border-color: var(--ios-blue) !important;
+  background: var(--ios-card) !important;
+  box-shadow: 0 0 0 3px var(--ios-blue-soft) !important;
+}
+/* Mọi ô chỉ đọc (KL / Thành tiền / tổng bộ PK / tiền phụ kiện phát sinh) là số
+   tính sẵn — để trong suốt, không giả dạng ô nhập được. */
+.quote-item-card-editing .readonly-money {
+  border-color: transparent !important;
+  background: transparent !important;
+}
+
+/* Dòng dữ liệu trong thẻ trắng: ngăn bằng hairline thay vì nền trắng liền mạch. */
+.quote-item-card-editing .quote-lines-editor {
+  gap: 0;
+}
+.quote-item-card-editing .spec-editor-row,
+.quote-item-card-editing .accessory-item-line,
+.quote-item-card-editing .extra-accessory-line {
+  border-bottom-color: var(--quote-item-hairline);
+}
+.quote-item-card-editing .spec-row-list > .spec-editor-row:last-child,
+.quote-item-card-editing .accessory-items > .accessory-item-line:last-child,
+.quote-item-card-editing .extra-accessory-table > .extra-accessory-line:last-child {
+  border-bottom: 0;
+}
+.quote-item-card-editing .empty-line {
+  border: 1px dashed var(--ios-separator);
+  background: var(--ios-surface-muted);
+  color: var(--ios-label2);
+}
+
+/* Dải tổng tiền: thẻ trắng, ô tổng hạng mục tô xanh hệ thống cho dễ quét mắt. */
+.quote-item-card-editing .quote-item-summary-strip {
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-md);
+  background: var(--ios-card);
+  box-shadow: 0 1px 1px rgba(28, 28, 40, 0.04);
+}
+/* Ba ô tổng tiền căn giữa cho cân với dải ngang. */
+.quote-item-card-editing .summary-metric {
+  justify-items: center;
+  text-align: center;
+}
+.quote-item-card-editing .summary-metric + .summary-metric {
+  border-left: 1px solid var(--ios-separator);
+}
+.quote-item-card-editing .summary-metric-strong {
+  background: var(--ios-blue-soft);
+}
+.quote-item-card-editing .summary-metric-strong strong {
+  color: var(--ios-blue-ink);
+}
+
+/* Nút icon ở đầu thẻ nằm trên nền trắng — hover dùng fill xám trung tính. */
+.quote-item-card-editing .quote-item-actions .icon-btn:hover {
+  background: var(--ios-fill);
+}
+
+/* Chỉ màn rộng mới dùng bảng một hàng — mới cần gạch chân dải tiêu đề cột
+   (từ 721–1024px dải này gãy thành hai nhóm, thêm gạch chân sẽ rối). */
+@media (min-width: 1025px) {
+  .quote-item-card-editing .quote-lines-head {
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--quote-item-hairline);
+  }
+}
+
+@media (min-width: 721px) {
+  /* Bảng kích thước đọc như một table: hàng trong suốt, ngăn bằng hairline. */
+  .quote-item-card-editing .quote-line-row {
+    padding: 5px 4px;
+    border-radius: 0;
+    border-bottom: 1px solid var(--quote-item-hairline);
+    background: transparent;
+  }
+  .quote-item-card-editing .quote-line-row:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .quote-item-card-editing {
+    gap: 10px;
+    padding: 10px;
+  }
+  .quote-item-card-editing .quote-item-card-header {
+    padding: 10px !important;
+  }
+  /* Mỗi dòng kích thước là một thẻ con — tô xám nhạt để thấy ranh giới dòng. */
+  .quote-item-card-editing .quote-line-row {
+    padding: 8px;
+    border: 1px solid var(--quote-item-hairline);
+    border-radius: var(--r-sm);
+    background: var(--ios-surface-muted);
+  }
+  .quote-item-card-editing .quote-line-row + .quote-line-row {
+    margin-top: 8px;
+  }
+  .quote-item-card-editing .quote-line-field .input {
+    background: var(--ios-card) !important;
+  }
+  /* Ô tổng hạng mục xuống hàng riêng — kẻ ngăn phải nằm ở cạnh trên. */
+  .quote-item-card-editing .summary-metric-strong {
+    border-left: 0;
+    border-top: 1px solid var(--ios-separator);
+  }
 }

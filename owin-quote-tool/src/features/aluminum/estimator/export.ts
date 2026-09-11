@@ -116,10 +116,24 @@ export function buildAluminumPrintHtml(model: AluminumPrintModel, assetOrigin?: 
 
 export const ALUMINUM_PRINT_CSS = `
   .aluminum-print-document {
+    --aluminum-weight-regular: 400;
+    --aluminum-weight-medium: 500;
+    --aluminum-weight-semibold: 600;
+    --aluminum-weight-bold: 700;
+    --r-xs: 6px;
+    --r-sm: 8px;
+    --r-md: 10px;
+    --r-lg: 14px;
+    --r-xl: 18px;
+    --r-pill: 999px;
+    --ios-radius: var(--r-lg);
+    --ios-radius-sm: var(--r-md);
+
     color: #111827;
     font-family: Arial, "Helvetica Neue", sans-serif;
     padding: 18mm;
     background: #ffffff;
+    font-weight: var(--aluminum-weight-regular);
   }
   .aluminum-print-header {
     display: flex;
@@ -129,14 +143,19 @@ export const ALUMINUM_PRINT_CSS = `
     padding-bottom: 16px;
     border-bottom: 2px solid #0f766e;
   }
-  .aluminum-print-header h1 { margin: 0; font-size: 24px; letter-spacing: 0; }
+  .aluminum-print-header h1 {
+    margin: 0;
+    font-size: 24px;
+    letter-spacing: 0;
+    font-weight: var(--aluminum-weight-bold);
+  }
   .aluminum-print-header p,
   .aluminum-print-section-heading p,
   .aluminum-print-footer { color: #64748b; font-size: 12px; }
   .aluminum-print-grand-total {
     min-width: 240px;
     border: 1px solid #dbe3ea;
-    border-radius: 12px;
+    border-radius: var(--r-lg);
     padding: 14px;
     text-align: right;
     background: #f8fafc;
@@ -145,7 +164,7 @@ export const ALUMINUM_PRINT_CSS = `
     display: block;
     color: #64748b;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: var(--aluminum-weight-medium);
     text-transform: uppercase;
   }
   .aluminum-print-grand-total strong {
@@ -153,6 +172,7 @@ export const ALUMINUM_PRINT_CSS = `
     margin-top: 5px;
     color: #0f766e;
     font-size: 24px;
+    font-weight: var(--aluminum-weight-bold);
     white-space: nowrap;
   }
   .aluminum-print-grand-total p { margin: 6px 0 0; }
@@ -168,12 +188,21 @@ export const ALUMINUM_PRINT_CSS = `
     gap: 16px;
     margin-bottom: 10px;
   }
-  .aluminum-print-section-heading h2 { margin: 0; font-size: 17px; }
+  .aluminum-print-section-heading h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: var(--aluminum-weight-bold);
+  }
   .aluminum-print-section-heading p { margin: 4px 0 0; }
   .aluminum-print-section-total { text-align: right; font-size: 12px; color: #475569; }
   .aluminum-print-section-total span,
   .aluminum-print-section-total strong { display: block; }
-  .aluminum-print-section-total strong { color: #111827; font-size: 16px; white-space: nowrap; }
+  .aluminum-print-section-total strong {
+    color: #111827;
+    font-size: 16px;
+    font-weight: var(--aluminum-weight-semibold);
+    white-space: nowrap;
+  }
   .aluminum-print-table {
     width: 100%;
     border-collapse: collapse;
@@ -188,18 +217,26 @@ export const ALUMINUM_PRINT_CSS = `
     text-align: left;
     text-transform: uppercase;
     font-size: 10.5px;
+    font-weight: var(--aluminum-weight-semibold);
   }
   .aluminum-print-table td {
     border: 1px solid #e2e8f0;
     padding: 7px;
     vertical-align: middle;
   }
-  .aluminum-print-table tfoot td { background: #f8fafc; font-weight: 700; }
+  .aluminum-print-table tfoot td {
+    background: #f8fafc;
+    font-weight: var(--aluminum-weight-semibold);
+  }
   .aluminum-print-table .center { text-align: center; }
   .aluminum-print-table .number,
   .aluminum-print-table .money { text-align: right; white-space: nowrap; }
-  .aluminum-print-table .strong { font-weight: 700; }
-  .aluminum-print-table .code { font-weight: 700; white-space: nowrap; }
+  .aluminum-print-table .strong { font-weight: var(--aluminum-weight-semibold); }
+  .aluminum-print-table tfoot .strong { font-weight: var(--aluminum-weight-bold); }
+  .aluminum-print-table .code {
+    font-weight: var(--aluminum-weight-semibold);
+    white-space: nowrap;
+  }
   .aluminum-print-table .image { width: 132px; text-align: center; }
   .aluminum-print-image,
   .aluminum-print-image-placeholder {
@@ -209,7 +246,7 @@ export const ALUMINUM_PRINT_CSS = `
     align-items: center;
     justify-content: center;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     background: #fff;
     object-fit: contain;
     padding: 4px;

@@ -1021,6 +1021,7 @@
 .product-summary-strip .summary-metric {
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
   gap: 4px;
   min-width: 0;
@@ -1029,6 +1030,7 @@
   border: 0;
   border-radius: var(--r-md);
   background: var(--product-tint);
+  text-align: center;
 }
 .product-summary-strip .summary-metric span {
   color: var(--ios-label3);

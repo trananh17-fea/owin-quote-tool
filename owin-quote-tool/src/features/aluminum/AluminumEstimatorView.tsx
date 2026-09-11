@@ -305,37 +305,43 @@ export function AluminumEstimatorView() {
   return (
     <section className="admin-page aluminum-page">
       <AluminumExportBar
-        scope={exportScope}
         status={status}
-        onScopeChange={setExportScope}
         onExportWord={exportWord}
         onPrintPdf={printPdf}
       />
 
-      <AluminumControls
-        selectedSystemId={selectedSystem?.id ?? ''}
-        rowCountsBySystem={rowCountsBySystem}
-        systemTotals={systemSummaries}
-        color={pageState.color}
-        colorBaseRates={pageState.colorBaseRates}
-        onSelectSystem={(systemId) => updatePageState((current) => touchAluminumEstimatorState({
-          ...current,
-          selectedSystemId: systemId,
-        }))}
-        onSelectColor={(color) => updatePageState((current) => selectAluminumColor(current, color))}
-        onBaseRateChange={updateBaseRate}
-      />
+      <section className="aluminum-summary-panel">
+        <AluminumControls
+          selectedSystemId={selectedSystem?.id ?? ''}
+          rowCountsBySystem={rowCountsBySystem}
+          systemTotals={systemSummaries}
+          color={pageState.color}
+          colorBaseRates={pageState.colorBaseRates}
+          onSelectSystem={(systemId) => updatePageState((current) => touchAluminumEstimatorState({
+            ...current,
+            selectedSystemId: systemId,
+          }))}
+          onSelectColor={(color) => updatePageState((current) => selectAluminumColor(current, color))}
+          onBaseRateChange={updateBaseRate}
+        />
 
-      <AluminumTotalsStrip
-        systemName={selectedSystem?.name ?? ''}
-        systemTotalAmount={currentTotals.totalAmount}
-        allTotalAmount={allTotals.totalAmount}
-        autosavePhase={autosavePhase}
-        lastSavedAt={lastSavedAt}
-        onRetry={retryAutosave}
-      />
+        <AluminumTotalsStrip
+          systemName={selectedSystem?.name ?? ''}
+          systemTotalAmount={currentTotals.totalAmount}
+          allTotalAmount={allTotals.totalAmount}
+          autosavePhase={autosavePhase}
+          lastSavedAt={lastSavedAt}
+          exportScope={exportScope}
+          onExportScopeChange={setExportScope}
+          onRetry={retryAutosave}
+        />
+      </section>
 
-      <AluminumTable rows={rowViewModels} onRowChange={updateRow} />
+      <AluminumTable
+        key={selectedSystem?.id ?? ''}
+        rows={rowViewModels}
+        onRowChange={updateRow}
+      />
 
       <AluminumPrintRoot model={activePrintModel} />
     </section>

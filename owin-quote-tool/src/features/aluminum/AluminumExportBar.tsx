@@ -1,17 +1,12 @@
 import { FileText, Printer } from 'lucide-react';
-import type { AluminumPrintScope } from '@/features/aluminum/estimator/print/index';
 
 /** Hero của tab: tiêu đề + chọn phạm vi xuất + nút Word / In PDF. */
 export function AluminumExportBar({
-  scope,
   status,
-  onScopeChange,
   onExportWord,
   onPrintPdf,
 }: {
-  scope: AluminumPrintScope;
   status: string | null;
-  onScopeChange: (scope: AluminumPrintScope) => void;
   onExportWord: () => void;
   onPrintPdf: () => void;
 }) {
@@ -27,22 +22,6 @@ export function AluminumExportBar({
         </p>
       </div>
       <div className="aluminum-export-bar">
-        <div className="aluminum-scope-toggle" role="group" aria-label="Phạm vi xuất">
-          <button
-            type="button"
-            className={scope === 'current-system' ? 'active' : ''}
-            onClick={() => onScopeChange('current-system')}
-          >
-            Hệ này
-          </button>
-          <button
-            type="button"
-            className={scope === 'all-systems' ? 'active' : ''}
-            onClick={() => onScopeChange('all-systems')}
-          >
-            Tất cả hệ
-          </button>
-        </div>
         <div className="aluminum-export-actions">
           <button className="btn btn-primary" type="button" onClick={onExportWord}>
             <FileText size={16} /> Word

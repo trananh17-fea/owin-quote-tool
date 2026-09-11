@@ -1,4 +1,5 @@
 import { formatEstimatorMoney } from '@/features/aluminum/estimator/estimator';
+import type { AluminumPrintScope } from '@/features/aluminum/estimator/print/index';
 
 export type AutosavePhase = 'loading' | 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 
@@ -19,6 +20,8 @@ export function AluminumTotalsStrip({
   allTotalAmount,
   autosavePhase,
   lastSavedAt,
+  exportScope,
+  onExportScopeChange,
   onRetry,
 }: {
   systemName: string;
@@ -26,22 +29,36 @@ export function AluminumTotalsStrip({
   allTotalAmount: number;
   autosavePhase: AutosavePhase;
   lastSavedAt: string | null;
+  exportScope: AluminumPrintScope;
+  onExportScopeChange: (scope: AluminumPrintScope) => void;
   onRetry: () => void;
 }) {
   const autosaveLabel = autosaveLabelFor(autosavePhase, lastSavedAt);
 
   return (
     <div className="aluminum-totals-strip">
-      <div className="aluminum-total-chip">
+      <button
+        type="button"
+        className={`aluminum-total-chip${exportScope === 'current-system' ? ' is-selected' : ''}`}
+        aria-pressed={exportScope === 'current-system'}
+        onClick={() => onExportScopeChange('current-system')}
+        title="Xuất hệ đang chọn"
+      >
         {/* Tên hệ đã tự mang tiền tố ("Hệ chấn song"), và có mục không phải hệ
             ("Nội thất") — nên không ghép thêm chữ "Hệ" ở đây. */}
-        <span>{systemName}</span>
+        <span>Đang chọn: {systemName}</span>
         <strong>{formatEstimatorMoney(systemTotalAmount)} đ</strong>
-      </div>
-      <div className="aluminum-total-chip aluminum-total-chip-all">
-        <span>Tất cả hệ</span>
+      </button>
+      <button
+        type="button"
+        className={`aluminum-total-chip aluminum-total-chip-all${exportScope === 'all-systems' ? ' is-selected' : ''}`}
+        aria-pressed={exportScope === 'all-systems'}
+        onClick={() => onExportScopeChange('all-systems')}
+        title="Xuất tất cả hệ"
+      >
+        <span>Tổng cộng</span>
         <strong>{formatEstimatorMoney(allTotalAmount)} đ</strong>
-      </div>
+      </button>
       <span className={`aluminum-autosave aluminum-autosave-${autosavePhase}`}>
         {autosavePhase === 'error' ? (
           <>

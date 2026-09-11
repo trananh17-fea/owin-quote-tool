@@ -25,16 +25,47 @@
 /* ═══════════════ Khung trang + hero ═══════════════ */
 
 .aluminum-page {
+  --aluminum-weight-regular: 400;
+  --aluminum-weight-medium: 500;
+  --aluminum-weight-semibold: 600;
+  --aluminum-weight-bold: 700;
+
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --r-pill: 999px;
+
+  --ios-radius: var(--r-lg);
+  --ios-radius-sm: var(--r-md);
+
   display: grid;
   gap: 12px;
+  font-weight: var(--aluminum-weight-regular);
+}
+
+/* Ánh xạ pattern dùng chung sang thang weight riêng của màn Tính nhôm. */
+.aluminum-page .app-title {
+  /* Đè rule dùng chung đang khóa bằng !important. */
+  font-weight: var(--aluminum-weight-bold) !important;
+}
+.aluminum-page .app-subtitle {
+  font-weight: var(--aluminum-weight-regular);
+}
+.aluminum-page :is(.btn, .btn-link) {
+  font-weight: var(--aluminum-weight-semibold);
+}
+.aluminum-page :is(input.input, select.input, textarea.input) {
+  font-weight: var(--aluminum-weight-regular);
 }
 
 .aluminum-hero {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
+  gap: 20px;
+  padding: 8px 0 10px;
   border: 1px solid var(--ios-separator);
   /* đè lớp chung (--r-md !important) để bo lớn kiểu thẻ iOS */
   border-radius: var(--r-lg);
@@ -42,12 +73,18 @@
   background: var(--ios-card);
   box-shadow: var(--shadow-md);
 }
-.aluminum-hero-text { min-width: 0; }
+.aluminum-hero-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .aluminum-hero-compact .app-title { margin-bottom: 2px; }
 .aluminum-hero-compact .app-subtitle {
   margin: 0;
-  max-width: 42ch;
+  max-width: none;
   color: var(--ios-label2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Hai biến thể mô tả: bản dài cho desktop, bản ngắn bật ở ≤720px */
@@ -68,9 +105,10 @@
   gap: 8px;
 }
 .aluminum-export-bar .btn {
-  min-height: 38px;
+  height: 38px;
+  min-height: 38px !important;
   gap: 7px;
-  padding: 8px 14px;
+  padding: 0 14px !important;
   border-radius: var(--r-sm);
   font-size: var(--fs-sm);
 }
@@ -78,40 +116,10 @@
   box-shadow: 0 6px 16px var(--ios-blue-soft);
 }
 
-/* Phạm vi xuất = segmented control iOS: track xám, pill trắng nổi lên */
-.aluminum-scope-toggle {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: var(--r-md);
-  background: var(--ios-fill-strong);
-}
-.aluminum-scope-toggle button {
-  border: 0;
-  border-radius: var(--r-sm);
-  padding: 7px 14px;
-  background: transparent;
-  color: var(--ios-label2);
-  font-size: var(--fs-sm);
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.22s var(--ease-ios), color 0.22s var(--ease-ios),
-    box-shadow 0.22s var(--ease-ios);
-}
-.aluminum-scope-toggle button:hover { color: var(--ios-label); }
-.aluminum-scope-toggle button.active {
-  background: var(--ios-card);
-  color: var(--ios-label);
-  font-weight: 600;
-  box-shadow: var(--shadow-sm);
-}
-.aluminum-scope-toggle button:active { transform: scale(0.985); }
-
 .aluminum-status {
   color: var(--ios-label3);
   font-size: var(--fs-xs);
-  font-weight: 500;
+  font-weight: var(--aluminum-weight-semibold);
   white-space: nowrap;
 }
 
@@ -120,15 +128,15 @@
 .aluminum-controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: stretch;
-  gap: 10px;
+  align-items: start;
+  gap: 12px;
 }
 
 .aluminum-control-card {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid var(--ios-separator);
   /* đè lớp chung (--r-md !important) */
   border-radius: var(--r-lg);
@@ -140,9 +148,10 @@
 
 .aluminum-control-label {
   color: var(--ios-label3);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: 10px;
+  font-weight: var(--aluminum-weight-semibold);
+  letter-spacing: 0.06em;
+  line-height: 1.2;
   text-transform: uppercase;
 }
 
@@ -150,7 +159,7 @@
 
 .aluminum-tabs {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: thin;
@@ -161,14 +170,14 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
-  padding: 7px 12px;
+  min-height: 34px;
+  padding: 5px 10px;
   border: 0;
   border-radius: var(--r-pill);
   background: var(--ios-fill);
   color: var(--ios-label2);
   font-size: var(--fs-sm);
-  font-weight: 500;
+  font-weight: var(--aluminum-weight-medium);
   white-space: nowrap;
   cursor: pointer;
   transition: background 0.2s var(--ease-ios), color 0.2s var(--ease-ios);
@@ -181,7 +190,7 @@
 .aluminum-tabs button.active {
   background: var(--ios-blue-ink);
   color: var(--ios-card);
-  font-weight: 600;
+  font-weight: var(--aluminum-weight-semibold);
 }
 .aluminum-tabs button.active .aluminum-tab-amount {
   /* Trắng mờ: không có token nào cho lớp phủ trên nền accent */
@@ -194,7 +203,7 @@
   background: var(--ios-blue-soft);
   color: var(--ios-blue-ink);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--aluminum-weight-semibold);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -204,22 +213,77 @@
 .aluminum-color-block {
   display: grid;
   align-content: start;
-  gap: 8px;
-  min-width: 200px;
+  gap: 6px;
+  min-width: 320px;
 }
 .aluminum-color-label { white-space: nowrap; }
+
+/* Ba vùng chọn + tổng dùng chung một bề mặt để không bị vỡ thành các card rời. */
+.aluminum-summary-panel {
+  min-width: 0;
+  border: 1px solid rgba(60, 60, 67, 0.14);
+  border-radius: var(--r-md);
+  background: var(--ios-card);
+  box-shadow: 0 1px 2px rgba(28, 28, 40, 0.05), 0 6px 18px rgba(28, 28, 40, 0.05);
+}
+.aluminum-summary-panel .aluminum-controls {
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 520px);
+  gap: 0;
+  padding: 12px 14px;
+}
+.aluminum-summary-panel .aluminum-control-card {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.aluminum-summary-panel .aluminum-systems-card {
+  grid-template-columns: 1fr;
+  align-content: center;
+  gap: 7px;
+  padding-right: 20px;
+}
+.aluminum-summary-panel .aluminum-color-block {
+  padding-left: 20px;
+  border-left: 1px solid var(--ios-separator);
+  grid-template-columns: 1fr;
+  align-content: center;
+  gap: 7px;
+}
+.aluminum-summary-panel .aluminum-totals-strip {
+  padding: 7px 12px;
+  border: 0;
+  border-top: 1px solid var(--ios-separator);
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.aluminum-summary-panel .aluminum-color-pair {
+  grid-template-columns: minmax(0, 1fr) minmax(92px, 0.72fr);
+  align-items: center;
+  gap: 4px;
+}
+.aluminum-summary-panel .aluminum-tabs button,
+.aluminum-summary-panel .aluminum-color-chip,
+.aluminum-summary-panel .aluminum-tab-amount {
+  border-radius: var(--r-md);
+}
 
 /* Mỗi cặp: chip chọn màu + ô nhập mốc quy đổi của chính màu đó */
 .aluminum-color-pair-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: start;
-  gap: 8px 10px;
+  gap: 6px 8px;
 }
 .aluminum-color-pair {
   display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  align-items: center;
   justify-items: stretch;
-  gap: 6px;
+  gap: 4px;
 }
 .aluminum-color-pair .aluminum-color-chip {
   width: 100%;
@@ -230,14 +294,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
-  padding: 7px 12px;
+  min-height: 34px;
+  padding: 5px 10px;
   border: 0;
   border-radius: var(--r-pill);
   background: var(--ios-fill);
   color: var(--ios-label);
   font-size: var(--fs-sm);
-  font-weight: 500;
+  font-weight: var(--aluminum-weight-medium);
   white-space: nowrap;
   cursor: pointer;
   transition: background 0.2s var(--ease-ios), color 0.2s var(--ease-ios);
@@ -247,13 +311,15 @@
 .aluminum-color-chip.active {
   background: var(--ios-blue-ink);
   color: var(--ios-card);
-  font-weight: 600;
+  font-weight: var(--aluminum-weight-semibold);
 }
 
 /* Ô mốc mang cả class .input nên đã có nền/viền/ring của lớp chung */
 .aluminum-base-rate-input {
   width: 100%;
-  min-height: var(--control-h-sm);
+  min-height: 36px !important;
+  padding: 6px 10px !important;
+  font-size: var(--fs-sm) !important;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -264,8 +330,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 14px;
-  padding: 10px 14px;
+  gap: 8px 16px;
+  padding: 8px 12px;
   /* đè lớp chung (viền xanh + gradient xanh/vàng đồng, cả hai !important) */
   border: 1px solid var(--ios-separator);
   background: var(--ios-card) !important;
@@ -275,23 +341,33 @@
   font-variant-numeric: tabular-nums;
 }
 .aluminum-total-chip {
+  appearance: none;
+  border: 0;
+  border-right: 1px solid var(--ios-separator);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   display: grid;
   gap: 2px;
   min-width: 0;
   padding-right: 14px;
-  border-right: 1px solid var(--ios-separator);
+  transition: background 0.16s var(--ease-ios);
 }
+.aluminum-total-chip:hover { background: var(--ios-fill); }
+.aluminum-total-chip:focus-visible { z-index: 1; }
 .aluminum-total-chip span {
   color: var(--ios-label3);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--aluminum-weight-semibold);
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 .aluminum-total-chip strong {
   color: var(--ios-label);
   font-size: 20px;
-  font-weight: 600;
+  font-weight: var(--aluminum-weight-semibold);
   letter-spacing: var(--track-tight);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -303,6 +379,7 @@
 .aluminum-total-chip-all strong {
   color: var(--ios-blue-ink);
   font-size: 24px;
+  font-weight: var(--aluminum-weight-bold);
 }
 
 /* Nhãn autosave — biến thể sinh từ `aluminum-autosave-${autosavePhase}` */
@@ -310,7 +387,7 @@
   margin-left: auto;
   color: var(--ios-label3);
   font-size: var(--fs-xs);
-  font-weight: 500;
+  font-weight: var(--aluminum-weight-semibold);
 }
 .aluminum-autosave-pending,
 .aluminum-autosave-saving { color: var(--ios-blue-ink); }
@@ -319,13 +396,22 @@
 
 /* ═══════════════ Bảng nhập liệu (desktop / tablet) ═══════════════ */
 
-.aluminum-table-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--ios-separator);
-  /* đè lớp chung (--r-md !important) */
+.aluminum-table-shell {
+  position: relative;
+  z-index: 6;
+  overflow: hidden;
+  border: 1px solid rgba(60, 60, 67, 0.14);
   border-radius: var(--r-lg);
   background: var(--ios-card);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 2px 5px rgba(28, 28, 40, 0.05), 0 12px 32px rgba(28, 28, 40, 0.07);
+}
+.aluminum-table-wrap {
+  max-height: min(62vh, 640px);
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   -webkit-overflow-scrolling: touch;
 }
 .aluminum-table {
@@ -336,30 +422,41 @@
 }
 .aluminum-table-compact { min-width: 720px; }
 
-/* Đầu bảng dính khi cuộn dọc — giữ z-index 1, dải tổng ở trên dùng z-index 5 */
+/* Đầu bảng dính khi cuộn dọc — nâng lên trên dải tổng/card phía trên khi khóa. */
 .aluminum-table thead {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 8;
   background: var(--ios-surface-muted);
 }
 .aluminum-table th,
 .aluminum-table td {
-  padding: 10px;
-  border-bottom: 1px solid var(--ios-separator);
+  padding: 11px 12px;
+  border-bottom: 1px solid rgba(60, 60, 67, 0.14);
+  border-right: 1px solid rgba(60, 60, 67, 0.1);
+  text-align: left;
   vertical-align: middle;
 }
+.aluminum-table th:last-child,
+.aluminum-table td:last-child { border-right: 0; }
 .aluminum-table th {
-  background: var(--ios-surface-muted);
-  text-align: left;
-  font-size: var(--fs-xs);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  /* đè lớp chung (--owin-ink-muted + 800, cả hai !important) */
-  color: var(--ios-label3) !important;
-  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 9;
+  padding-block: 16px;
+  border-bottom-color: #dce9f7;
+  background: #f3f8fe;
+  box-shadow: 0 1px 0 rgba(53, 90, 122, 0.12);
+  color: #355a7a !important;
+  font-size: var(--fs-md);
+  font-weight: var(--aluminum-weight-semibold);
+  text-align: center;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-transform: none;
 }
-.aluminum-table tbody tr:last-child td { border-bottom: 0; }
+.aluminum-table tr:last-child td { border-bottom: 0; }
 
 /* Bảng gọn: cột Hình + SL canh giữa, hai cột tiền canh phải */
 .aluminum-table-compact th:first-child,
@@ -373,29 +470,89 @@
   background: var(--ios-card);
   box-shadow: inset 3px 0 0 var(--ios-blue);
 }
+.aluminum-table tbody tr:nth-child(even) td { background: #fbfdff; }
 .aluminum-table tbody tr:hover { background: var(--ios-row-hover); }
 /* Hover nhắm vào td để thắng nền của .input-cell (specificity cao hơn) */
 .aluminum-table tbody tr:hover td { background: var(--ios-row-hover); }
+.aluminum-table tbody tr.aluminum-row-clickable { cursor: pointer; }
+.aluminum-table tbody tr.aluminum-row-clickable:focus-visible {
+  outline: 2px solid var(--ios-blue);
+  outline-offset: -2px;
+}
 
 .aluminum-table .center { text-align: center; }
 .aluminum-table .num {
   text-align: right;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
 }
 .aluminum-table .code {
   color: var(--ios-label);
-  font-weight: 600;
+  font-weight: var(--aluminum-weight-semibold);
   white-space: nowrap;
 }
-.aluminum-table .description { color: var(--ios-label2); }
+.aluminum-table .description { color: var(--ios-label); }
 /* Cột gõ được giữ nền trắng; chính control chỉ ra vùng tương tác. */
 .aluminum-table .input-cell { background: var(--ios-card); }
 .aluminum-table .total {
   color: var(--ios-label);
-  font-weight: 600;
+  font-weight: var(--aluminum-weight-semibold);
 }
 .aluminum-table .muted { color: var(--ios-label3); }
+
+.aluminum-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--ios-separator);
+  background: var(--ios-card);
+  color: var(--ios-label2);
+  font-size: var(--fs-sm);
+}
+.aluminum-pagination-summary,
+.aluminum-pagination-controls,
+.aluminum-pagination-summary label {
+  display: flex;
+  align-items: center;
+}
+.aluminum-pagination-summary {
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+.aluminum-pagination-summary label {
+  gap: 8px;
+  font-weight: var(--aluminum-weight-medium);
+  white-space: nowrap;
+}
+.aluminum-page-size-select {
+  width: 72px;
+  min-width: 72px;
+  min-height: 34px !important;
+  padding: 5px 26px 5px 9px !important;
+  font-size: var(--fs-sm) !important;
+  font-weight: var(--aluminum-weight-regular) !important;
+  font-variant-numeric: tabular-nums;
+}
+.aluminum-pagination-controls {
+  flex: 0 0 auto;
+  gap: 10px;
+  color: var(--ios-label);
+  white-space: nowrap;
+}
+.aluminum-pagination-controls strong { font-weight: var(--aluminum-weight-semibold); }
+.aluminum-pagination-controls .icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  background: var(--ios-card);
+}
+.aluminum-pagination-controls .icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
 
 /* ═══════════════ Ảnh cây nhôm ═══════════════ */
 
@@ -439,7 +596,7 @@
   color: var(--ios-label);
   font-family: inherit;
   font-size: var(--fs-sm);
-  font-weight: 500;
+  font-weight: var(--aluminum-weight-regular);
   font-variant-numeric: tabular-nums;
   outline: none;
   transition: background 0.16s var(--ease-ios), box-shadow 0.16s var(--ease-ios);
@@ -469,6 +626,16 @@
    specificity). Đừng đổi thành display khác hay thêm @media print ở đây. */
 .aluminum-print-root { display: none; }
 
+/* ═══════════════ Header phẳng theo luồng Báo giá ═══════════════ */
+.aluminum-hero {
+  padding-inline: 0;
+  border: 0;
+  border-bottom: 1px solid var(--ios-separator);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 /* ═══════════════ Responsive (giữ nguyên breakpoint của bản cũ) ═══════════════ */
 
 /* ─── Màn hẹp: hero xếp dọc, hàng điều khiển về 1 cột ─── */
@@ -479,7 +646,21 @@
   }
   .aluminum-export-bar { justify-content: flex-start; }
   .aluminum-controls { grid-template-columns: 1fr; }
+  .aluminum-summary-panel .aluminum-controls {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px;
+  }
+  .aluminum-summary-panel .aluminum-systems-card { padding-right: 0; }
   .aluminum-color-block { min-width: 0; }
+  .aluminum-summary-panel .aluminum-color-block {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding-top: 12px;
+    padding-left: 0;
+    border-top: 1px solid var(--ios-separator);
+    border-left: 0;
+  }
 }
 
 /* ─── Điện thoại dọc: bảng → thẻ, dải tổng ghim trên đỉnh ─── */
@@ -495,6 +676,7 @@
     display: block;
     max-width: none;
     font-size: var(--fs-sm);
+    white-space: normal;
   }
 
   .aluminum-export-bar {
@@ -502,15 +684,6 @@
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
-  }
-  .aluminum-scope-toggle {
-    display: flex;
-    width: 100%;
-  }
-  .aluminum-scope-toggle button {
-    flex: 1;
-    min-height: 34px;
-    font-size: var(--fs-xs);
   }
   .aluminum-export-actions {
     display: grid;
@@ -520,14 +693,16 @@
   }
   .aluminum-export-bar .btn {
     width: 100%;
-    min-height: 36px;
+    height: 36px;
+    min-height: 36px !important;
+    padding-inline: 14px !important;
     justify-content: center;
   }
-
   .aluminum-controls {
     grid-template-columns: 1fr;
     gap: 8px;
   }
+  .aluminum-summary-panel .aluminum-controls { padding: 10px; }
   .aluminum-control-card { padding: 10px; }
   .aluminum-tabs button {
     min-height: 34px;
@@ -585,6 +760,11 @@
     border-radius: var(--r-md);
     background: var(--ios-card);
     box-shadow: var(--shadow-sm);
+    cursor: pointer;
+  }
+  .aluminum-card:focus-visible {
+    outline: 2px solid var(--ios-blue);
+    outline-offset: 2px;
   }
   .aluminum-card.active {
     border-color: var(--ios-blue);
@@ -612,7 +792,7 @@
   .aluminum-card-code {
     color: var(--ios-label);
     font-size: var(--fs-sm);
-    font-weight: 600;
+    font-weight: var(--aluminum-weight-semibold);
   }
   .aluminum-card-desc {
     display: -webkit-box;
@@ -637,7 +817,7 @@
   .aluminum-card-field > span {
     color: var(--ios-label3);
     font-size: 9px;
-    font-weight: 600;
+    font-weight: var(--aluminum-weight-medium);
     letter-spacing: 0.04em;
     text-transform: uppercase;
   }
@@ -690,14 +870,10 @@
   }
   .aluminum-export-bar .btn {
     width: auto;
-    min-height: 28px;
+    height: 28px;
+    min-height: 28px !important;
+    padding-inline: 10px !important;
   }
-  .aluminum-scope-toggle { width: auto; }
-  .aluminum-scope-toggle button {
-    flex: 0 0 auto;
-    min-height: 28px;
-  }
-
   .aluminum-controls { grid-template-columns: 1fr auto; }
 
   .aluminum-totals-strip {
@@ -716,6 +892,7 @@
     min-width: 0;
     font-size: var(--fs-xs);
   }
+  .aluminum-table th { font-size: var(--fs-xs); }
   .aluminum-table th,
   .aluminum-table td { padding: 3px 5px; }
   .aluminum-image-cell {
@@ -737,10 +914,8 @@
 @media (prefers-reduced-motion: reduce) {
   .aluminum-tabs button,
   .aluminum-color-chip,
-  .aluminum-scope-toggle button,
   .aluminum-qty-input,
   .aluminum-price-input { transition: none; }
   .aluminum-tabs button:active,
-  .aluminum-color-chip:active,
-  .aluminum-scope-toggle button:active { transform: none; }
+  .aluminum-color-chip:active { transform: none; }
 }

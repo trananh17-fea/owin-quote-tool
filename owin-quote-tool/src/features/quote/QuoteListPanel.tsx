@@ -214,7 +214,6 @@ export function QuoteListPanel({
                       >
                         {quote.code}
                       </button>
-                      <div className="quote-history-mobile-date">{formatShortDate(quote.createdAt)}</div>
                     </td>
                     <td data-col="customer">
                       <div className="quote-customer-name">{quote.customerName || 'Khách chưa đặt tên'}</div>
@@ -222,7 +221,12 @@ export function QuoteListPanel({
                     </td>
                     <td className="num" data-col="product">{formatVND(quote.subtotalProductVnd)}</td>
                     <td className="num" data-col="accessory">{formatVND(quote.subtotalAccessoryVnd)}</td>
-                    <td className="num total-cell" data-col="total">{formatVND(quote.roundedTotalVnd)}</td>
+                    {/* Ngày tạo đi kèm tổng tiền, chỉ hiện ở dạng thẻ trên điện thoại — desktop
+                        đã có cột "Ngày tạo" riêng. */}
+                    <td className="num total-cell" data-col="total">
+                      {formatVND(quote.roundedTotalVnd)}
+                      <span className="quote-history-mobile-date">{formatShortDate(quote.createdAt)}</span>
+                    </td>
                     <td data-col="status"><span className={`quote-status-pill quote-status-${quote.status.toLowerCase()}`}>{statusLabel(quote.status)}</span></td>
                     <td data-col="date">{formatShortDate(quote.createdAt)}</td>
                     <td data-col="actions">
