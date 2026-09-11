@@ -67,7 +67,7 @@ function App() {
                   className={`tool-nav-item${active ? ' active' : ''}`}
                   onClick={() => activateTab(item.key)}
                 >
-                  {item.icon}
+                  <span className="tool-nav-icon" aria-hidden="true">{item.icon}</span>
                   <span>{item.label}</span>
                 </button>
               );

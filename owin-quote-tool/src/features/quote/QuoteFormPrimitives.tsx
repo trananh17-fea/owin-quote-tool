@@ -77,9 +77,9 @@ export function Field({
 
 export function TotalLine({ label, value, strong }: { label: string; value: number; strong?: boolean }) {
   return (
-    <div className="switch-row">
-      <span style={{ fontWeight: strong ? 700 : 500 }}>{label}</span>
-      <span style={{ fontWeight: strong ? 800 : 600 }}>{formatVND(value)}</span>
+    <div className={`switch-row quote-total-line${strong ? ' is-strong' : ''}`}>
+      <span className="quote-total-label">{label}</span>
+      <span className="quote-total-value">{formatVND(value)}</span>
     </div>
   );
 }

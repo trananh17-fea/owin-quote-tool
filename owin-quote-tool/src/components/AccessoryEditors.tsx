@@ -1,4 +1,4 @@
-import { Plus, Sparkles, Trash2 } from 'lucide-react';
+import { Sparkles, Trash2 } from 'lucide-react';
 import type { ProductUnit } from '@/types/models';
 import { AutoSuggestInput } from '@/components/AutoSuggestInput';
 import { CurrencyInput } from '@/components/CurrencyInput';
@@ -122,7 +122,7 @@ export function FixedAccessoryPackageEditor({
           type="button"
           onClick={() => onChange(addEmptyFixedAccessoryItem(value))}
         >
-          <Plus size={15} /> Thêm món
+            <span aria-hidden="true">＋</span> Thêm món
         </button>
       </div>
 
@@ -136,20 +136,19 @@ export function FixedAccessoryPackageEditor({
       />
       {canSuggestFromName && isBlankOrDefaultPackageItems(value.items) && (
         <div className="hint accessory-package-hint">
-          Đã có mẫu món cho bộ này — gõ/chọn tên bộ để tự điền, hoặc bấm “Gợi ý món theo tên bộ”.
-          Chỉ chuẩn hoá <strong>tên</strong>, không ép đơn giá.
+          Chọn tên bộ để tự điền danh sách món; đơn giá vẫn nhập riêng.
         </div>
       )}
       {orphans.length > 0 && orphans.length <= 24 && (
         <div className="hint accessory-orphan-hint">
-          Món lẻ ngoài bộ chuẩn (gợi ý gộp): {orphans.slice(0, 6).join(' · ')}
+          Món lẻ có thể gộp: {orphans.slice(0, 6).join(' · ')}
           {orphans.length > 6 ? ` · +${orphans.length - 6}` : ''}
         </div>
       )}
 
       <div className="accessory-items">
         {value.items.length === 0 ? (
-          <div className="empty-line">Chưa có món phụ kiện nào trong bộ.</div>
+          <div className="empty-line">Chưa có món trong bộ. Bấm “Thêm món” để thêm dòng.</div>
         ) : (
           value.items.map((item, index) => (
             <div key={item.id} className="accessory-item-line" data-row-id={item.id} {...rowProps(index)}>
@@ -265,12 +264,12 @@ export function ExtraAccessoriesEditor({
         </div>
         <div className="spacer" />
         <button className="btn-link" type="button" onClick={() => onChange(addEmptyAccessoryDraft(value))}>
-          <Plus size={15} /> Thêm phụ kiện
+          <span aria-hidden="true">＋</span> Thêm phụ kiện
         </button>
       </div>
 
       {value.length === 0 ? (
-        <div className="empty-line">Chưa có phụ kiện phát sinh. Bấm “Thêm phụ kiện” để thêm dòng trống (SL mặc định 0).</div>
+        <div className="empty-line">Chưa có phụ kiện. Bấm “Thêm phụ kiện” để thêm.</div>
       ) : (
         <div className="extra-accessory-table">
           <div className="extra-accessory-head">

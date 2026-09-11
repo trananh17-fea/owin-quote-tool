@@ -141,8 +141,8 @@ export function QuoteItemCard({
         <div className="quote-item-card-main">
           <div className="quote-item-titleline">
             <div>
-              <div className="section-label" style={{ margin: 0 }}>#{index + 1} · Đang sửa</div>
-              <div className="product-sub">Tổng {formatVND(calculated?.itemTotalVnd ?? 0)}</div>
+              <div className="section-label" style={{ margin: 0 }}>Hạng mục #{index + 1}</div>
+              <div className="product-sub">Tổng hạng mục {formatVND(calculated?.itemTotalVnd ?? 0)}</div>
             </div>
             <div className="quote-item-actions">
               <DragHandle {...dragHandleProps} label="Kéo để đổi thứ tự hạng mục" />

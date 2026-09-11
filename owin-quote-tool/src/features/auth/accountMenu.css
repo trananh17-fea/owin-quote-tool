@@ -8,22 +8,27 @@
 .account-menu-trigger {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   max-width: 250px;
-  min-height: 36px;
-  padding: 3px 8px 3px 3px;
-  border: 0;
+  min-height: 44px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid rgba(77, 89, 113, 0.13);
   border-radius: var(--r-pill);
-  background: var(--ios-fill);
+  background: linear-gradient(180deg, rgba(245, 247, 251, 0.88), rgba(234, 237, 244, 0.82));
   color: var(--ios-label);
   text-align: left;
   cursor: pointer;
-  transition: background 0.2s var(--ease-ios);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.92) inset, 0 5px 16px rgba(31, 44, 70, 0.08);
+  transition: background 0.22s var(--ease-ios), border-color 0.22s var(--ease-ios),
+    box-shadow 0.22s var(--ease-ios), transform 0.2s var(--ease-ios);
 }
 .account-menu-trigger:hover,
 .account-menu-trigger[aria-expanded='true'] {
-  background: var(--ios-fill-strong);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(238, 242, 248, 0.9));
+  border-color: rgba(0, 122, 255, 0.2);
+  box-shadow: 0 1px 0 #fff inset, 0 8px 22px rgba(30, 51, 88, 0.12);
 }
+.account-menu-trigger:active { transform: scale(0.98); }
 .account-menu-trigger > svg {
   flex: 0 0 auto;
   color: var(--ios-label3);
@@ -35,12 +40,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
   border-radius: 50%;
-  background: var(--ios-blue);
+  background: linear-gradient(145deg, #2393ff, #0067dc 64%, #0056c1);
   color: #fff;
+  border: 1px solid rgba(0, 76, 175, 0.28);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) inset, 0 4px 10px rgba(0, 104, 224, 0.24);
 }
 
 .account-menu-identity,
@@ -61,7 +68,7 @@
 .account-menu-details strong {
   color: var(--ios-label);
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .account-menu-identity small,
 .account-menu-details small {
@@ -76,10 +83,12 @@
   z-index: 70;
   width: min(290px, calc(100vw - 20px));
   padding: 12px;
-  border: 1px solid var(--ios-separator);
+  border: 1px solid rgba(76, 88, 112, 0.16);
   border-radius: var(--r-lg);
-  background: var(--ios-card);
-  box-shadow: var(--shadow-lg);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 22px 60px rgba(24, 37, 64, 0.2), 0 1px 0 #fff inset;
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  backdrop-filter: blur(28px) saturate(170%);
   text-align: left;
   animation: account-menu-in 0.18s var(--ease-ios) both;
 }
@@ -112,7 +121,7 @@
   .account-menu-identity { display: none; }
   .account-menu-trigger {
     gap: 4px;
-    min-height: 32px;
+    min-height: 38px;
     padding: 2px 4px 2px 2px;
   }
 }
