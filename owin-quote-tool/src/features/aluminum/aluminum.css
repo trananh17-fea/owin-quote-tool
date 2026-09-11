@@ -37,9 +37,9 @@
   padding: 14px 16px;
   border: 1px solid var(--ios-separator);
   /* đè lớp chung (--r-md !important) để bo lớn kiểu thẻ iOS */
-  border-radius: var(--r-lg) !important;
+  border-radius: var(--r-lg);
   /* đè lớp chung (gradient navy !important) — thẻ trắng phẳng */
-  background: var(--ios-card) !important;
+  background: var(--ios-card);
   box-shadow: var(--shadow-md);
 }
 .aluminum-hero-text { min-width: 0; }
@@ -131,7 +131,7 @@
   padding: 12px;
   border: 1px solid var(--ios-separator);
   /* đè lớp chung (--r-md !important) */
-  border-radius: var(--r-lg) !important;
+  border-radius: var(--r-lg);
   background: var(--ios-card);
   box-shadow: var(--shadow-md);
 }
@@ -267,10 +267,10 @@
   gap: 10px 14px;
   padding: 10px 14px;
   /* đè lớp chung (viền xanh + gradient xanh/vàng đồng, cả hai !important) */
-  border: 1px solid var(--ios-separator) !important;
+  border: 1px solid var(--ios-separator);
   background: var(--ios-card) !important;
   /* đè lớp chung (--r-md !important) */
-  border-radius: var(--r-lg) !important;
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow-md);
   font-variant-numeric: tabular-nums;
 }
@@ -323,7 +323,7 @@
   overflow-x: auto;
   border: 1px solid var(--ios-separator);
   /* đè lớp chung (--r-md !important) */
-  border-radius: var(--r-lg) !important;
+  border-radius: var(--r-lg);
   background: var(--ios-card);
   box-shadow: var(--shadow-md);
   -webkit-overflow-scrolling: touch;
@@ -357,7 +357,7 @@
   text-transform: uppercase;
   /* đè lớp chung (--owin-ink-muted + 800, cả hai !important) */
   color: var(--ios-label3) !important;
-  font-weight: 600 !important;
+  font-weight: 600;
 }
 .aluminum-table tbody tr:last-child td { border-bottom: 0; }
 

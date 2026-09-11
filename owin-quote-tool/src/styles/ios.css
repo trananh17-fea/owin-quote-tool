@@ -328,7 +328,7 @@ input[type='number']::-webkit-outer-spin-button, input[type='number']::-webkit-i
   justify-content: center;
   gap: 8px;
   padding: 10px 16px !important;
-  font-weight: 600 !important;
+  font-weight: 600;
   white-space: nowrap;
 }
 .icon-btn {
@@ -336,7 +336,7 @@ input[type='number']::-webkit-outer-spin-button, input[type='number']::-webkit-i
   height: var(--icon-btn);
   min-width: var(--icon-btn);
   min-height: var(--icon-btn);
-  padding: 0 !important;
+  padding: 0;
   border-radius: var(--r-sm) !important;
   background: var(--ios-card);
   border: 1px solid var(--ios-separator);
@@ -354,7 +354,7 @@ input[type='number']::-webkit-outer-spin-button, input[type='number']::-webkit-i
 }
 .btn-primary {
   background: var(--ios-blue-ink);
-  color: #fff !important;
+  color: #fff;
   border: 0;
 }
 .btn-primary:hover { background: var(--ios-blue-hover); filter: none; }

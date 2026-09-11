@@ -49,12 +49,23 @@
   position: sticky;
   top: 0;
   z-index: 2;
+  padding-block: 13px;
   background: var(--ios-surface-muted);
   color: var(--ios-label2);
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
+  line-height: 1.25;
   letter-spacing: 0.04em;
+  white-space: nowrap;
   text-transform: uppercase;
+}
+.quote-history-table th[data-col='product'],
+.quote-history-table th[data-col='accessory'],
+.quote-history-table th[data-col='total'] {
+  text-align: right;
+}
+.quote-history-table th[data-col='actions'] {
+  text-align: right;
 }
 .quote-history-table tr:last-child td { border-bottom: 0; }
 .quote-history-table .num {
@@ -220,8 +231,8 @@
 
 .quote-totals-card {
   /* Đè gradient navy cũ còn `!important` trong lớp chung. */
-  background: var(--ios-card) !important;
-  border-color: var(--ios-separator) !important;
+  background: var(--ios-card);
+  border-color: var(--ios-separator);
 }
 .quote-totals-card .switch-row:last-of-type,
 .quote-totals-card .switch-row strong { color: var(--ios-label); }
@@ -256,7 +267,7 @@
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
     max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   /* Đè nền navy cũ còn `!important` trong lớp chung. */
-  background: rgba(28, 28, 40, 0.4) !important;
+  background: rgba(28, 28, 40, 0.4);
 }
 
 .quote-picker-modal {
@@ -269,7 +280,7 @@
   padding: 18px;
   overflow: hidden;
   /* Đè viền trắng mờ cũ còn `!important` trong lớp chung. */
-  border: 1px solid var(--ios-separator) !important;
+  border: 1px solid var(--ios-separator);
   border-radius: var(--r-lg);
   background: var(--ios-card);
   box-shadow: var(--shadow-lg);
@@ -370,10 +381,10 @@
 /* Nút thu gọn danh mục: kém đặc hiệu hơn `.quote-picker-categories button`
    VÀ lớp chung còn 4 khai báo `!important` cho nó. */
 .quote-picker-cat-toggle {
-  background: var(--ios-blue-soft) !important;
-  border: 1px solid transparent !important;
-  color: var(--ios-blue-ink) !important;
-  font-weight: 600 !important;
+  background: var(--ios-blue-soft);
+  border: 1px solid transparent;
+  color: var(--ios-blue-ink);
+  font-weight: 600;
 }
 
 .quote-picker-results {
@@ -525,7 +536,7 @@
   gap: 0;
   padding: 12px 14px;
   /* Đè gradient trắng-xám cũ còn `!important` trong lớp chung. */
-  background: var(--ios-card) !important;
+  background: var(--ios-card);
 }
 
 .quote-item-card-editing {
@@ -535,7 +546,7 @@
 /* Đè viền xanh navy cũ còn `!important` trong lớp chung. */
 .quote-item-card:focus-within,
 .quote-item-card-editing {
-  border-color: var(--ios-blue) !important;
+  border-color: var(--ios-blue);
   box-shadow: var(--shadow-glow);
 }
 .quote-item-card-editing .quote-item-card-header {
@@ -1135,8 +1146,8 @@
      `.two-col { grid-template-columns: 1fr !important }` ở breakpoint 720. */
   .quote-top-grid,
   .quote-customer-grid {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
   .quote-detail-grid,
   .quote-detail-info {
@@ -1188,11 +1199,11 @@
     font-size: 9px;
   }
   .quote-line-row {
-    grid-template-columns: 52px 52px 52px 44px 52px minmax(90px, 1fr) minmax(90px, 1fr) 28px !important;
-    align-items: center !important;
-    gap: 4px !important;
-    padding: 4px 6px !important;
-    min-width: 0 !important;
+    grid-template-columns: 52px 52px 52px 44px 52px minmax(90px, 1fr) minmax(90px, 1fr) 28px;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px;
+    min-width: 0;
   }
   .quote-line-field::before { display: none; }
   .quote-line-field-wide,
@@ -1224,7 +1235,7 @@
 
 @media (max-width: 380px) {
   /* `!important`: đè lưới 2 cột `!important` của breakpoint 720. */
-  .quote-picker-grid { grid-template-columns: 1fr !important; }
+  .quote-picker-grid { grid-template-columns: 1fr; }
   .quote-form-actions { grid-template-columns: 1fr 1fr; }
 }
 
@@ -1232,5 +1243,5 @@
 @media print {
   .quote-workflow-page,
   .quote-detail-page,
-  .quote-print-doc { display: none !important; }
+  .quote-print-doc { display: none; }
 }

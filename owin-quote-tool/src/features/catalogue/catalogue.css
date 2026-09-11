@@ -416,6 +416,6 @@
 @media print {
   .catalogue-page,
   .bang-gia-doc {
-    display: none !important;
+    display: none;
   }
 }

@@ -234,8 +234,8 @@
 @media (max-width: 720px) {
   .admin-page { gap: 10px; }
   .admin-page-heading {
-      display: grid !important;
-      grid-template-columns: 1fr !important;
+      display: grid;
+      grid-template-columns: 1fr;
       gap: 10px;
       margin-bottom: 10px;
     }
@@ -277,14 +277,14 @@
   .spec-table-head { display: none; }
   .spec-editor-row {
       grid-template-columns: 32px minmax(0, 1fr) 34px !important;
-      gap: 6px !important;
+      gap: 6px;
     }
   .summary-metric { padding: 8px; }
   .summary-metric span { font-size: 10px; }
   .summary-metric strong { font-size: 13px; }
   .summary-metric-strong { grid-column: 1 / -1; }
   .summary-metric + .summary-metric {
-      border-left: 0 !important;
+      border-left: 0;
       border-top: 1px solid var(--owin-border);
     }
 }
@@ -307,20 +307,20 @@
   .product-name { font-size: 12px; }
 }
 .card, .editor-panel {
-  border-color: var(--ios-separator) !important;
-  box-shadow: var(--shadow-md) !important;
+  border-color: var(--ios-separator);
+  box-shadow: var(--shadow-md);
   background: var(--owin-surface);
 }
 .section-label {
-  color: var(--ios-label3) !important;
+  color: var(--ios-label3);
   text-transform: uppercase;
-  letter-spacing: 0.04em !important;
+  letter-spacing: 0.04em;
   font-size: var(--fs-xs) !important;
   font-weight: 600 !important;
 }
 .accessory-editor-panel, .editor-panel {
-  background: var(--ios-card) !important;
-  border: 1px solid var(--owin-border) !important;
+  background: var(--ios-card);
+  border: 1px solid var(--owin-border);
   border-radius: var(--r-md) !important;
   padding: 14px !important;
 }
@@ -343,10 +343,10 @@
 
 @media print {
   .no-print {
-      display: none !important;
+      display: none;
     }
   .preview-doc:not(.aluminum-print-document) {
-      display: none !important;
+      display: none;
     }
 }
 .page-actions {

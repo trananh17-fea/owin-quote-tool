@@ -122,5 +122,5 @@
 }
 
 @media print {
-  .account-menu { display: none !important; }
+  .account-menu { display: none; }
 }

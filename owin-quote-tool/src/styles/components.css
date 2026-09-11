@@ -211,8 +211,8 @@
 }
 .dropzone-logo-fallback {
   opacity: 0.55;
-  max-width: 64% !important;
-  max-height: 48% !important;
+  max-width: 64%;
+  max-height: 48%;
 }
 .image-fit-frame {
   align-items: center;
@@ -275,8 +275,8 @@
 .accessory-item-line input[type='number'] {
   width: 100%;
   text-align: center;
-  padding-left: 6px !important;
-  padding-right: 6px !important;
+  padding-left: 6px;
+  padding-right: 6px;
 }
 .line-index {
   width: 28px;
@@ -442,28 +442,28 @@
   .spec-editor-row .autosuggest:last-of-type, .spec-editor-row > .field { grid-column: 2; }
   .accessory-item-line {
       grid-template-columns: 28px minmax(0, 1fr) 64px 34px !important;
-      gap: 6px !important;
+      gap: 6px;
     }
   .accessory-item-line .line-index { display: none; }
   .fixed-package-grid {
-      grid-template-columns: 1fr 1fr !important;
-      gap: 8px !important;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
     }
 }
 
 @media (orientation: landscape) and (max-height: 500px) and (max-width: 960px) {
-  .extra-accessory-head { display: none !important; }
+  .extra-accessory-head { display: none; }
   .extra-accessory-line {
       min-width: 0 !important;
       grid-template-columns: 24px minmax(140px, 1.2fr) minmax(0, 2.2fr) 28px !important;
       gap: 6px !important;
       padding: 6px !important;
-      align-items: end !important;
+      align-items: end;
     }
   .extra-acc-metrics {
-      grid-column: auto !important;
-      grid-template-columns: 52px 48px 56px minmax(80px, 1fr) minmax(90px, 1fr) !important;
-      gap: 4px !important;
+      grid-column: auto;
+      grid-template-columns: 52px 48px 56px minmax(80px, 1fr) minmax(90px, 1fr);
+      gap: 4px;
     }
   .extra-acc-metrics .field > label { font-size: 8px; }
   .extra-acc-metrics .input, .extra-acc-metrics .readonly-money {
@@ -485,10 +485,10 @@
   border-bottom: 1px dashed var(--owin-border);
 }
 .segmented {
-  background: var(--owin-soft) !important;
+  background: var(--owin-soft);
   border: 1px solid var(--owin-border);
   border-radius: var(--r-pill) !important;
-  padding: 3px !important;
+  padding: 3px;
 }
 .segmented button {
   border-radius: var(--r-pill) !important;
