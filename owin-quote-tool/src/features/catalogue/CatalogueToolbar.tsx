@@ -1,6 +1,10 @@
 import { FileDown } from 'lucide-react';
 
-/** Thanh công cụ của tab Bảng giá: tiêu đề, lọc theo loại cửa, ba nút xuất file. */
+/**
+ * Header của tab Bảng giá. Dùng đúng bố cục heading của tab Sản phẩm và Báo giá
+ * (`.admin-page-heading` + hàng tiêu đề có chip đếm + phụ đề), phần hành động là
+ * bộ lọc loại cửa và ba nút xuất file.
+ */
 export function CatalogueToolbar({
   loading,
   totalCount,
@@ -28,19 +32,21 @@ export function CatalogueToolbar({
   onExportExcel: () => void;
   onExportPdf: () => void;
 }) {
+  const filtered = exportCategory !== 'all';
   return (
-    <div className="toolbar catalogue-toolbar no-print">
-      <div className="catalogue-toolbar-text">
-        <h1 className="app-title">Bảng giá</h1>
+    <div className="admin-page-heading catalogue-list-heading no-print">
+      <div className="catalogue-heading-text">
+        <div className="catalogue-list-title-row">
+          <h1 className="app-title">Bảng giá</h1>
+          <span className="catalogue-list-count">
+            {loading ? 'Đang tải…' : `${filtered ? shownCount : totalCount} sản phẩm`}
+          </span>
+        </div>
         <p className="app-subtitle">
-          {loading
-            ? 'Đang tải…'
-            : exportCategory === 'all'
-              ? `${totalCount} sản phẩm`
-              : `${shownCount} SP · ${exportCategory}`}
+          {filtered ? `Bảng giá nhôm kính hệ OWIN · ${exportCategory}` : 'Bảng giá sản phẩm nhôm kính hệ OWIN'}
         </p>
       </div>
-      <div className="catalogue-toolbar-actions">
+      <div className="catalogue-heading-actions">
         <label className="catalogue-filter-label">
           <span>Xuất theo</span>
           <select
