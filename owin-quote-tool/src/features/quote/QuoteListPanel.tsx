@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Copy, Eye, FileDown, ListFilter, LoaderCircle, Plus, Search, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Copy, FileDown, ListFilter, LoaderCircle, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import type { QuoteRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { formatShortDate, statusLabel } from '@/features/quote/quoteFormat';
@@ -143,9 +143,28 @@ export function QuoteListPanel({
               </thead>
               <tbody>
                 {pagination.items.map((quote) => (
-                  <tr key={quote.id} className="quote-history-row">
+                  <tr
+                    key={quote.id}
+                    className="quote-history-row"
+                    tabIndex={0}
+                    aria-label={`Xem chi tiết báo giá ${quote.code}`}
+                    onClick={() => onView(quote)}
+                    onKeyDown={(event) => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onView(quote);
+                      }
+                    }}
+                  >
                     <td data-col="code">
-                      <button className="quote-code-button" onClick={() => onView(quote)}>
+                      <button
+                        className="quote-code-button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onView(quote);
+                        }}
+                      >
                         {quote.code}
                       </button>
                       <div className="quote-history-mobile-date">{formatShortDate(quote.createdAt)}</div>
@@ -161,14 +180,37 @@ export function QuoteListPanel({
                     <td data-col="date">{formatShortDate(quote.createdAt)}</td>
                     <td data-col="actions">
                       <div className="quote-actions">
-                        <button className="icon-btn" onClick={() => onView(quote)} aria-label="Xem báo giá">
-                          <Eye size={16} />
+                        <button
+                          className="icon-btn quote-edit-action"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onEdit(quote);
+                          }}
+                          aria-label="Sửa báo giá"
+                          title="Sửa báo giá"
+                        >
+                          <Pencil size={16} />
                         </button>
-                        <button className="btn btn-ghost" onClick={() => onEdit(quote)}>Sửa</button>
-                        <button className="icon-btn" onClick={() => onDuplicate(quote)} aria-label="Nhân bản">
+                        <button
+                          className="icon-btn"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onDuplicate(quote);
+                          }}
+                          aria-label="Nhân bản"
+                          title="Nhân bản"
+                        >
                           <Copy size={16} />
                         </button>
-                        <button className="icon-btn danger" onClick={() => onDelete(quote)} aria-label="Xoá báo giá">
+                        <button
+                          className="icon-btn danger"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onDelete(quote);
+                          }}
+                          aria-label="Xoá báo giá"
+                          title="Xoá báo giá"
+                        >
                           <Trash2 size={16} />
                         </button>
                       </div>

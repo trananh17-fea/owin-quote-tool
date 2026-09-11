@@ -2,8 +2,9 @@
  * TÍNH NĂNG: BÁO GIÁ — stylesheet riêng của tab "Báo giá".
  * Import bởi features/quote/QuoteView.tsx, nạp SAU styles/patterns.css.
  *
- * Chỉ chứa selector `.quote-*` và `.legacy-accessory-row` (hàng phụ kiện kiểu
- * cũ của một hạng mục). Pattern dùng chung (.card, .field, .input, .btn,
+ * Chủ yếu chứa selector `.quote-*` và `.legacy-accessory-row` (hàng phụ kiện
+ * kiểu cũ của một hạng mục); ngoại lệ là selector shell có `:has(.quote-list-page)`
+ * để đổi nền riêng màn danh sách. Pattern dùng chung (.card, .field, .input, .btn,
  * .icon-btn, .editor-panel, .spec-editor-row, .summary-metric, .switch-row,
  * .two-col, .toolbar, .admin-page*, .preview-doc) vẫn ở lớp chung — ở đây chỉ
  * khai biến thể có tổ tiên `.quote-*`.
@@ -18,6 +19,9 @@
  */
 
 /* ═══════════════ Danh sách báo giá ═══════════════ */
+
+/* Chỉ làm sáng nền màn danh sách; form và chi tiết báo giá giữ nền app chung. */
+.tool-content:has(.quote-list-page) { background: #f8f9fb; }
 
 .quote-list-heading {
   align-items: center;
@@ -51,12 +55,10 @@
   gap: 10px;
   margin-bottom: 16px;
   padding: 10px;
-  border: 1px solid var(--ios-separator);
+  border: 1px solid rgba(60, 60, 67, 0.14);
   border-radius: var(--r-lg);
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: var(--shadow-md);
-  -webkit-backdrop-filter: blur(18px) saturate(180%);
-  backdrop-filter: blur(18px) saturate(180%);
+  background: var(--ios-card);
+  box-shadow: 0 2px 5px rgba(28, 28, 40, 0.05), 0 10px 28px rgba(28, 28, 40, 0.07);
 }
 .quote-toolbar-control {
   position: relative;
@@ -74,15 +76,16 @@
 .quote-toolbar-control .input {
   min-height: 44px;
   padding-left: 42px !important; /* chừa chỗ cho icon, đè padding control chung */
-  border-color: transparent !important; /* control chìm nhẹ trong toolbar */
+  border-color: rgba(60, 60, 67, 0.16) !important;
   border-radius: 12px !important; /* biến thể toolbar gọn hơn input form */
-  background: var(--ios-fill) !important;
+  background: var(--ios-card) !important;
   font-size: var(--fs-sm) !important;
   font-weight: 500;
   transition: background 0.16s var(--ease-ios), box-shadow 0.16s var(--ease-ios);
 }
 .quote-toolbar-control .input:hover {
-  background: var(--ios-fill-strong) !important;
+  border-color: rgba(0, 122, 255, 0.28) !important;
+  background: #fbfdff !important;
 }
 .quote-toolbar-control .input:focus {
   border-color: var(--ios-blue) !important;
@@ -119,10 +122,10 @@
 }
 .quote-list-table-card {
   margin-top: 0;
-  border: 1px solid var(--ios-separator);
+  border: 1px solid rgba(60, 60, 67, 0.14);
   border-radius: var(--r-lg);
   background: var(--ios-card);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 2px 5px rgba(28, 28, 40, 0.05), 0 12px 32px rgba(28, 28, 40, 0.07);
 }
 
 .quote-history-table {
@@ -134,38 +137,58 @@
 .quote-history-table th,
 .quote-history-table td {
   padding: 11px 12px;
-  border-bottom: 1px solid var(--ios-separator);
+  border-bottom: 1px solid rgba(60, 60, 67, 0.14);
+  border-right: 1px solid rgba(60, 60, 67, 0.1);
   text-align: left;
   vertical-align: middle;
 }
+.quote-history-table th:last-child,
+.quote-history-table td:last-child { border-right: 0; }
 .quote-history-table th {
   position: sticky;
   top: 0;
   z-index: 2;
   padding-block: 14px;
-  border-bottom-color: var(--ios-blue-soft-strong);
-  background: #eaf3ff;
-  color: var(--ios-blue-ink);
-  font-size: var(--fs-sm);
-  font-weight: 700;
+  border-bottom-color: #dce9f7;
+  background: #f3f8fe;
+  color: #355a7a;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  text-align: center;
   line-height: 1.3;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   white-space: nowrap;
-  text-transform: uppercase;
+  text-transform: none;
 }
 .quote-history-table th[data-col='product'],
 .quote-history-table th[data-col='accessory'],
 .quote-history-table th[data-col='total'] {
-  text-align: right;
+  text-align: center;
 }
 .quote-history-table th[data-col='actions'] {
-  text-align: right;
+  text-align: center;
+}
+.quote-history-table td[data-col='code'],
+.quote-history-table td[data-col='status'],
+.quote-history-table td[data-col='date'] {
+  text-align: center;
+}
+.quote-history-table td[data-col='actions'] {
+  text-align: center;
 }
 .quote-history-table tr:last-child td { border-bottom: 0; }
 .quote-history-table .num {
   text-align: right;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+@media (min-width: 721px) {
+  .quote-history-table td[data-col='product'],
+  .quote-history-table td[data-col='accessory'],
+  .quote-history-table td[data-col='total'] {
+    text-align: right;
+  }
 }
 .quote-history-table .total-cell {
   color: var(--ios-label);
@@ -173,8 +196,16 @@
   font-variant-numeric: tabular-nums;
 }
 
-.quote-history-row { transition: background 0.16s var(--ease-ios); }
+.quote-history-row {
+  cursor: pointer;
+  transition: background 0.16s var(--ease-ios), box-shadow 0.16s var(--ease-ios);
+}
 .quote-history-row:hover { background: var(--ios-row-hover); }
+.quote-history-row:focus-visible {
+  outline: none;
+  background: var(--ios-row-hover);
+  box-shadow: inset 3px 0 0 var(--ios-blue);
+}
 
 .quote-code-button {
   padding: 0;
@@ -234,10 +265,16 @@
 
 .quote-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 6px;
   white-space: nowrap;
 }
+.quote-actions .quote-edit-action {
+  border-color: transparent;
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+}
+.quote-actions .quote-edit-action:hover { background: var(--ios-blue-soft-strong); }
 
 /* Footer phân trang — compact bar theo phong cách iOS. */
 .quote-list-pagination {
@@ -247,7 +284,7 @@
   gap: 16px;
   padding: 12px 14px;
   border-top: 1px solid var(--ios-separator);
-  background: var(--ios-surface-muted);
+  background: var(--ios-card);
   color: var(--ios-label2);
   font-size: var(--fs-sm);
 }
