@@ -1,5 +1,5 @@
 import type { InputHTMLAttributes } from 'react';
-import { SmartNumberInput } from './SmartNumberInput';
+import { SmartNumberInput } from '@/components/SmartNumberInput';
 
 interface CurrencyInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type' | 'min' | 'max'> {

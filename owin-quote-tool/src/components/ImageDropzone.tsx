@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { ImagePlus, LoaderCircle } from 'lucide-react';
-import { compressAndUpload, ImageError } from '@/utils/imageStorage';
-import { resolveImageUrl } from '@/utils/imagePaths';
-import { trackPendingWork, type PendingWorkScope } from '@/lib/pendingWork';
+import { compressAndUpload, ImageError } from '@/lib/media/imageStorage';
+import { resolveImageUrl } from '@/lib/media/imagePaths';
+import { trackPendingWork, type PendingWorkScope } from '@/lib/browser/pendingWork';
 
 const OWIN_LOGO = `${import.meta.env.BASE_URL}owin-user-assets/logo/logo.webp`;
 

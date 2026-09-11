@@ -21,6 +21,7 @@ interface Props {
   onSelect?: (value: string) => void;
   disabled?: boolean;
   fieldKey?: string;
+  required?: boolean;
   /** When false, hide the in-field clear button. Default true. */
   allowClear?: boolean;
 }
@@ -39,6 +40,7 @@ export function AutoSuggestInput({
   placeholder,
   onSelect,
   disabled,
+  required = false,
   allowClear = true,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -127,7 +129,7 @@ export function AutoSuggestInput({
 
   return (
     <div className="field autosuggest" ref={containerRef}>
-      <label>{label}</label>
+      <label>{label}{required && <span className="required-mark">*</span>}</label>
       <div className={`autosuggest-control${showClear ? ' has-value' : ''}`}>
         <input
           className="input"

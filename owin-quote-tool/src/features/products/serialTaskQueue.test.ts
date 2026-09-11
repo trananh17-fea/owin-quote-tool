@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SerialTaskQueue } from './serialTaskQueue';
+import { SerialTaskQueue } from '@/features/products/serialTaskQueue';
 
 describe('SerialTaskQueue', () => {
   it('keeps writes in the order they were queued', async () => {

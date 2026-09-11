@@ -1,12 +1,12 @@
-import { ALUMINUM_SYSTEMS } from '@/lib/aluminum-estimator/aluminum-systems';
-import { parseEstimatorNumber } from '@/lib/aluminum-estimator/aluminum-estimator';
+import { ALUMINUM_SYSTEMS } from '@/features/aluminum/estimator/systems';
+import { parseEstimatorNumber } from '@/features/aluminum/estimator/estimator';
 import {
   compareAndSwapHostedAppData,
   getHostedAppData,
   getHostedAppDataVersioned,
   upsertHostedAppData,
   type HostedAppDataSnapshot,
-} from '@/features/supabase/sharedDataRepo';
+} from '@/services/supabase/sharedDataRepo';
 import type {
   AluminumCalculationRecord,
   AluminumEstimatorInputState,
@@ -153,8 +153,8 @@ export function otherAluminumColor(color: AluminumColor): AluminumColor {
   return color === 'Ghi - Cafe' ? 'Vân Gỗ' : 'Ghi - Cafe';
 }
 
-/** Ghi / xoá một ô đơn giá trong sổ màu. */
-export function writePriceOnColorBook(
+/** Ghi / xoá một ô đơn giá của một màu. */
+export function writeUnitPriceForColor(
   unitPricesByColor: AluminumEstimatorUnitPricesByColor,
   color: AluminumColor,
   systemId: string,
@@ -162,18 +162,18 @@ export function writePriceOnColorBook(
   unitPrice: string,
   note: string,
 ): AluminumEstimatorUnitPricesByColor {
-  const colorBook = { ...(unitPricesByColor[color] ?? {}) };
-  const systemRows = { ...(colorBook[systemId] ?? {}) };
+  const pricesForColor = { ...(unitPricesByColor[color] ?? {}) };
+  const systemRows = { ...(pricesForColor[systemId] ?? {}) };
   if (!unitPrice && !note) {
     delete systemRows[rowId];
   } else {
     systemRows[rowId] = { unitPrice, note };
   }
-  if (Object.keys(systemRows).length === 0) delete colorBook[systemId];
-  else colorBook[systemId] = systemRows;
+  if (Object.keys(systemRows).length === 0) delete pricesForColor[systemId];
+  else pricesForColor[systemId] = systemRows;
   const next = { ...unitPricesByColor };
-  if (Object.keys(colorBook).length === 0) delete next[color];
-  else next[color] = colorBook;
+  if (Object.keys(pricesForColor).length === 0) delete next[color];
+  else next[color] = pricesForColor;
   return next;
 }
 
@@ -200,13 +200,13 @@ export function applyLinkedUnitPrice(
   const targetNote = prevTarget?.note ?? '';
 
   if (!sourcePrice || sourcePrice <= 0) {
-    let next = writePriceOnColorBook(unitPricesByColor, sourceColor, systemId, rowId, '', note);
-    next = writePriceOnColorBook(next, targetColor, systemId, rowId, '', targetNote);
+    let next = writeUnitPriceForColor(unitPricesByColor, sourceColor, systemId, rowId, '', note);
+    next = writeUnitPriceForColor(next, targetColor, systemId, rowId, '', targetNote);
     return next;
   }
 
   const targetPrice = convertAluminumUnitPrice(sourcePrice, sourceBase, targetBase);
-  let next = writePriceOnColorBook(
+  let next = writeUnitPriceForColor(
     unitPricesByColor,
     sourceColor,
     systemId,
@@ -214,7 +214,7 @@ export function applyLinkedUnitPrice(
     formatAluminumPriceInput(sourcePrice),
     note,
   );
-  next = writePriceOnColorBook(
+  next = writeUnitPriceForColor(
     next,
     targetColor,
     systemId,
@@ -250,7 +250,7 @@ export function scaleUnitPricesByGhiBaseChange(
         const note = cell?.note ?? '';
         if (p > 0) {
           const nextPrice = convertAluminumUnitPrice(p, oldBase, newBase);
-          scaled = writePriceOnColorBook(
+          scaled = writeUnitPriceForColor(
             scaled,
             normalizeAluminumColor(color),
             systemId,
@@ -259,7 +259,7 @@ export function scaleUnitPricesByGhiBaseChange(
             note,
           );
         } else if (note) {
-          scaled = writePriceOnColorBook(
+          scaled = writeUnitPriceForColor(
             scaled,
             normalizeAluminumColor(color),
             systemId,
@@ -283,14 +283,14 @@ export function recomputeLinkedPricesFromBases(
   colorBaseRates: AluminumColorBaseRates = DEFAULT_COLOR_BASE_RATES,
 ): AluminumEstimatorUnitPricesByColor {
   const rates = normalizeColorBaseRates(colorBaseRates);
-  const ghiBook = unitPricesByColor['Ghi - Cafe'] ?? {};
-  const vanBook = unitPricesByColor['Vân Gỗ'] ?? {};
+  const ghiCafePrices = unitPricesByColor['Ghi - Cafe'] ?? {};
+  const vanGoPrices = unitPricesByColor['Vân Gỗ'] ?? {};
   let next: AluminumEstimatorUnitPricesByColor = {};
 
-  const systemIds = new Set([...Object.keys(ghiBook), ...Object.keys(vanBook)]);
+  const systemIds = new Set([...Object.keys(ghiCafePrices), ...Object.keys(vanGoPrices)]);
   for (const systemId of systemIds) {
-    const ghiRows = ghiBook[systemId] ?? {};
-    const vanRows = vanBook[systemId] ?? {};
+    const ghiRows = ghiCafePrices[systemId] ?? {};
+    const vanRows = vanGoPrices[systemId] ?? {};
     const rowIds = new Set([...Object.keys(ghiRows), ...Object.keys(vanRows)]);
     for (const rowId of rowIds) {
       const ghi = ghiRows[rowId];
@@ -319,10 +319,10 @@ export function recomputeLinkedPricesFromBases(
         );
       } else if (ghi?.note || van?.note) {
         if (ghi?.note) {
-          next = writePriceOnColorBook(next, 'Ghi - Cafe', systemId, rowId, '', ghi.note);
+          next = writeUnitPriceForColor(next, 'Ghi - Cafe', systemId, rowId, '', ghi.note);
         }
         if (van?.note) {
-          next = writePriceOnColorBook(next, 'Vân Gỗ', systemId, rowId, '', van.note);
+          next = writeUnitPriceForColor(next, 'Vân Gỗ', systemId, rowId, '', van.note);
         }
       }
     }

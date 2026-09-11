@@ -4,7 +4,7 @@
  * - quote/other: lighter thumbs
  */
 
-import { getImageDataUrlByPath, thumbUrlFor } from '@/utils/imagePaths';
+import { getImageDataUrlByPath, thumbUrlFor } from '@/lib/media/imagePaths';
 
 export type LightPdfImageOptions = {
   /** Prefer storage thumb (smaller). Default true for quote; false for catalogue. */

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { BookOpen, Calculator, FileText, Package } from 'lucide-react';
-import { SupabaseGate } from '@/features/supabase/SupabaseGate';
-import { AccountMenu } from '@/features/supabase/AccountMenu';
-import { ProductsView } from '@/features/products/ProductsView';
-import { QuoteView } from '@/features/quote/QuoteView';
-import { BangGiaView } from '@/features/catalogue/BangGiaView';
-import { TinhTamNhomView } from '@/features/aluminum/TinhTamNhomView';
+import { AuthGate } from '@/features/auth/AuthGate';
+import { AccountMenu } from '@/features/auth/AccountMenu';
+import { ProductsView } from '@/features/products';
+import { QuoteView } from '@/features/quote';
+import { CatalogueView } from '@/features/catalogue';
+import { AluminumEstimatorView } from '@/features/aluminum';
 import { GlobalImageLightbox } from '@/components/ImageLightbox';
 
 type Tab = 'products' | 'quotes' | 'catalogue' | 'aluminum';
@@ -37,7 +37,7 @@ function App() {
   };
 
   return (
-    <SupabaseGate>
+    <AuthGate>
       <div className="tool-shell" data-active-tab={tab}>
         <header className="tool-topnav no-print">
           <button type="button" className="tool-brand" onClick={() => activateTab('products')} aria-label="OWIN — về sản phẩm">
@@ -67,7 +67,7 @@ function App() {
                   className={`tool-nav-item${active ? ' active' : ''}`}
                   onClick={() => activateTab(item.key)}
                 >
-                  {item.icon}
+                  <span className="tool-nav-icon" aria-hidden="true">{item.icon}</span>
                   <span>{item.label}</span>
                 </button>
               );
@@ -80,30 +80,32 @@ function App() {
         </header>
 
         <main className="tool-content" id="tool-main" tabIndex={-1}>
-          {visitedTabs.has('products') && (
-            <div hidden={tab !== 'products'} role="tabpanel" aria-label="Sản phẩm">
-              <ProductsView onOpenCatalogue={() => activateTab('catalogue')} />
-            </div>
-          )}
-          {visitedTabs.has('quotes') && (
-            <div hidden={tab !== 'quotes'} role="tabpanel" aria-label="Báo giá">
-              <QuoteView />
-            </div>
-          )}
-          {visitedTabs.has('aluminum') && (
-            <div hidden={tab !== 'aluminum'} role="tabpanel" aria-label="Tính nhôm">
-              <TinhTamNhomView />
-            </div>
-          )}
-          {visitedTabs.has('catalogue') && (
-            <div hidden={tab !== 'catalogue'} role="tabpanel" aria-label="Bảng giá">
-              <BangGiaView />
-            </div>
-          )}
+          <div className="tool-content-inner">
+            {visitedTabs.has('products') && (
+              <div hidden={tab !== 'products'} role="tabpanel" aria-label="Sản phẩm">
+                <ProductsView onOpenCatalogue={() => activateTab('catalogue')} />
+              </div>
+            )}
+            {visitedTabs.has('quotes') && (
+              <div hidden={tab !== 'quotes'} role="tabpanel" aria-label="Báo giá">
+                <QuoteView />
+              </div>
+            )}
+            {visitedTabs.has('aluminum') && (
+              <div hidden={tab !== 'aluminum'} role="tabpanel" aria-label="Tính nhôm">
+                <AluminumEstimatorView />
+              </div>
+            )}
+            {visitedTabs.has('catalogue') && (
+              <div hidden={tab !== 'catalogue'} role="tabpanel" aria-label="Bảng giá">
+                <CatalogueView />
+              </div>
+            )}
+          </div>
         </main>
       </div>
       <GlobalImageLightbox />
-    </SupabaseGate>
+    </AuthGate>
   );
 }
 

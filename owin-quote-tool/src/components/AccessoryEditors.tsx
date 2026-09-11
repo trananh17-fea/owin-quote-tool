@@ -1,15 +1,15 @@
-import { Plus, Sparkles, Trash2 } from 'lucide-react';
+import { Sparkles, Trash2 } from 'lucide-react';
 import type { ProductUnit } from '@/types/models';
-import { AutoSuggestInput } from './AutoSuggestInput';
-import { CurrencyInput } from './CurrencyInput';
-import { SmartNumberInput } from './SmartNumberInput';
-import { DragHandle, reorderList, useDragReorder } from './DragReorder';
-import { formatVND } from '@/utils/format';
+import { AutoSuggestInput } from '@/components/AutoSuggestInput';
+import { CurrencyInput } from '@/components/CurrencyInput';
+import { SmartNumberInput } from '@/components/SmartNumberInput';
+import { DragHandle, mergeRowDragProps, reorderList, useDragReorder } from '@/components/DragReorder';
+import { formatVND } from '@/lib/format/currency';
 import {
   isBlankOrDefaultPackageItems,
   resolvePackageItemsByName,
   type AccessoryPackageTemplate,
-} from '@/lib/accessoryPackages';
+} from '@/lib/quote/accessoryPackages';
 import {
   addEmptyAccessoryDraft,
   addEmptyFixedAccessoryItem,
@@ -75,11 +75,14 @@ export function FixedAccessoryPackageEditor({
   onChange,
   suggestions,
   title = 'Bộ phụ kiện cố định',
+  rowDrag = false,
 }: {
   value: FixedAccessoryDraft;
   onChange: (value: FixedAccessoryDraft) => void;
   suggestions: AccessoryEditorSuggestions;
   title?: string;
+  /** Kéo bằng cả dòng thay vì tay cầm riêng. Mặc định giữ tay cầm cho tab Báo giá. */
+  rowDrag?: boolean;
 }) {
   const total = calculateFixedAccessoryDraftTotal(value);
   const catalog = suggestions.packageCatalog ?? [];
@@ -88,6 +91,9 @@ export function FixedAccessoryPackageEditor({
   const { handleProps, rowProps } = useDragReorder((from, to) =>
     patch({ items: reorderList(value.items, from, to) }),
   );
+  // Hai nhóm prop không trùng key nên khi kéo cả dòng thì trải cả hai lên dòng.
+  const lineDragProps = (index: number) =>
+    rowDrag ? mergeRowDragProps(handleProps(index), rowProps(index)) : rowProps(index);
 
   const applySuggestedItems = (force: boolean) => {
     onChange(applyPackageName(value, value.name, catalog, force));
@@ -122,7 +128,7 @@ export function FixedAccessoryPackageEditor({
           type="button"
           onClick={() => onChange(addEmptyFixedAccessoryItem(value))}
         >
-          <Plus size={15} /> Thêm món
+            <span aria-hidden="true">＋</span> Thêm món
         </button>
       </div>
 
@@ -136,24 +142,28 @@ export function FixedAccessoryPackageEditor({
       />
       {canSuggestFromName && isBlankOrDefaultPackageItems(value.items) && (
         <div className="hint accessory-package-hint">
-          Đã có mẫu món cho bộ này — gõ/chọn tên bộ để tự điền, hoặc bấm “Gợi ý món theo tên bộ”.
-          Chỉ chuẩn hoá <strong>tên</strong>, không ép đơn giá.
+          Chọn tên bộ để tự điền danh sách món; đơn giá vẫn nhập riêng.
         </div>
       )}
       {orphans.length > 0 && orphans.length <= 24 && (
         <div className="hint accessory-orphan-hint">
-          Món lẻ ngoài bộ chuẩn (gợi ý gộp): {orphans.slice(0, 6).join(' · ')}
+          Món lẻ có thể gộp: {orphans.slice(0, 6).join(' · ')}
           {orphans.length > 6 ? ` · +${orphans.length - 6}` : ''}
         </div>
       )}
 
       <div className="accessory-items">
         {value.items.length === 0 ? (
-          <div className="empty-line">Chưa có món phụ kiện nào trong bộ.</div>
+          <div className="empty-line">Chưa có món trong bộ. Bấm “Thêm món” để thêm dòng.</div>
         ) : (
           value.items.map((item, index) => (
-            <div key={item.id} className="accessory-item-line" data-row-id={item.id} {...rowProps(index)}>
-              <DragHandle {...handleProps(index)} label="Kéo để đổi thứ tự món" />
+            <div
+              key={item.id}
+              className={rowDrag ? 'accessory-item-line is-row-drag' : 'accessory-item-line'}
+              data-row-id={item.id}
+              {...lineDragProps(index)}
+            >
+              {!rowDrag && <DragHandle {...handleProps(index)} label="Kéo để đổi thứ tự món" />}
               <span className="line-index">{index + 1}</span>
               <AutoSuggestInput
                 label="Tên món trong bộ"
@@ -245,16 +255,21 @@ export function ExtraAccessoriesEditor({
   onChange,
   suggestions,
   title = 'Phụ kiện phát sinh',
+  rowDrag = false,
 }: {
   value: ExtraAccessoryDraft[];
   onChange: (value: ExtraAccessoryDraft[]) => void;
   suggestions: AccessoryEditorSuggestions;
   title?: string;
+  /** Kéo bằng cả dòng thay vì tay cầm riêng. Mặc định giữ tay cầm cho tab Báo giá. */
+  rowDrag?: boolean;
 }) {
   const total = value.reduce((sum, item) => sum + item.amount, 0);
   const { handleProps, rowProps } = useDragReorder((from, to) =>
     onChange(reindexExtraAccessories(reorderList(value, from, to))),
   );
+  const lineDragProps = (index: number) =>
+    rowDrag ? mergeRowDragProps(handleProps(index), rowProps(index)) : rowProps(index);
 
   return (
     <div className="editor-panel accessory-editor-panel">
@@ -265,16 +280,16 @@ export function ExtraAccessoriesEditor({
         </div>
         <div className="spacer" />
         <button className="btn-link" type="button" onClick={() => onChange(addEmptyAccessoryDraft(value))}>
-          <Plus size={15} /> Thêm phụ kiện
+          <span aria-hidden="true">＋</span> Thêm phụ kiện
         </button>
       </div>
 
       {value.length === 0 ? (
-        <div className="empty-line">Chưa có phụ kiện phát sinh. Bấm “Thêm phụ kiện” để thêm dòng trống (SL mặc định 0).</div>
+        <div className="empty-line">Chưa có phụ kiện. Bấm “Thêm phụ kiện” để thêm.</div>
       ) : (
         <div className="extra-accessory-table">
-          <div className="extra-accessory-head">
-            <span />
+          <div className={rowDrag ? 'extra-accessory-head is-row-drag' : 'extra-accessory-head'}>
+            {!rowDrag && <span />}
             <span>Tên phụ kiện</span>
             <span className="extra-acc-metrics-head">
               <span>DV</span>
@@ -286,8 +301,13 @@ export function ExtraAccessoriesEditor({
             <span />
           </div>
           {value.map((item, index) => (
-            <div key={item.id} className="extra-accessory-line" data-row-id={item.id} {...rowProps(index)}>
-              <DragHandle {...handleProps(index)} label="Kéo để đổi thứ tự phụ kiện" />
+            <div
+              key={item.id}
+              className={rowDrag ? 'extra-accessory-line is-row-drag' : 'extra-accessory-line'}
+              data-row-id={item.id}
+              {...lineDragProps(index)}
+            >
+              {!rowDrag && <DragHandle {...handleProps(index)} label="Kéo để đổi thứ tự phụ kiện" />}
               <div className="extra-acc-name">
                 <AutoSuggestInput
                   label="Tên"

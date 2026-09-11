@@ -6,29 +6,25 @@
  */
 
 import type {
-  Accessory,
-  DVT,
-  Product,
   ProductAccessoryRecord,
   ProductRecord,
   ProductSpecRecord,
   ProductUnit,
 } from '@/types/models';
 import { parseFixedAccessoriesJson, serializeFixedAccessoriesJson } from '@/lib/quote/accessoryDrafts';
-import { notifyProductsChanged } from './productEvents';
+import { notifyProductsChanged } from '@/features/products/productEvents';
 import {
   compareAndSwapProduct,
   getProductById,
   adjustHostedProductPrices,
-  listProducts,
   listProductsRaw,
   upsertProduct,
   upsertProductsBatch,
   setHostedProductOrder,
-} from '@/features/supabase/productsRepo';
-import { mergeTopLevel } from '@/features/supabase/threeWayMerge';
-import { normalizeCategoryName } from '@/config/categoryOrder';
-import { titleCaseVi } from '@/utils/titleCase';
+} from '@/services/supabase/productsRepo';
+import { mergeTopLevel } from '@/services/supabase/threeWayMerge';
+import { normalizeCategoryName } from '@/lib/products/categoryOrder';
+import { titleCaseVi } from '@/lib/format/titleCase';
 
 const DEFAULT_CATEGORY = 'Khác';
 
@@ -39,7 +35,7 @@ export type ProductInput = {
   name?: string;
   slug?: string;
   category?: string;
-  unit?: ProductUnit | DVT | string;
+  unit?: ProductUnit | string;
   unitPriceVnd?: number;
   shortDesc?: string | null;
   coverImagePath?: string | null;
@@ -47,7 +43,7 @@ export type ProductInput = {
   rawSizeText?: string | null;
   rawPriceText?: string | null;
   specs?: ProductSpecRecord[];
-  accessories?: Array<Partial<ProductAccessoryRecord> & Partial<Accessory>>;
+  accessories?: Array<Partial<ProductAccessoryRecord>>;
   fixedAccessoryPackage?: string | null;
   extraAccessories?: string | null;
   isFeatured?: boolean;
@@ -59,18 +55,6 @@ export type ProductInput = {
   deleted?: boolean;
   deletedAt?: string | null;
   revision?: number;
-  dvt?: DVT | ProductUnit | string;
-  ten?: string;
-  ma?: string;
-  donGiaGoc?: number;
-  rongMacDinh?: number;
-  caoMacDinh?: number;
-  imageId?: string;
-  mau?: string;
-  heNhom?: string;
-  khungBao?: string;
-  banCanh?: string;
-  kinh?: string;
 };
 
 function hasText(value: unknown): value is string {
@@ -81,16 +65,11 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function legacyDvtToUnit(dvt: unknown): ProductUnit {
-  if (dvt === 'Bộ' || dvt === 'BO') return 'BO';
-  if (dvt === 'md' || dvt === 'METER') return 'METER';
+/** Chuẩn hoá mọi biến thể đơn vị (kể cả nhãn hiển thị cũ) về ProductUnit. */
+function toProductUnit(value: unknown): ProductUnit {
+  if (value === 'Bộ' || value === 'BO') return 'BO';
+  if (value === 'md' || value === 'METER') return 'METER';
   return 'M2';
-}
-
-function unitToLegacyDvt(unit: unknown): DVT {
-  if (unit === 'BO') return 'Bộ';
-  if (unit === 'METER') return 'md';
-  return 'm²';
 }
 
 function slugifyVi(input: string): string {
@@ -134,28 +113,11 @@ function normalizeFixedAccessoryPackage(value: unknown): string | null {
   return serializeFixedAccessoriesJson(parseFixedAccessoriesJson(text, 1));
 }
 
-function rawSizeFromLegacy(input: ProductInput): string | null {
-  if (hasText(input.rawSizeText)) return input.rawSizeText.trim();
-  const width = normalizeNumber(input.rongMacDinh, 0);
-  const height = normalizeNumber(input.caoMacDinh, 0);
-  if (width > 0 && height > 0) return `${width} x ${height}`;
-  return null;
+function normalizeRawSizeText(input: ProductInput): string | null {
+  return hasText(input.rawSizeText) ? input.rawSizeText.trim() : null;
 }
 
-function imageIdToPath(value: unknown): string | null {
-  return normalizeNullableString(value);
-}
-
-function imageIdFromPath(value: string | null): string | undefined {
-  return value || undefined;
-}
-
-function spec(key: string, value: unknown, sortOrder: number): ProductSpecRecord | null {
-  const normalized = normalizeNullableString(value);
-  return normalized ? { key, value: normalized, sortOrder } : null;
-}
-
-function specsFromLegacy(input: ProductInput): ProductSpecRecord[] {
+function normalizeSpecs(input: ProductInput): ProductSpecRecord[] {
   const direct = Array.isArray(input.specs) ? input.specs : null;
   if (direct) {
     return direct
@@ -169,26 +131,20 @@ function specsFromLegacy(input: ProductInput): ProductSpecRecord[] {
       .filter((item) => item.key);
   }
 
-  return [
-    spec('Màu', input.mau, 0),
-    spec('Hệ Nhôm', input.heNhom, 1),
-    spec('Khung Bao', input.khungBao, 2),
-    spec('Bản Cánh', input.banCanh, 3),
-    spec('Loại Kính', input.kinh, 4),
-  ].filter((item): item is ProductSpecRecord => item !== null);
+  return [];
 }
 
 function normalizeAccessories(input: ProductInput): ProductAccessoryRecord[] {
   const items = Array.isArray(input.accessories) ? input.accessories : [];
   return items
     .map((item, index): ProductAccessoryRecord | null => {
-      const raw = item as Partial<ProductAccessoryRecord> & Partial<Accessory>;
-      const name = normalizeString(raw.name ?? raw.ten);
+      const raw = item as Partial<ProductAccessoryRecord>;
+      const name = normalizeString(raw.name);
       if (!name) return null;
       return {
         name,
-        quantityPerSet: normalizeNumber(raw.quantityPerSet ?? raw.sl, 0),
-        unitPriceVnd: normalizeNumber(raw.unitPriceVnd ?? raw.donGia, 0),
+        quantityPerSet: normalizeNumber(raw.quantityPerSet, 0),
+        unitPriceVnd: normalizeNumber(raw.unitPriceVnd, 0),
         note: normalizeNullableString(raw.note),
         sortOrder: normalizeNumber(raw.sortOrder, index),
       };
@@ -196,35 +152,13 @@ function normalizeAccessories(input: ProductInput): ProductAccessoryRecord[] {
     .filter((item): item is ProductAccessoryRecord => item !== null);
 }
 
-function getSpecValue(record: ProductRecord, keys: string[]): string | undefined {
-  const wanted = keys.map((key) => key.toLowerCase());
-  return record.specs.find((item) => wanted.includes(item.key.toLowerCase()))?.value;
-}
-
-function parseRawSize(rawSizeText: string | null): { width?: number; height?: number } {
-  if (!rawSizeText) return {};
-  const [rawWidth, rawHeight] = rawSizeText.split(/\s*[xX*]\s*/);
-  const width = normalizeNumber(String(rawWidth ?? '').replace(',', '.'), 0);
-  const height = normalizeNumber(String(rawHeight ?? '').replace(',', '.'), 0);
-  return {
-    width: width > 0 ? width : undefined,
-    height: height > 0 ? height : undefined,
-  };
-}
-
-function isProductRecordLike(input: ProductInput): boolean {
-  return hasText(input.code) && hasText(input.name) && hasText(input.unit);
-}
-
 export function normalizeProductRecord(input: ProductInput, numericIdFallback = 1): ProductRecord {
-  const existingRecord = isProductRecordLike(input);
-  const name = normalizeString(input.name ?? input.ten, 'Sản phẩm');
-  const code = normalizeString(input.code ?? input.ma ?? input.id, crypto.randomUUID()).toUpperCase();
+  const name = normalizeString(input.name, 'Sản phẩm');
+  const code = normalizeString(input.code ?? input.id, crypto.randomUUID()).toUpperCase();
   const createdAt = normalizeString(input.createdAt, normalizeString(input.updatedAt, nowIso()));
   const updatedAt = normalizeString(input.updatedAt, nowIso());
-  const unit = existingRecord ? legacyDvtToUnit(input.unit) : legacyDvtToUnit(input.dvt);
-  const coverImagePath =
-    normalizeNullableString(input.coverImagePath) ?? imageIdToPath(input.imageId);
+  const unit = toProductUnit(input.unit);
+  const coverImagePath = normalizeNullableString(input.coverImagePath);
 
   const revision = Number(input.revision);
   return {
@@ -235,13 +169,13 @@ export function normalizeProductRecord(input: ProductInput, numericIdFallback = 
     slug: normalizeString(input.slug, slugifyVi(name) || code.toLowerCase()),
     category: normalizeCategoryName(normalizeString(input.category, DEFAULT_CATEGORY) || DEFAULT_CATEGORY),
     unit,
-    unitPriceVnd: normalizeNumber(input.unitPriceVnd ?? input.donGiaGoc, 0),
+    unitPriceVnd: normalizeNumber(input.unitPriceVnd, 0),
     shortDesc: normalizeNullableString(input.shortDesc),
     coverImagePath,
     gallery: Array.isArray(input.gallery) ? input.gallery.map(String).filter(Boolean) : [],
-    rawSizeText: rawSizeFromLegacy(input),
+    rawSizeText: normalizeRawSizeText(input),
     rawPriceText: normalizeNullableString(input.rawPriceText),
-    specs: specsFromLegacy(input),
+    specs: normalizeSpecs(input),
     accessories: normalizeAccessories(input),
     fixedAccessoryPackage: normalizeFixedAccessoryPackage(input.fixedAccessoryPackage),
     extraAccessories: normalizeJsonString(input.extraAccessories, '[]'),
@@ -254,36 +188,6 @@ export function normalizeProductRecord(input: ProductInput, numericIdFallback = 
     revision: Number.isSafeInteger(revision) && revision > 0 ? revision : undefined,
     deleted: Boolean(input.deleted) || undefined,
     deletedAt: normalizeNullableString(input.deletedAt),
-  };
-}
-
-export function toLegacyProduct(record: ProductRecord): Product {
-  const { width, height } = parseRawSize(record.rawSizeText);
-  return {
-    id: record.id,
-    updatedAt: record.updatedAt,
-    revision: record.revision,
-    deleted: record.deleted,
-    deletedAt: record.deletedAt,
-    dvt: unitToLegacyDvt(record.unit),
-    ten: record.name,
-    ma: record.code,
-    donGiaGoc: record.unitPriceVnd,
-    rongMacDinh: width,
-    caoMacDinh: height,
-    imageId: imageIdFromPath(record.coverImagePath),
-    mau: getSpecValue(record, ['Màu', 'Mau']),
-    heNhom: getSpecValue(record, ['Hệ Nhôm', 'He Nhom', 'Hệ nhôm']),
-    khungBao: getSpecValue(record, ['Khung Bao', 'Khung bao']),
-    banCanh: getSpecValue(record, ['Bản Cánh', 'Ban Canh', 'Bản cánh']),
-    kinh: getSpecValue(record, ['Loại Kính', 'Kính', 'Loai Kinh']),
-    accessories: record.accessories.map((item, index) => ({
-      id: `${record.id}-pk-${index}`,
-      ten: item.name,
-      donGia: item.unitPriceVnd,
-      sl: item.quantityPerSet,
-      enabled: true,
-    })),
   };
 }
 
@@ -304,17 +208,6 @@ async function getNextNumericId(): Promise<number> {
  */
 export async function seedIfEmpty(): Promise<void> {
   return Promise.resolve();
-}
-
-/** Tất cả sản phẩm CÒN SỐNG, compatibility view cho UI cũ. */
-export async function getAllProducts(): Promise<Product[]> {
-  const records = (await listProducts()).map((value, index) =>
-    normalizeProductRecord(value as ProductInput, index + 1),
-  );
-  return records
-    .filter((value) => !value.deleted && !value.deletedAt)
-    .map(toLegacyProduct)
-    .sort((a, b) => a.ma.localeCompare(b.ma));
 }
 
 /** Sort by manual drag order first (sortOrder), then code for any not yet ordered. */
@@ -346,17 +239,10 @@ export async function getProductRecord(id: string): Promise<ProductRecord | null
   return value ? normalizeProductRecord(value as ProductInput) : null;
 }
 
-export async function getProduct(id: string): Promise<Product | null> {
-  const record = await getProductRecord(id);
-  return record ? toLegacyProduct(record) : null;
-}
-
 export interface SaveProductOptions {
   /** Document acknowledged when this editor started (or after its previous save). */
   baseRecord?: ProductRecord | null;
 }
-
-export type SavedProduct = Product & { record: ProductRecord };
 
 const MAX_CAS_ATTEMPTS = 6;
 
@@ -418,7 +304,7 @@ async function persistProductCas(
 export async function saveProduct(
   p: ProductInput & { id?: string; updatedAt?: string },
   options: SaveProductOptions = {},
-): Promise<SavedProduct> {
+): Promise<ProductRecord> {
   const id = normalizeString(p.id, crypto.randomUUID());
   const hasExplicitBase = Object.prototype.hasOwnProperty.call(options, 'baseRecord');
   // Fast path: ProductForm already holds the last ACK as baseRecord — skip an extra GET.
@@ -454,7 +340,7 @@ export async function saveProduct(
   );
   const saved = await persistProductCas(local, base);
   notifyProductsChanged();
-  return { ...toLegacyProduct(saved), record: saved };
+  return saved;
 }
 
 /** Xoá mềm trực tiếp trên Supabase. */

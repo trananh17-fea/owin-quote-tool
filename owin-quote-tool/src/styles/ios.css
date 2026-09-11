@@ -1,29 +1,48 @@
-/* iOS-style design tokens + base — Owin Quote Tool */
-:root {
-  --ios-blue: #007aff;
-  --ios-green: #34c759;
-  --ios-red: #ff3b30;
-  --ios-gray1: #8e8e93;
-  --ios-gray5: #e5e5ea;
-  --ios-gray6: #f2f2f7;
-  --ios-label: #1c1c1e;
-  --ios-label2: #3c3c43;
-  --ios-bg: #f2f2f7;
-  --ios-card: #ffffff;
-  --ios-radius: 24px; /* rounded-3xl ~ 1.5rem */
-  --ios-radius-sm: 12px;
-  --ios-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.05);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
-    Helvetica, Arial, sans-serif;
-}
+/*
+ * BASE iOS — reset + control nguyên thuỷ dùng chung (.card, .field, .input,
+ * .btn, .icon-btn, .segmented, .switch, .toolbar...).
+ * Token nằm ở styles/tokens.css — file này KHÔNG khai báo lại biến.
+ */
 
 * { box-sizing: border-box; }
+
+html {
+  min-width: 320px;
+  background: var(--ios-bg);
+}
 
 body {
   margin: 0;
   background: var(--ios-bg);
   color: var(--ios-label);
+  font-family: var(--font-sans);
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+[role='button'],
+[role='tab'] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, [href], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ios-blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--ios-blue-soft);
+}
+
+::selection {
+  background: rgba(0, 122, 255, 0.2);
 }
 
 .app-shell {
@@ -32,11 +51,12 @@ body {
   padding: 24px 20px 80px;
 }
 
-.app-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px; }
-.app-subtitle { color: var(--ios-gray1); font-size: 14px; margin: 0 0 24px; }
+.app-title { font-size: var(--fs-title); font-weight: 700; letter-spacing: var(--track-tight); margin: 0 0 4px; }
+.app-subtitle { color: var(--ios-label3); font-size: var(--fs-sm); margin: 0 0 24px; }
 
 .card {
   background: var(--ios-card);
+  border: 1px solid var(--ios-separator);
   border-radius: var(--ios-radius);
   box-shadow: var(--ios-shadow);
   padding: 20px;
@@ -45,7 +65,7 @@ body {
 .section-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--ios-gray1);
+  color: var(--ios-label3);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin: 0 0 8px;
@@ -57,7 +77,7 @@ body {
 .input {
   width: 100%;
   border: none;
-  background: var(--ios-gray6);
+  background: var(--ios-fill);
   border-radius: var(--ios-radius-sm);
   padding: 12px 14px;
   font-size: 16px;
@@ -65,12 +85,12 @@ body {
   outline: none;
   transition: box-shadow 0.15s ease;
 }
-.input:focus { box-shadow: 0 0 0 2px var(--ios-blue); }
+.input:focus-visible { box-shadow: 0 0 0 3px var(--ios-blue-soft); }
 
 /* Segmented control */
 .segmented {
   display: inline-flex;
-  background: var(--ios-gray5);
+  background: var(--ios-fill-strong);
   border-radius: 10px;
   padding: 2px;
   gap: 2px;
@@ -100,12 +120,12 @@ body {
   flex: 0 0 auto;
   border: none;
   border-radius: 999px;
-  background: var(--ios-gray5);
+  background: var(--ios-fill-strong);
   cursor: pointer;
   transition: background 0.2s ease;
   padding: 0;
 }
-.switch.on { background: var(--ios-green); }
+.switch.on { background: var(--ios-green-fill); }
 .switch .knob {
   position: absolute;
   top: 2px;
@@ -124,42 +144,40 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 10px 0;
-  border-bottom: 1px solid var(--ios-gray6);
+  border-bottom: 1px solid var(--ios-fill);
 }
 .switch-row:last-child { border-bottom: none; }
-
-/* Collapsible (animation ẩn/hiện Rộng/Cao) */
-.collapsible {
-  overflow: hidden;
-  transition: max-height 0.28s ease, opacity 0.28s ease, margin 0.28s ease;
-}
-.collapsible.open { max-height: 200px; opacity: 1; }
-.collapsible.closed { max-height: 0; opacity: 0; margin-top: 0; margin-bottom: 0; }
 
 /* Buttons */
 .btn {
   border: none;
   border-radius: var(--ios-radius-sm);
+  min-height: var(--touch);
   padding: 12px 20px;
   font-size: 16px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   cursor: pointer;
-  transition: filter 0.15s ease, opacity 0.15s ease;
+  transition: filter 0.15s ease, opacity 0.15s ease, transform 0.15s var(--ease-ios);
 }
 .btn svg { flex: 0 0 auto; }
-.btn:active { filter: brightness(0.94); }
-.btn-primary { background: var(--ios-blue); color: #fff; }
-.btn-danger { background: var(--ios-red); color: #fff; }
-.btn-ghost { background: var(--ios-gray6); color: var(--ios-blue); }
+.btn:active:not(:disabled) { filter: brightness(0.94); transform: scale(0.985); }
+.btn-primary { background: var(--ios-blue-ink); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--ios-blue-hover); }
+.btn-danger { background: var(--ios-red-fill); color: #fff; }
+.btn-ghost { background: var(--ios-fill); color: var(--ios-blue); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Image dropzone */
 .dropzone {
-  border: 2px dashed var(--ios-gray5);
+  border: 2px dashed var(--ios-fill-strong);
   border-radius: var(--ios-radius-sm);
   padding: 18px;
   text-align: center;
-  color: var(--ios-gray1);
+  color: var(--ios-label3);
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
   position: relative;
@@ -184,30 +202,17 @@ body {
 @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
 
 /* Product list */
-.product-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px;
-  border-radius: var(--ios-radius-sm);
-  transition: background 0.15s ease;
-}
-.product-row:hover { background: var(--ios-gray6); }
 .product-thumb {
   width: 52px; height: 52px; border-radius: 12px; object-fit: cover;
-  background: var(--ios-gray5); flex: 0 0 auto;
+  background: var(--ios-fill-strong); flex: 0 0 auto;
 }
-.product-meta { flex: 1 1 auto; min-width: 0; }
 .product-name { font-weight: 600; font-size: 15px; }
-.product-sub { color: var(--ios-gray1); font-size: 13px; }
-.badge {
-  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px;
-  background: var(--ios-gray5); color: var(--ios-label2);
-}
-.row-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.product-sub { color: var(--ios-label3); font-size: 13px; }
 .icon-btn {
-  border: none; background: var(--ios-gray6); border-radius: 8px; padding: 8px;
+  width: var(--icon-btn); height: var(--icon-btn); border: 1px solid var(--ios-separator);
+  background: var(--ios-card); border-radius: 10px; padding: 8px;
   cursor: pointer; color: var(--ios-label2); display: inline-flex;
+  align-items: center; justify-content: center;
 }
 .icon-btn.danger { color: var(--ios-red); }
 
@@ -216,40 +221,6 @@ body {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 0.9s linear infinite; display: inline-block; vertical-align: -4px; }
-
-/* Tabs điều hướng */
-.nav-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
-.nav-tabs button {
-  border: none; background: transparent; padding: 8px 16px; border-radius: 10px;
-  font-size: 15px; font-weight: 600; color: var(--ios-gray1); cursor: pointer;
-}
-.nav-tabs button.active { background: var(--ios-card); color: var(--ios-blue); box-shadow: var(--ios-shadow); }
-
-/* Grid card sản phẩm chọn báo giá */
-.pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-.pick-card {
-  background: var(--ios-card); border-radius: var(--ios-radius-sm); padding: 10px;
-  cursor: pointer; box-shadow: var(--ios-shadow); transition: transform 0.12s ease;
-  text-align: left; border: none;
-}
-.pick-card:active { transform: scale(0.97); }
-.pick-card img, .pick-card .ph {
-  width: 100%; height: 96px; object-fit: cover; border-radius: 10px; background: var(--ios-gray5);
-  display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
-}
-.pick-card .nm { font-weight: 600; font-size: 14px; }
-.pick-card .cd { color: var(--ios-gray1); font-size: 12px; }
-
-/* Bảng báo giá editable */
-.quote-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.quote-table th, .quote-table td { padding: 8px 6px; border-bottom: 1px solid var(--ios-gray6); text-align: right; }
-.quote-table th { color: var(--ios-gray1); font-size: 12px; font-weight: 600; text-transform: uppercase; }
-.quote-table td.l, .quote-table th.l { text-align: left; }
-.quote-table input { width: 84px; border: none; background: var(--ios-gray6); border-radius: 8px; padding: 6px 8px; text-align: right; font-size: 14px; }
-.quote-table input.wide { width: 110px; }
-.qt-acc { background: var(--ios-gray6); }
-.qt-acc td { font-size: 13px; color: var(--ios-label2); }
-.qt-total-row td { font-weight: 700; font-size: 15px; border-top: 2px solid var(--ios-gray5); }
 
 /* Preview WYSIWYG */
 .preview-doc { background: #fff; border-radius: var(--ios-radius-sm); padding: 24px; box-shadow: var(--ios-shadow); font-size: 13px; color: #111; }
@@ -262,15 +233,276 @@ body {
 .preview-doc .doc-title { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 4px; }
 .preview-doc .cust { margin: 10px 0; line-height: 1.6; }
 .preview-doc .totals { margin-top: 12px; text-align: right; line-height: 1.7; }
-.muted { color: var(--ios-gray1); }
+.muted { color: var(--ios-label3); }
 
-/* Conflict dialog */
-.conflict-dialog { width: 100%; margin-top: 8px; }
-.conflict-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--ios-gray6); }
-.conflict-row:last-child { border-bottom: none; }
+@media (pointer: coarse) {
+  .icon-btn,
+  .segmented button,
+  .tool-nav-item {
+    min-width: var(--touch);
+    min-height: var(--touch);
+  }
+}
 
-@media (max-width: 640px) {
-  .conflict-row { align-items: stretch; flex-direction: column; }
-  .row-actions { justify-content: stretch; }
-  .row-actions .btn { flex: 1 1 160px; justify-content: center; }
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .btn:active:not(:disabled) { transform: none; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Tinh chỉnh control (trước ở lớp chung — lớp override cũ).
+ * Đặt sau phần trên để giữ đúng kết quả cascade như trước khi gộp file.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+html, body {
+  min-width: 0;
+  overflow-x: hidden;
+}
+body {
+  background: var(--ios-bg);
+  color: var(--ios-label);
+  font-size: var(--fs-md);
+}
+::selection {
+  background: var(--ios-blue-soft);
+  color: var(--ios-label);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(60, 60, 67, 0.28) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(60, 60, 67, 0.24);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(60, 60, 67, 0.4); background-clip: padding-box; }
+img, svg, video, canvas {
+  max-width: 100%;
+}
+button, input, select, textarea {
+  font: inherit;
+  max-width: 100%;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type='number']::-webkit-outer-spin-button, input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.input, .btn, .btn-primary, .btn-ghost, .btn-danger, select.input, textarea.input {
+  border-radius: var(--r-md) !important;
+  font-size: var(--fs-md) !important;
+  min-height: var(--control-h);
+  box-sizing: border-box;
+}
+.input, select.input, textarea.input {
+  padding: 10px 14px !important;
+  background: var(--ios-fill) !important;
+  border: 1px solid var(--ios-separator) !important;
+  color: var(--ios-label);
+  width: 100%;
+}
+.input:focus, select.input:focus, textarea.input:focus {
+  outline: none;
+  border-color: var(--ios-blue) !important;
+  box-shadow: var(--shadow-glow) !important;
+  background: var(--ios-card) !important;
+}
+.btn, .btn-primary, .btn-ghost, .btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px !important;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.icon-btn {
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  min-width: var(--icon-btn);
+  min-height: var(--icon-btn);
+  padding: 0;
+  border-radius: var(--r-sm) !important;
+  background: var(--ios-card);
+  border: 1px solid var(--ios-separator);
+  color: var(--ios-label2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.field > label {
+  font-size: var(--fs-sm) !important;
+  font-weight: 500;
+  color: var(--ios-label2);
+  margin-bottom: 6px;
+}
+.btn-primary {
+  background: var(--ios-blue-ink);
+  color: #fff;
+  border: 0;
+}
+.btn-primary:hover { background: var(--ios-blue-hover); filter: none; }
+.btn-primary:active { transform: scale(0.985); }
+.btn-primary:disabled, .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+}
+.btn-ghost {
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+  border: 0;
+}
+.btn-ghost:hover { background: var(--ios-blue-soft-strong); }
+.btn-ghost:active { transform: scale(0.985); }
+.btn-danger {
+  background: var(--ios-red-soft);
+  color: var(--ios-red);
+  border: 0;
+}
+.toolbar { flex-wrap: wrap; gap: 10px; align-items: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .btn-primary, .btn-ghost { transition: none !important; }
+}
+.btn-primary, .btn-ghost {
+  min-height: var(--control-h);
+}
+.btn-link {
+  border: none;
+  background: transparent;
+  color: var(--owin-action);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 6px;
+  min-height: 36px;
+  border-radius: var(--r-xs);
+}
+.btn-link:hover { color: var(--owin-action-hover); background: color-mix(in srgb, var(--ios-blue) 6%, transparent); }
+.icon-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+[data-dragging] {
+  opacity: 0.45;
+}
+
+@media (max-width: 720px) {
+  :root {
+    /* Chỉ thu control cho vừa ngón tay; KHÔNG thu thang chữ theo breakpoint
+       (IOS_STYLE_GUIDE §4.2) — chữ nhỏ hơn 16px làm Safari iOS tự zoom khi
+       chạm vào ô nhập, và phá luôn việc người dùng chỉnh cỡ chữ trình duyệt. */
+    --control-h: 36px;
+    --control-h-sm: 34px;
+    --icon-btn: 34px;
+  }
+  html { -webkit-tap-highlight-color: color-mix(in srgb, var(--ios-blue) 12%, transparent); }
+  .field { margin-bottom: 8px; }
+  .field > label {
+    /* font-size bo di: thua rule `!important` cua thang chu o tren, va thang chu
+       khong thu nho theo breakpoint (IOS_STYLE_GUIDE §4.2). */
+    margin-bottom: 3px;
+    font-weight: 500;
+  }
+  .input, select.input, textarea.input {
+      min-height: var(--control-h);
+      padding: 6px 10px;
+      border-radius: 9px;
+      font-size: 16px; /* iOS no-zoom */
+      line-height: 1.25;
+    }
+  textarea.input { min-height: 56px; }
+  .btn {
+      min-height: 36px;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+  .icon-btn {
+      width: var(--icon-btn);
+      height: var(--icon-btn);
+      min-width: var(--icon-btn);
+    }
+  .toolbar { flex-wrap: wrap; gap: 6px; }
+  .toolbar .btn { min-height: 36px; }
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 960px) {
+  :root {
+      --control-h: 30px;
+      --control-h-sm: 28px;
+      --icon-btn: 28px;
+    }
+  .field { margin-bottom: 5px; }
+  .field > label { margin-bottom: 2px; }
+  .input, select.input, textarea.input {
+      min-height: 30px;
+      padding: 4px 8px;
+      font-size: 13px; /* ngang: ít zoom, ưu tiên gọn để thấy hết */
+      line-height: 1.2;
+    }
+  textarea.input { min-height: 48px; }
+  .btn {
+      min-height: 30px;
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+  .icon-btn {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+    }
+}
+.input, select.input, textarea.input {
+  background: var(--owin-soft) !important;
+  border: 1px solid var(--ios-separator) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
+}
+.input:hover, select.input:hover, textarea.input:hover {
+  border-color: var(--owin-border-strong) !important;
+}
+.input:focus, select.input:focus, textarea.input:focus {
+  border-color: var(--ios-blue) !important;
+  box-shadow: var(--shadow-glow) !important;
+  background: var(--ios-card) !important;
+}
+.input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.icon-btn {
+  border: 1px solid var(--owin-border);
+  background: var(--ios-card);
+  color: var(--owin-ink-muted);
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.icon-btn:hover {
+  background: var(--owin-soft);
+  color: var(--owin-ink);
+  border-color: var(--owin-border-strong);
+}
+.icon-btn.danger:hover {
+  background: var(--owin-danger-soft);
+  color: var(--owin-danger);
+  border-color: rgba(194, 65, 12, 0.3);
 }

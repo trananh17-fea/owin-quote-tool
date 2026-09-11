@@ -9,7 +9,7 @@ import {
   CATALOGUE_WORD_EDIT_PASSWORD,
   computeWordProtectionHash,
   fitImageDimensionsToEmuBox,
-  renderBangGiaDocumentXml,
+  renderCatalogueDocumentXml,
   renderQuoteDocumentXml,
 } from '@/features/export/wordExport';
 
@@ -178,7 +178,7 @@ describe('reference Word catalogue template renderer', () => {
     };
 
     const zip = new PizZip(readFileSync(resolve(DIR, 'Template_Bang_Gia.docx')));
-    const xml = await renderBangGiaDocumentXml(zip, [product]);
+    const xml = await renderCatalogueDocumentXml(zip, [product]);
 
     expect(xml).toContain('I. CỬA SỔ');
     expect(xml).toContain('Cửa Sổ Mở Quay 1 Cánh');

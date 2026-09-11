@@ -1,0 +1,114 @@
+import { useEffect, useState } from 'react';
+import { ArrowRight, Eye, EyeOff, LoaderCircle, Monitor, Moon, Sun, ShieldCheck } from 'lucide-react';
+import { signInWithPassword } from '@/features/auth/authSession';
+import './login.css';
+
+type Appearance = 'light' | 'dark' | 'system';
+const appearances = [
+  { value: 'light', label: 'Sáng', Icon: Sun },
+  { value: 'dark', label: 'Tối', Icon: Moon },
+  { value: 'system', label: 'Theo máy', Icon: Monitor },
+] as const;
+function readAppearance(): Appearance {
+  try {
+    const value = localStorage.getItem('owin-appearance');
+    if (value === 'light' || value === 'dark') return value;
+  } catch { /* Use system preference if storage is unavailable. */ }
+  return 'system';
+}
+
+export function LoginScreen() {
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [visible, setVisible] = useState(false);
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [appearance, setAppearance] = useState<Appearance>(readAppearance);
+  const [systemDark, setSystemDark] = useState(() => matchMedia('(prefers-color-scheme: dark)').matches);
+  useEffect(() => {
+    const media = matchMedia('(prefers-color-scheme: dark)');
+    const update = () => setSystemDark(media.matches);
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (busy || !identifier.trim() || !password) return;
+    setBusy(true);
+    setError('');
+    try { await signInWithPassword(identifier, password); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Không thể đăng nhập lúc này. Vui lòng thử lại.'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="login-premium" data-appearance={appearance === 'system' ? (systemDark ? 'dark' : 'light') : appearance}>
+      <header className="login-header">
+        <a className="login-wordmark" href={import.meta.env.BASE_URL} aria-label="OWIN trang chủ">
+          <img src={`${import.meta.env.BASE_URL}owin-user-assets/logo/logo.webp`} width="40" height="40" alt="" />
+          <span>OWIN</span>
+        </a>
+        <div className="login-appearance" role="group" aria-label="Chế độ giao diện">
+          {appearances.map(({ value, label, Icon }) => <button key={value} type="button" title={label} aria-label={`Giao diện ${label.toLowerCase()}`} aria-pressed={appearance === value} onClick={() => {
+            setAppearance(value);
+            try { localStorage.setItem('owin-appearance', value); } catch { /* Preference remains available for this session. */ }
+          }}><Icon size={16} /><span>{label}</span></button>)}
+        </div>
+      </header>
+      <main className="login-scroll">
+        <div className="login-layout">
+          <section className="login-story" aria-label="Giới thiệu OWIN">
+            <div className="login-story-copy">
+              <span className="login-eyebrow">Báo giá nhôm kính</span>
+            </div>
+            <svg className="login-architecture" viewBox="0 0 680 370" role="img" aria-label="Hình vẽ một căn nhà có cửa nhôm kính lớn">
+              <defs><clipPath id="arch-clip"><rect width="680" height="370" rx="26" /></clipPath></defs>
+              <g clipPath="url(#arch-clip)">
+              <rect className="arch-bg" width="680" height="370" />
+              <g className="arch-scene">
+              <path d="M0 290H680V370H0Z" fill="#dfe2ea" />
+              <path d="M85 90 470 30 614 99 230 154Z" fill="#fbfbfd" />
+              <path d="M85 90 230 154V337L85 272Z" fill="#dde0e8" />
+              <path d="M230 154 614 99V283L230 337Z" fill="#f5f6fa" />
+              <path d="M255 167 590 119V273L255 320Z" fill="#4b5568" />
+              <path d="M266 176 579 131V264L266 308Z" fill="#c4dbee" />
+              <path d="M266 250 579 166V264L266 308Z" fill="#d7e6f4" />
+              <path d="M330 167V301M410 155V289M492 143V278" stroke="#4b5568" strokeWidth="8" />
+              <path d="M272 186 319 179M344 176 397 168M426 164 479 156M506 152 566 143" stroke="#f6fbfe" strokeWidth="3" />
+              <path d="M232 338 614 284 653 302 268 358Z" fill="#d4d8e1" />
+              <path d="M106 143 188 180V283L106 246Z" fill="#aabfd4" />
+              <path d="M147 162V264" stroke="#5e6b80" strokeWidth="5" />
+              <circle cx="61" cy="237" r="32" fill="#93c9a7" /><circle cx="48" cy="211" r="26" fill="#a8d6b2" />
+              <path d="M58 253V304" stroke="#8d9c8b" strokeWidth="5" />
+              <path d="M550 328H615" stroke="#b9bfc9" strokeWidth="3" />
+              </g>
+              </g>
+            </svg>
+            <div className="login-story-footer"><span>Dành cho công việc mỗi ngày</span><span>OWIN</span></div>
+          </section>
+          <section className="login-form-region" aria-labelledby="login-title">
+            <form className="login-form" onSubmit={submit} aria-busy={busy}>
+              <h2 id="login-title">Đăng nhập</h2>
+              <label className="login-field" htmlFor="login-identifier">Tên đăng nhập hoặc email</label>
+              <input id="login-identifier" name="username" autoComplete="username" autoCapitalize="none" spellCheck={false} placeholder="Ví dụ: an.nguyen hoặc an@owin.vn" value={identifier} onChange={e => setIdentifier(e.target.value)} required disabled={busy} aria-describedby={error ? 'login-error' : undefined} />
+              <label className="login-field" htmlFor="login-password">Mật khẩu</label>
+              <div className="login-password">
+                <input id="login-password" name="password" type={visible ? 'text' : 'password'} autoComplete="current-password" placeholder="Nhập mật khẩu" value={password} onChange={e => setPassword(e.target.value)} required disabled={busy} aria-describedby={error ? 'login-error' : undefined} />
+                <button type="button" onClick={() => setVisible(v => !v)} aria-label={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} aria-pressed={visible}>{visible ? <EyeOff size={19} /> : <Eye size={19} />}</button>
+              </div>
+              <button className="login-forgot" type="button" aria-expanded={recoveryOpen} aria-controls="login-recovery" onClick={() => setRecoveryOpen(open => !open)}>Quên mật khẩu?</button>
+              {recoveryOpen && <div className="login-recovery" id="login-recovery" role="status">Nhắn cho người quản lý tài khoản, kèm tên đăng nhập hoặc email của bạn, để được cấp mật khẩu mới. Đừng gửi mật khẩu cho bất kỳ ai.</div>}
+              {error && <p className="login-feedback" id="login-error" role="alert">{error}</p>}
+              <button className="login-submit" type="submit" disabled={busy || !identifier.trim() || !password}>{busy ? 'Đang đăng nhập…' : 'Đăng nhập'}{busy ? <LoaderCircle className="login-spinner" size={19} /> : <ArrowRight size={19} />}</button>
+              <p className="login-session-note"><ShieldCheck size={16} /> Máy này sẽ nhớ đăng nhập cho lần sau.</p>
+              <div className="login-help">Chưa có tài khoản?<br /><span>Nhắn người quản lý để được mở tài khoản.</span></div>
+            </form>
+          </section>
+        </div>
+        <footer className="login-footer"><span>OWIN · Công cụ báo giá nhôm kính</span><span>Sản phẩm · Báo giá · Bảng giá · Tính nhôm</span></footer>
+      </main>
+    </div>
+  );
+}
+
+

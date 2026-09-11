@@ -4,7 +4,7 @@
  */
 
 import type { jsPDF } from 'jspdf';
-import { withBasePath } from '@/utils/imagePaths';
+import { withBasePath } from '@/lib/media/imagePaths';
 
 export const PDF_FONT_FAMILY = 'NotoSansVI';
 

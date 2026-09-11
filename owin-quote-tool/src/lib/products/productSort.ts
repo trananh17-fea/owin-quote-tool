@@ -1,5 +1,5 @@
 import type { ProductRecord } from '@/types/models';
-import { categoryOrderIndex } from '@/config/categoryOrder';
+import { categoryOrderIndex } from '@/lib/products/categoryOrder';
 import { buildCatalogueMoneyBlocks } from '@/lib/catalogue/catalogueMoney';
 
 /**

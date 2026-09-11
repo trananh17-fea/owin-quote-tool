@@ -10,16 +10,15 @@
  */
 
 import PizZip from 'pizzip';
-import type { CalculatedQuote, Customer, ProductRecord, ProductUnit, QuoteLine } from '@/types/models';
-import { downloadBlob } from '@/utils/download';
-import { formatSoVND } from '@/utils/format';
-import { getImageDataUrlByPath } from '@/utils/imagePaths';
+import type { CalculatedQuote, ProductRecord, ProductUnit } from '@/types/models';
+import { downloadBlob } from '@/lib/browser/download';
+import { formatVndNumber } from '@/lib/format/currency';
+import { getImageDataUrlByPath } from '@/lib/media/imagePaths';
 import { resolveItemImage } from '@/lib/media/itemImageResolver';
 import { buildCatalogueBlockRows, type CatalogueBlockRow } from '@/lib/catalogue/catalogueRows';
-import { tinhDong, tinhTongBaoGia, tinhTongLamTron } from '@/features/quote/quoteCalc';
 
-import tplBaoGiaUrl from '@/assets/templates/Template_Bao_Gia.docx?url';
-import tplBangGiaUrl from '@/assets/templates/Template_Bang_Gia.docx?url';
+import quoteTemplateUrl from '@/assets/templates/Template_Bao_Gia.docx?url';
+import catalogueTemplateUrl from '@/assets/templates/Template_Bang_Gia.docx?url';
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -564,8 +563,8 @@ function buildQuoteItemDocRows(
       height: line.unit === 'BO' ? '' : formatDecimal(line.heightM),
       quantity: formatDecimal(line.quantity),
       weight: formatDecimal(line.calculatedQty),
-      unitPrice: formatSoVND(line.unitPriceVnd),
-      amount: formatSoVND(line.lineTotalVnd),
+      unitPrice: formatVndNumber(line.unitPriceVnd),
+      amount: formatVndNumber(line.lineTotalVnd),
       showImage: lineIndex === 0,
     });
   });
@@ -589,8 +588,8 @@ function buildQuoteItemDocRows(
         height: '',
         quantity: formatDecimal(quantity),
         weight: '',
-        unitPrice: formatSoVND(unitPrice),
-        amount: formatSoVND(quantity * unitPrice),
+        unitPrice: formatVndNumber(unitPrice),
+        amount: formatVndNumber(quantity * unitPrice),
         showImage: false,
       });
     }
@@ -614,8 +613,8 @@ function buildQuoteItemDocRows(
           height: '',
           quantity: formatDecimal(quantity),
           weight: '',
-          unitPrice: formatSoVND(accessory.unitPriceVnd),
-          amount: formatSoVND(accessory.lineTotalVnd),
+          unitPrice: formatVndNumber(accessory.unitPriceVnd),
+          amount: formatVndNumber(accessory.lineTotalVnd),
           showImage: false,
         });
       });
@@ -643,8 +642,8 @@ function buildQuoteItemDocRows(
           height: '',
           quantity: formatDecimal(quantity || (unit === 'BO' ? 0 : 1)),
           weight: unit === 'BO' ? '' : formatDecimal(weight > 0 ? weight : quantity),
-          unitPrice: formatSoVND(unitPrice),
-          amount: formatSoVND(basis * unitPrice),
+          unitPrice: formatVndNumber(unitPrice),
+          amount: formatVndNumber(basis * unitPrice),
           showImage: false,
         });
       });
@@ -987,15 +986,15 @@ export function buildQuoteWordData(quote: CalculatedQuote): Record<string, strin
     '{ngay}': d.ngay,
     '{thang}': d.thang,
     '{nam}': d.nam,
-    '{tong_tien}': formatSoVND(quote.summary.totalVnd),
-    '{lam_tron}': formatSoVND(quote.summary.roundedTotalVnd),
-    '{tam_ung}': formatSoVND(quote.summary.depositVnd),
-    '{can_thanh_toan}': formatSoVND(quote.summary.balanceVnd),
+    '{tong_tien}': formatVndNumber(quote.summary.totalVnd),
+    '{lam_tron}': formatVndNumber(quote.summary.roundedTotalVnd),
+    '{tam_ung}': formatVndNumber(quote.summary.depositVnd),
+    '{can_thanh_toan}': formatVndNumber(quote.summary.balanceVnd),
   };
 }
 
 export async function exportQuoteWord(quote: CalculatedQuote, quoteCode: string, products: ProductRecord[] = []): Promise<string> {
-  const zip = await fetchTemplateZip(tplBaoGiaUrl);
+  const zip = await fetchTemplateZip(quoteTemplateUrl);
   const documentXml = await renderQuoteDocumentXml(zip, quote, products);
   zip.file('word/document.xml', documentXml);
   const fileName = `Bao_gia_${quoteCode}.docx`;
@@ -1022,7 +1021,7 @@ function renderCatalogueCategoryRow(template: string, row: CatalogueBlockRow): s
 
 function money(value: number | null | undefined): string {
   if (value === null || value === undefined) return '';
-  return formatSoVND(value);
+  return formatVndNumber(value);
 }
 
 function renderCatalogueProductRow(template: string, row: CatalogueBlockRow, imageXml: string | null): string {
@@ -1156,7 +1155,7 @@ function catalogueImageMaxCy(blockHeightTwips: number): number {
   );
 }
 
-export async function renderBangGiaDocumentXml(zip: PizZip, products: ProductRecord[]): Promise<string> {
+export async function renderCatalogueDocumentXml(zip: PizZip, products: ProductRecord[]): Promise<string> {
   const documentFile = zip.file('word/document.xml');
   if (!documentFile) throw new Error('Template bảng giá không có word/document.xml.');
 
@@ -1237,7 +1236,7 @@ export async function renderBangGiaDocumentXml(zip: PizZip, products: ProductRec
   return ensureBoldFontRuns(documentXml);
 }
 
-export async function buildBangGiaWordData(products: ProductRecord[]) {
+export async function buildCatalogueWordData(products: ProductRecord[]) {
   return {
     rows: buildCatalogueBlockRows(products),
     totalVnd: buildCatalogueBlockRows(products)
@@ -1429,102 +1428,13 @@ export async function applyCatalogueReadOnlyProtection(
   zip.file(settingsPath, next);
 }
 
-export async function exportBangGiaWord(products: ProductRecord[]): Promise<string> {
-  const zip = await fetchTemplateZip(tplBangGiaUrl);
-  const documentXml = await renderBangGiaDocumentXml(zip, products);
+export async function exportCatalogueWord(products: ProductRecord[]): Promise<string> {
+  const zip = await fetchTemplateZip(catalogueTemplateUrl);
+  const documentXml = await renderCatalogueDocumentXml(zip, products);
   zip.file('word/document.xml', documentXml);
   // Catalogue exports are preview-only; password unlocks editing in Word.
   await applyCatalogueReadOnlyProtection(zip, CATALOGUE_WORD_EDIT_PASSWORD);
   const fileName = `Bang_gia_OWIN_${new Date().toISOString().slice(0, 10)}.docx`;
   downloadBlob(generateDocxBlob(zip), fileName);
   return fileName;
-}
-
-function legacyQuoteToCalculated(customer: Customer, lines: QuoteLine[], tamUng = 0): CalculatedQuote {
-  const items = lines.map((line, index) => {
-    const calc = tinhDong(line);
-    const unit: ProductUnit = line.dvt === 'Bộ' ? 'BO' : line.dvt === 'md' ? 'METER' : 'M2';
-    const quantity =
-      unit === 'M2'
-        ? Number(((line.rong || 0) * (line.cao || 0) * line.sl).toFixed(3))
-        : unit === 'METER'
-          ? Number((((line.rong || 0) + (line.cao || 0)) * line.sl).toFixed(3))
-          : line.sl;
-    return {
-      sourceType: 'CUSTOM' as const,
-      productId: line.productId,
-      productCode: line.ma,
-      quoteItemCode: line.ma,
-      itemName: line.ten,
-      productName: line.ten,
-      category: null,
-      groupName: null,
-      coverImagePath: line.imageId || null,
-      image: line.imageId || null,
-      unit,
-      description: line.moTa || null,
-      unitPriceVnd: line.donGia,
-      specs: [],
-      dimensions: [{
-        unit,
-        widthM: line.rong ?? null,
-        heightM: line.cao ?? null,
-        quantity: line.sl,
-        calculatedQty: quantity,
-        unitPriceVnd: line.donGia,
-        lineTotalVnd: calc.tienChinh,
-        description: null,
-      }],
-      accessories: line.accessories.filter((item) => item.enabled).map((item) => ({
-        enabled: true,
-        isEnabled: true,
-        name: item.ten,
-        quantityPerSet: item.sl,
-        totalSet: item.sl,
-        unitPriceVnd: item.donGia,
-        lineTotalVnd: item.sl * item.donGia,
-        note: null,
-      })),
-      fixedAccessoryPackage: null,
-      extraAccessories: null,
-      productSubtotalVnd: calc.tienChinh,
-      accessorySubtotalVnd: calc.tienPhuKien,
-      itemTotalVnd: calc.tongDong,
-      mainTotal: calc.tienChinh,
-      accessoryTotal: calc.tienPhuKien,
-      itemTotal: calc.tongDong,
-      sortOrder: index + 1,
-      numericId: null,
-    };
-  });
-  const totalVnd = tinhTongBaoGia(lines);
-  const roundedTotalVnd = tinhTongLamTron(lines);
-  return {
-    customerId: null,
-    customerName: customer.ten,
-    customerPhone: customer.sdt,
-    customerEmail: customer.email,
-    customerAddress: customer.diaChi,
-    quoteDate: new Date(),
-    depositVnd: tamUng,
-    items,
-    summary: {
-      subtotalProductVnd: items.reduce((sum, item) => sum + item.productSubtotalVnd, 0),
-      subtotalAccessoryVnd: items.reduce((sum, item) => sum + item.accessorySubtotalVnd, 0),
-      totalVnd,
-      roundedTotalVnd,
-      depositVnd: tamUng,
-      balanceVnd: Math.max(0, roundedTotalVnd - tamUng),
-    },
-  };
-}
-
-/** Legacy compatibility export kept for old callers. */
-export async function exportFormat1(customer: Customer, lines: QuoteLine[], tamUng = 0): Promise<void> {
-  await exportQuoteWord(legacyQuoteToCalculated(customer, lines, tamUng), `OWIN-${Date.now()}`);
-}
-
-/** Legacy compatibility export kept for old callers. */
-export async function exportFormat2(customer: Customer, lines: QuoteLine[], _imageMap: Record<string, string>, tamUng = 0): Promise<void> {
-  await exportQuoteWord(legacyQuoteToCalculated(customer, lines, tamUng), `OWIN-${Date.now()}`);
 }

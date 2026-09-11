@@ -5,8 +5,8 @@
 import { jsPDF } from 'jspdf';
 import type { CalculatedQuote, CalculatedQuoteItem, ProductRecord, ProductUnit } from '@/types/models';
 import { resolveItemImage } from '@/lib/media/itemImageResolver';
-import { downloadBlob } from '@/utils/download';
-import { formatSoVND } from '@/utils/format';
+import { downloadBlob } from '@/lib/browser/download';
+import { formatVndNumber } from '@/lib/format/currency';
 import { ensureVietnamesePdfFonts, PDF_FONT_FAMILY } from '@/features/export/pdfFonts';
 import { lightPdfImageDataUrl } from '@/features/export/pdfImage';
 
@@ -38,7 +38,7 @@ type PdfRow = {
 function money(value: number | null | undefined): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return '';
   if (value === 0) return '0';
-  return formatSoVND(value);
+  return formatVndNumber(value);
 }
 
 function unitLabel(unit: ProductUnit | string | null | undefined): string {

@@ -1,9 +1,9 @@
 import ExcelJS from 'exceljs';
 import type { ProductRecord } from '@/types/models';
 import { resolveItemImage } from '@/lib/media/itemImageResolver';
-import { toExcelImage } from '@/utils/excelImage';
+import { toExcelImage } from '@/features/export/excelImage';
 import { buildCatalogueBlockRows } from '@/lib/catalogue/catalogueRows';
-import { downloadBlob } from '@/utils/download';
+import { downloadBlob } from '@/lib/browser/download';
 
 const HEADERS = ['STT', 'Hình ảnh', 'Mô tả chi tiết', 'DV', 'Rộng', 'Cao', 'KL', 'Đơn giá', 'Thành tiền', 'Tổng tiền'];
 
@@ -17,7 +17,7 @@ function styleBorder(): Partial<ExcelJS.Borders> {
   return { top: line, left: line, bottom: line, right: line };
 }
 
-export async function exportBangGiaExcel(products: ProductRecord[]): Promise<void> {
+export async function exportCatalogueExcel(products: ProductRecord[]): Promise<void> {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'OWIN Quote Tool';
   const sheet = workbook.addWorksheet('Bang gia', {

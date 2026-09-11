@@ -13,14 +13,23 @@ import {
   subscribeToQuotes,
   upsertQuote,
   upsertQuotesBatch,
-} from '@/features/supabase/quotesRepo';
+} from '@/services/supabase/quotesRepo';
 import {
   documentsEqual,
   mergeAppendOnlyById,
   mergeTopLevel,
-} from '@/features/supabase/threeWayMerge';
+} from '@/services/supabase/threeWayMerge';
 
 type QuoteInput = Partial<QuoteRecord>;
+
+interface NormalizedQuoteCacheEntry {
+  revision: number | undefined;
+  updatedAt: string | undefined;
+  record: QuoteRecord;
+}
+
+const normalizedQuoteCache = new Map<string, NormalizedQuoteCacheEntry>();
+const MAX_NORMALIZED_QUOTE_CACHE_SIZE = 5_000;
 
 export const QUOTES_CHANGED_EVENT = 'owin-quotes-changed';
 
@@ -225,6 +234,30 @@ export function normalizeQuoteRecord(input: QuoteInput): QuoteRecord {
   };
 }
 
+/** Realtime/focus refreshes usually return unchanged document JSON. Reuse the
+ * normalized object so large snapshots are not copied and serialized again. */
+function normalizeFetchedQuote(input: QuoteRecord): QuoteRecord {
+  const cached = normalizedQuoteCache.get(input.id);
+  if (
+    cached
+    && cached.revision === input.revision
+    && cached.updatedAt === input.updatedAt
+  ) {
+    return cached.record;
+  }
+
+  const record = normalizeQuoteRecord(input);
+  if (!cached && normalizedQuoteCache.size >= MAX_NORMALIZED_QUOTE_CACHE_SIZE) {
+    normalizedQuoteCache.clear();
+  }
+  normalizedQuoteCache.set(record.id, {
+    revision: record.revision,
+    updatedAt: record.updatedAt,
+    record,
+  });
+  return record;
+}
+
 function notifyQuotesChanged(): void {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event(QUOTES_CHANGED_EVENT));
@@ -233,20 +266,20 @@ function notifyQuotesChanged(): void {
 
 export async function getAllQuotesRaw(): Promise<QuoteRecord[]> {
   return (await listQuotesRaw())
-    .map((quote) => normalizeQuoteRecord(quote))
+    .map(normalizeFetchedQuote)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function getAllQuotes(): Promise<QuoteRecord[]> {
   return (await listQuotes())
-    .map((quote) => normalizeQuoteRecord(quote))
+    .map(normalizeFetchedQuote)
     .filter((quote) => !quote.deletedAt && !quote.deleted)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function getQuote(id: string): Promise<QuoteRecord | null> {
   const value = await getQuoteById(id);
-  return value ? normalizeQuoteRecord(value) : null;
+  return value ? normalizeFetchedQuote(value) : null;
 }
 
 export interface SaveQuoteOptions {
