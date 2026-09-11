@@ -1,0 +1,1236 @@
+/*
+ * TÍNH NĂNG: BÁO GIÁ — stylesheet riêng của tab "Báo giá".
+ * Import bởi features/quote/QuoteView.tsx, nạp SAU styles/owinTheme.css.
+ *
+ * Chỉ chứa selector `.quote-*` và `.legacy-accessory-row` (hàng phụ kiện kiểu
+ * cũ của một hạng mục). Pattern dùng chung (.card, .field, .input, .btn,
+ * .icon-btn, .editor-panel, .spec-editor-row, .summary-metric, .switch-row,
+ * .two-col, .toolbar, .admin-page*, .preview-doc) vẫn ở lớp chung — ở đây chỉ
+ * khai biến thể có tổ tiên `.quote-*`.
+ *
+ * Màn danh sách / chi tiết còn mượn vài class của tab Sản phẩm
+ * (product-filter-card, product-toast, product-data-error, product-empty-card,
+ * product-header-actions, product-name, product-sub). Chúng do features/products
+ * sở hữu — KHÔNG style ở đây, chờ đợt đổi tên tập trung.
+ *
+ * `!important` chỉ còn ở chỗ buộc phải đè một `!important` khác vẫn sống ở lớp
+ * chung (.input, .two-col) hoặc rule cũ chưa được xoá khỏi owinTheme.css; mỗi
+ * chỗ đều có ghi chú lý do ngay tại rule.
+ */
+
+/* ═══════════════ Danh sách báo giá ═══════════════ */
+
+/* Hai class dưới nằm trên CÙNG một <div>: thẻ bọc bảng, đồng thời là vùng cuộn
+   ngang cho bảng rộng 960px. */
+.quote-history-table-wrap {
+  overflow-x: auto;
+}
+.quote-list-table-card {
+  margin-top: 0;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-lg);
+  background: var(--ios-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.quote-history-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.quote-history-table th,
+.quote-history-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--ios-separator);
+  text-align: left;
+  vertical-align: middle;
+}
+.quote-history-table th {
+  background: var(--ios-bg);
+  color: var(--ios-label3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.quote-history-table tr:last-child td { border-bottom: 0; }
+.quote-history-table .num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.quote-history-table .total-cell {
+  color: var(--ios-label);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-history-row { transition: background 0.16s var(--ease-ios); }
+.quote-history-row:hover { background: var(--ios-bg); }
+
+.quote-code-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ios-blue-ink);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.quote-code-button:hover { color: var(--ios-blue); }
+
+.quote-customer-name {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.quote-customer-meta {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ios-label3);
+  font-size: var(--fs-sm);
+}
+/* Ngày chỉ để dành cho dạng thẻ trên điện thoại (desktop đã có cột "Ngày tạo"). */
+.quote-history-mobile-date { display: none; }
+
+/* Pill trạng thái — nền tint, chữ cùng tông (draft / saved / exported).
+   Tên lớp ghép động: `quote-status-${status.toLowerCase()}`. */
+.quote-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.quote-status-draft {
+  background: var(--ios-fill);
+  color: var(--ios-label2);
+}
+.quote-status-saved {
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+}
+.quote-status-exported {
+  background: var(--ios-green-soft);
+  color: var(--ios-green);
+}
+
+.quote-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* ═══════════════ Chi tiết một báo giá ═══════════════ */
+
+.quote-detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quote-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.8fr);
+  gap: 16px;
+}
+.quote-detail-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.quote-detail-info span,
+.quote-detail-info strong { display: block; }
+.quote-detail-info span {
+  color: var(--ios-label3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.quote-detail-info strong {
+  margin-top: 4px;
+  color: var(--ios-label);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.quote-detail-items {
+  display: grid;
+  gap: 10px;
+}
+.quote-detail-item {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-md);
+  background: var(--ios-card);
+}
+.quote-detail-item strong {
+  color: var(--ios-label);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════ Đầu form + thẻ tổng tiền ═══════════════ */
+
+.quote-form-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+.quote-form-heading-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 240px;
+}
+.quote-form-heading-text { min-width: 0; }
+.quote-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* .quote-top-grid / .quote-customer-grid chỉ là "cột" của .two-col (lớp chung);
+   ở đây chỉ đặt lại hành vi theo breakpoint, xem phần Responsive. */
+
+.quote-totals-card {
+  /* Đè gradient navy cũ còn `!important` trong owinTheme.css (~dòng 3307). */
+  background: var(--ios-card) !important;
+  border-color: var(--ios-separator) !important;
+}
+.quote-totals-card .switch-row:last-of-type,
+.quote-totals-card .switch-row strong { color: var(--ios-label); }
+.quote-totals-card .switch-row span:last-child { font-variant-numeric: tabular-nums; }
+
+/* ═══════════════ Khối thêm hạng mục ═══════════════ */
+
+.quote-add-products-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+}
+.quote-add-products-card .section-label { margin-bottom: 4px; }
+.quote-add-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ═══════════════ Modal chọn sản phẩm từ kho ═══════════════ */
+
+.quote-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  /* Đè nền navy cũ còn `!important` trong owinTheme.css (~dòng 3437). */
+  background: rgba(28, 28, 40, 0.4) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.quote-picker-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(1120px, 100%);
+  max-width: 1120px;
+  max-height: min(86vh, 860px);
+  padding: 18px;
+  overflow: hidden;
+  /* Đè viền trắng mờ cũ còn `!important` trong owinTheme.css (~dòng 3442). */
+  border: 1px solid var(--ios-separator) !important;
+  border-radius: var(--r-lg);
+  background: var(--ios-card);
+  box-shadow: var(--shadow-lg);
+}
+
+.quote-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ios-separator);
+}
+.quote-picker-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.quote-picker-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--r-md);
+  background: var(--ios-fill);
+  color: var(--ios-blue-ink);
+}
+.quote-picker-title h2 {
+  margin: 0;
+  color: var(--ios-label);
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: var(--track-tight);
+}
+.quote-picker-title p {
+  margin: 3px 0 0;
+  color: var(--ios-label3);
+  font-size: var(--fs-sm);
+}
+
+/* Ô tìm: nền fill, không viền, focus mới lên ring xanh */
+.quote-picker-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  background: var(--ios-fill);
+  color: var(--ios-label3);
+}
+.quote-picker-search:focus-within {
+  border-color: var(--ios-blue);
+  background: var(--ios-card);
+  box-shadow: var(--shadow-glow);
+}
+.quote-picker-search input {
+  flex: 1;
+  min-height: 46px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ios-label);
+  font-size: var(--fs-md);
+}
+
+.quote-picker-categories {
+  display: flex;
+  gap: 8px;
+  min-height: 40px;
+  padding-bottom: 8px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ios-separator);
+}
+.quote-picker-categories.is-collapsed {
+  min-height: auto;
+  padding-bottom: 4px;
+}
+.quote-picker-categories button {
+  flex: 0 0 auto;
+  padding: 7px 13px;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  background: var(--ios-fill);
+  color: var(--ios-label2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.quote-picker-categories button.active {
+  border-color: var(--ios-blue);
+  background: var(--ios-blue);
+  color: var(--ios-card);
+}
+/* Nút thu gọn danh mục: kém đặc hiệu hơn `.quote-picker-categories button`
+   VÀ owinTheme.css (~dòng 331) còn 4 khai báo `!important` cho nó. */
+.quote-picker-cat-toggle {
+  background: var(--ios-blue-soft) !important;
+  border: 1px solid transparent !important;
+  color: var(--ios-blue-ink) !important;
+  font-weight: 600 !important;
+}
+
+.quote-picker-results {
+  flex: 1;
+  min-height: 0;
+  padding-right: 4px;
+  overflow-y: auto;
+}
+.quote-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.quote-picker-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px;
+  overflow: hidden;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-lg);
+  background: var(--ios-card);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease-ios), box-shadow 0.14s var(--ease-ios),
+    transform 0.14s var(--ease-ios);
+}
+.quote-picker-card:hover {
+  border-color: var(--ios-blue);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.quote-picker-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 160px;
+  aspect-ratio: 1.15 / 1;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-md);
+  background: var(--ios-bg);
+  cursor: zoom-in;
+}
+.quote-picker-thumb .ph {
+  width: 95%;
+  height: 95%;
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  background: var(--ios-bg);
+}
+.quote-picker-card-body {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  min-width: 0;
+  padding: 0 2px 2px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.quote-picker-card-body strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--ios-label);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  line-height: 1.25;
+}
+.quote-picker-meta {
+  color: var(--ios-label3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.quote-picker-price {
+  color: var(--ios-label);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: var(--track-tight);
+  font-variant-numeric: tabular-nums;
+}
+.quote-picker-price small {
+  margin-left: 2px;
+  color: var(--ios-label3);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+}
+.quote-picker-choose {
+  margin-top: 2px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.quote-picker-card:hover .quote-picker-choose {
+  background: var(--ios-blue);
+  color: var(--ios-card);
+}
+
+/* ═══════════════ Thẻ hạng mục ═══════════════ */
+
+/* Vùng thả khi kéo sắp xếp hạng mục */
+.quote-item-drop[data-drag-over] {
+  outline: 2px dashed var(--ios-blue);
+  outline-offset: -2px;
+  border-radius: var(--r-md);
+  background: var(--ios-blue-soft);
+}
+
+/* Thẻ luôn đi kèm class .card (bo góc + nền lấy từ lớp chung). */
+.quote-item-card {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 12px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid var(--ios-separator);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.16s var(--ease-ios), box-shadow 0.16s var(--ease-ios);
+}
+.quote-item-card > * {
+  max-width: 100%;
+  min-width: 0;
+}
+.quote-item-card .field { margin-bottom: 0; }
+/* Cỡ chữ nhãn do `.field > label` (lớp chung, có !important) quyết định —
+   ở đây chỉ đổi phần trang trí. */
+.quote-item-card .field > label {
+  color: var(--ios-label3);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.quote-item-card .input { min-height: 40px; }
+
+.quote-item-card-locked {
+  gap: 0;
+  padding: 12px 14px;
+  /* Đè gradient trắng-xám cũ còn `!important` trong owinTheme.css (~dòng 3377). */
+  background: var(--ios-card) !important;
+}
+
+.quote-item-card-editing {
+  gap: 12px;
+  padding: 14px;
+}
+/* Đè viền xanh navy cũ còn `!important` trong owinTheme.css (~dòng 3373). */
+.quote-item-card:focus-within,
+.quote-item-card-editing {
+  border-color: var(--ios-blue) !important;
+  box-shadow: var(--shadow-glow);
+}
+.quote-item-card-editing .quote-item-card-header {
+  gap: 12px;
+  grid-template-columns: minmax(88px, 100px) minmax(0, 1fr);
+  padding-bottom: 10px;
+}
+.quote-item-card-editing .editor-panel {
+  padding: 12px;
+  border-radius: var(--r-sm);
+}
+/* Ô nhập trong thẻ đang sửa thấp hơn mặc định — phải `!important` vì lớp chung
+   `.input` khai `padding` kèm `!important`. */
+.quote-item-card-editing .input,
+.quote-item-card-editing .readonly-money,
+.quote-item-card-editing .accessory-item-line .input,
+.quote-item-card-editing .spec-editor-row .input {
+  min-height: var(--control-h-sm);
+  padding: 8px 12px !important;
+}
+.quote-item-card-editing .spec-table-head,
+.quote-item-card-editing .spec-editor-row {
+  grid-template-columns: 36px minmax(0, 0.9fr) minmax(0, 1.35fr) 40px;
+}
+.quote-item-card-editing .accessory-item-line {
+  grid-template-columns: 36px 32px minmax(0, 1fr) 76px 40px;
+}
+.quote-item-card-editing .summary-metric strong,
+.quote-item-card-editing .summary-metric-strong strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-item-card-header {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+  min-width: 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ios-separator);
+}
+.quote-item-card-main {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.quote-item-titleline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.quote-item-actions {
+  display: flex;
+  gap: 6px;
+}
+.quote-item-basic-grid {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 10px;
+}
+
+/* Ảnh hạng mục */
+.quote-item-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-md);
+  background: var(--ios-bg);
+}
+.quote-item-thumb .ph {
+  width: 95%;
+  height: 95%;
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  background: var(--ios-bg);
+}
+.quote-item-thumb-btn {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-md);
+  background: var(--ios-bg);
+  cursor: zoom-in;
+}
+.quote-item-thumb-btn:hover {
+  border-color: var(--ios-blue);
+  box-shadow: var(--shadow-md);
+}
+.quote-item-thumb-edit {
+  position: relative;
+  cursor: pointer;
+}
+.quote-item-thumb-overlay {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-xs);
+  background: var(--ios-label);
+  color: var(--ios-card);
+  pointer-events: none;
+}
+.quote-item-thumb-compact {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  height: 56px;
+  aspect-ratio: 1;
+  border-radius: var(--r-md);
+  justify-self: start;
+}
+
+/* Hàng thu gọn: ảnh · nội dung · nút. Hai class luôn đi cùng nhau trong JSX. */
+.quote-item-locked-row,
+.quote-item-locked-row-compact {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+}
+/* Cả hàng là vùng bấm mở trình sửa — bỏ chrome mặc định của <button>. */
+.quote-item-locked-main {
+  display: grid;
+  gap: 2px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 4px 6px;
+  overflow: hidden;
+  appearance: none;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.16s var(--ease-ios);
+}
+.quote-item-locked-main:hover { background: var(--ios-fill); }
+.quote-item-locked-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+.quote-item-locked-title strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.quote-item-locked-index {
+  color: var(--ios-label3);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.quote-item-locked-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: var(--ios-label3);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+.quote-item-locked-code {
+  color: var(--ios-label3);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.quote-item-locked-total {
+  color: var(--ios-label);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.quote-item-locked-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Khối con trong thẻ đang sửa */
+.quote-card-section {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-md);
+  background: var(--ios-bg);
+}
+.quote-item-config-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.95fr);
+  align-items: start;
+  gap: 12px;
+}
+.quote-item-extra { min-width: 0; }
+.quote-item-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-md);
+  background: var(--ios-card);
+}
+
+/* ═══════════════ Bảng kích thước của hạng mục ═══════════════ */
+
+.quote-lines-editor {
+  display: grid;
+  gap: 7px;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+.quote-lines-head,
+.quote-line-row {
+  display: grid;
+  grid-template-columns: 76px 76px 76px 64px 86px minmax(124px, 0.8fr) minmax(128px, 0.8fr) 36px;
+  align-items: end;
+  gap: 8px;
+  min-width: 720px;
+}
+.quote-lines-head {
+  align-items: center;
+  padding: 0 2px;
+  color: var(--ios-label3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.quote-line-row {
+  padding: 8px;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-md);
+  background: var(--ios-card);
+}
+.quote-line-field {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+.quote-line-field > * {
+  width: 100%;
+  min-width: 0;
+}
+/* Nhãn cột chỉ hiện khi bảng gãy thành thẻ (xem breakpoint 720). */
+.quote-line-field::before {
+  display: none;
+  content: attr(data-label);
+  color: var(--ios-label3);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.quote-line-field-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* ═══════════════ Phụ kiện kiểu cũ của hạng mục ═══════════════ */
+
+.legacy-accessory-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 90px minmax(140px, 0.8fr) 100px 40px;
+  align-items: end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.legacy-accessory-row .field { margin-bottom: 0; }
+
+/* ═══════════════ Bản in ẩn (đường Word / Excel / PDF) ═══════════════ */
+
+/* GIỮ NGUYÊN cách đẩy khối ra ngoài màn hình: thiếu một khai báo là bảng in
+   hiện giữa trang. Rule @media print ẩn nó nằm ở cuối file. */
+.quote-print-doc {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  margin-top: 18px;
+  overflow: hidden;
+  border-radius: var(--r-xs);
+  opacity: 0;
+  pointer-events: none;
+}
+.quote-print-doc table {
+  table-layout: fixed;
+  font-size: 11px;
+}
+.quote-print-doc th:nth-child(3),
+.quote-print-doc td.quote-image-cell { width: 112px; }
+.quote-print-doc .quote-image-cell {
+  height: 96px;
+  padding: 3px;
+  text-align: center;
+  vertical-align: middle;
+}
+.quote-print-doc .quote-image-cell .ph {
+  width: 95%;
+  height: 95%;
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+}
+.quote-print-doc .description-cell {
+  text-align: left;
+  line-height: 1.35;
+}
+/* Một hạng mục không bị cắt ngang giữa hai trang giấy. */
+.quote-item-block,
+.quote-print-doc tbody.quote-item-block {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ═══════════════ Responsive (kế thừa breakpoint của bản cũ) ═══════════════ */
+
+/* Desktop rộng: thẻ tổng tiền dính theo khi cuộn danh sách hạng mục.
+   Đặt TRƯỚC các block max-width để breakpoint hẹp (kể cả điện thoại ngang
+   901–960px) luôn thắng và trả về static. */
+@media (min-width: 901px) {
+  .quote-totals-card {
+    position: sticky;
+    top: 12px;
+  }
+}
+
+@media (max-width: 980px) {
+  .quote-picker-grid,
+  .quote-item-config-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .quote-totals-card { position: static; }
+
+  .quote-add-products-card,
+  .quote-item-titleline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .quote-add-actions { justify-content: stretch; }
+  .quote-add-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .quote-picker-backdrop { padding: 10px; }
+  .quote-picker-card { grid-template-columns: 1fr; }
+
+  .quote-detail-grid,
+  .quote-detail-info { grid-template-columns: 1fr; }
+  .quote-detail-item { grid-template-columns: 48px minmax(0, 1fr); }
+  .quote-detail-item strong { grid-column: 2; }
+
+  .quote-item-card-header,
+  .quote-item-basic-grid,
+  .quote-item-summary-strip { grid-template-columns: 1fr; }
+  .quote-item-thumb { max-width: 140px; }
+  .quote-item-locked-row,
+  .quote-item-locked-row-compact {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .quote-item-thumb-compact {
+    width: 52px;
+    min-width: 52px;
+    max-width: 52px;
+    height: 52px;
+  }
+
+  /* Bảng kích thước bỏ hàng tiêu đề, hàng tự xuống dòng */
+  .quote-lines-head { display: none; }
+  .quote-line-row { min-width: 0; }
+  .legacy-accessory-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+}
+
+/* ─── Điện thoại dọc: bảng danh sách thành thẻ, nút trải hết bề ngang ─── */
+@media (max-width: 720px) {
+  .quote-list-table-card {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .quote-history-table-wrap { overflow: visible; }
+  .quote-history-table {
+    min-width: 0;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+  }
+  .quote-history-table thead { display: none; }
+  .quote-history-table tbody tr.quote-history-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'code status'
+      'customer customer'
+      'total total'
+      'actions actions';
+    gap: 4px 8px;
+    padding: 12px;
+    border: 1px solid var(--ios-separator);
+    border-radius: var(--r-md);
+    background: var(--ios-card);
+    box-shadow: var(--shadow-sm);
+  }
+  .quote-history-table td {
+    padding: 0;
+    border: 0;
+  }
+  .quote-history-table td[data-col='product'],
+  .quote-history-table td[data-col='accessory'],
+  .quote-history-table td[data-col='date'] { display: none; }
+  .quote-history-table td[data-col='code'] {
+    grid-area: code;
+    min-width: 0;
+  }
+  .quote-history-table td[data-col='status'] {
+    grid-area: status;
+    justify-self: end;
+  }
+  .quote-history-table td[data-col='customer'] { grid-area: customer; }
+  .quote-history-table td[data-col='total'] {
+    grid-area: total;
+    color: var(--ios-label);
+    text-align: left;
+    font-size: var(--fs-lg);
+    font-weight: 600;
+  }
+  .quote-history-table td[data-col='actions'] { grid-area: actions; }
+  .quote-history-mobile-date {
+    display: block;
+    margin-top: 2px;
+    color: var(--ios-label3);
+    font-size: 11px;
+  }
+  .quote-customer-name {
+    max-width: none;
+    white-space: normal;
+    font-size: var(--fs-md);
+  }
+  .quote-customer-meta {
+    max-width: none;
+    white-space: normal;
+    font-size: var(--fs-sm);
+  }
+  .quote-actions {
+    flex-wrap: wrap;
+    padding-top: 8px;
+    border-top: 1px solid var(--ios-separator);
+  }
+  .quote-actions .btn { min-height: 34px; }
+
+  .quote-detail-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+  .quote-detail-actions .btn {
+    width: 100%;
+    min-height: 36px;
+    justify-content: center;
+  }
+
+  /* Form: một cột, hàng nút Lưu chiếm trọn bề ngang */
+  .quote-top-grid,
+  .quote-customer-grid,
+  .quote-item-config-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .quote-form-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .quote-form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+    margin-left: 0;
+  }
+  .quote-form-actions .btn {
+    width: 100%;
+    min-height: 36px;
+    justify-content: center;
+  }
+  .quote-form-actions .btn-primary { grid-column: 1 / -1; }
+
+  .quote-add-products-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .quote-add-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+  .quote-add-actions .btn {
+    width: 100%;
+    min-height: 36px;
+    justify-content: center;
+  }
+
+  /* Bảng kích thước gãy thành lưới 2 ô, mỗi ô có nhãn riêng */
+  .quote-lines-editor { overflow: visible; }
+  .quote-line-row {
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+    gap: 6px;
+    padding: 8px;
+    min-width: 0;
+  }
+  .quote-line-field::before {
+    display: block;
+    font-size: 9px;
+  }
+  .quote-line-field[data-label='']::before { display: none; }
+  /* 16px = Safari iOS không tự phóng to trang khi bấm vào ô nhập.
+     `!important` để đè `.input { font-size / padding !important }` của lớp chung. */
+  .quote-line-field .input,
+  .quote-line-field .readonly-money {
+    min-height: 34px;
+    font-size: 16px !important;
+    padding: 4px 8px !important;
+  }
+  .quote-line-field-action {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .quote-item-card { padding: 10px; }
+  .quote-item-card-editing .quote-item-card-header {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  /* Modal chọn sản phẩm thành sheet dán đáy */
+  .quote-picker-backdrop {
+    align-items: flex-end;
+    padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+  }
+  .quote-picker-modal {
+    width: 100%;
+    max-height: min(92dvh, 900px);
+    border-radius: var(--r-lg) var(--r-lg) var(--r-sm) var(--r-sm);
+  }
+  .quote-picker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .quote-picker-thumb { min-height: 100px; }
+}
+
+/* ─── Điện thoại ngang: 2 cột, control thấp, bảng kích thước giữ dạng bảng ─── */
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 960px) {
+  /* `!important`: hai lưới này cũng mang class .two-col, mà lớp chung khai
+     `.two-col { grid-template-columns: 1fr !important }` ở breakpoint 720. */
+  .quote-top-grid,
+  .quote-customer-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  .quote-detail-grid,
+  .quote-detail-info {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .quote-form-heading {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .quote-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: auto;
+    margin-left: auto;
+  }
+  .quote-form-actions .btn {
+    width: auto;
+    min-height: 30px;
+  }
+  .quote-form-actions .btn-primary { grid-column: auto; }
+
+  .quote-totals-card { position: static; }
+
+  .quote-add-products-card {
+    flex-direction: row;
+    align-items: center;
+  }
+  .quote-add-actions {
+    display: flex;
+    width: auto;
+  }
+  .quote-add-actions .btn {
+    width: auto;
+    min-height: 30px;
+  }
+
+  /* Màn quá thấp để cuộn: bảng kích thước quay lại dạng bảng, ô thật nhỏ.
+     `!important` để thắng lưới 2 ô của breakpoint 720 (owinTheme cũng khai
+     `!important` ở đó) và `.input` của lớp chung. */
+  .quote-lines-head {
+    display: grid;
+    grid-template-columns: 52px 52px 52px 44px 52px minmax(90px, 1fr) minmax(90px, 1fr) 28px;
+    min-width: 0;
+    font-size: 9px;
+  }
+  .quote-line-row {
+    grid-template-columns: 52px 52px 52px 44px 52px minmax(90px, 1fr) minmax(90px, 1fr) 28px !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 4px 6px !important;
+    min-width: 0 !important;
+  }
+  .quote-line-field::before { display: none; }
+  .quote-line-field-wide,
+  .quote-line-field-total,
+  .quote-line-field-action { grid-column: auto; }
+  .quote-line-field .input,
+  .quote-line-field .readonly-money {
+    min-height: 28px;
+    font-size: 12px !important;
+    padding: 2px 4px !important;
+  }
+
+  .quote-picker-backdrop {
+    align-items: stretch;
+    padding: 6px;
+  }
+  .quote-picker-modal {
+    width: min(920px, 100%);
+    max-height: calc(100dvh - 12px);
+    border-radius: var(--r-sm);
+  }
+  .quote-picker-grid {
+    /* `!important`: đè lưới 2 cột `!important` của breakpoint 720. */
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 6px;
+  }
+  .quote-picker-thumb { min-height: 72px; }
+}
+
+@media (max-width: 380px) {
+  /* `!important`: đè lưới 2 cột `!important` của breakpoint 720. */
+  .quote-picker-grid { grid-template-columns: 1fr !important; }
+  .quote-form-actions { grid-template-columns: 1fr 1fr; }
+}
+
+/* ─── In trình duyệt bị chặn: người dùng xuất bằng nút Word / Excel / PDF ─── */
+@media print {
+  .quote-workflow-page,
+  .quote-detail-page,
+  .quote-print-doc { display: none !important; }
+}

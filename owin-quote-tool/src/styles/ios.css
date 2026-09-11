@@ -6,11 +6,43 @@
 
 * { box-sizing: border-box; }
 
+html {
+  min-width: 320px;
+  background: var(--ios-bg);
+}
+
 body {
   margin: 0;
   background: var(--ios-bg);
   color: var(--ios-label);
+  font-family: var(--font-sans);
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+[role='button'],
+[role='tab'] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, [href], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ios-blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--ios-blue-soft);
+}
+
+::selection {
+  background: rgba(0, 122, 255, 0.2);
 }
 
 .app-shell {
@@ -24,6 +56,7 @@ body {
 
 .card {
   background: var(--ios-card);
+  border: 1px solid var(--ios-separator);
   border-radius: var(--ios-radius);
   box-shadow: var(--ios-shadow);
   padding: 20px;
@@ -52,7 +85,7 @@ body {
   outline: none;
   transition: box-shadow 0.15s ease;
 }
-.input:focus { box-shadow: 0 0 0 2px var(--ios-blue); }
+.input:focus-visible { box-shadow: 0 0 0 3px var(--ios-blue-soft); }
 
 /* Segmented control */
 .segmented {
@@ -92,7 +125,7 @@ body {
   transition: background 0.2s ease;
   padding: 0;
 }
-.switch.on { background: var(--ios-green); }
+.switch.on { background: var(--ios-green-fill); }
 .switch .knob {
   position: absolute;
   top: 2px;
@@ -119,16 +152,22 @@ body {
 .btn {
   border: none;
   border-radius: var(--ios-radius-sm);
+  min-height: var(--touch);
   padding: 12px 20px;
   font-size: 16px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   cursor: pointer;
-  transition: filter 0.15s ease, opacity 0.15s ease;
+  transition: filter 0.15s ease, opacity 0.15s ease, transform 0.15s var(--ease-ios);
 }
 .btn svg { flex: 0 0 auto; }
-.btn:active { filter: brightness(0.94); }
-.btn-primary { background: var(--ios-blue); color: #fff; }
-.btn-danger { background: var(--ios-red); color: #fff; }
+.btn:active:not(:disabled) { filter: brightness(0.94); transform: scale(0.985); }
+.btn-primary { background: var(--ios-blue-ink); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--ios-blue-hover); }
+.btn-danger { background: var(--ios-red-fill); color: #fff; }
 .btn-ghost { background: var(--ios-fill); color: var(--ios-blue); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -170,8 +209,10 @@ body {
 .product-name { font-weight: 600; font-size: 15px; }
 .product-sub { color: var(--ios-label3); font-size: 13px; }
 .icon-btn {
-  border: none; background: var(--ios-fill); border-radius: 8px; padding: 8px;
+  width: var(--icon-btn); height: var(--icon-btn); border: 1px solid var(--ios-separator);
+  background: var(--ios-card); border-radius: 10px; padding: 8px;
   cursor: pointer; color: var(--ios-label2); display: inline-flex;
+  align-items: center; justify-content: center;
 }
 .icon-btn.danger { color: var(--ios-red); }
 
@@ -193,3 +234,25 @@ body {
 .preview-doc .cust { margin: 10px 0; line-height: 1.6; }
 .preview-doc .totals { margin-top: 12px; text-align: right; line-height: 1.7; }
 .muted { color: var(--ios-label3); }
+
+@media (pointer: coarse) {
+  .icon-btn,
+  .segmented button,
+  .tool-nav-item {
+    min-width: var(--touch);
+    min-height: var(--touch);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .btn:active:not(:disabled) { transform: none; }
+}

@@ -61,6 +61,7 @@ import {
 import { deleteQuote, getAllQuotes, saveQuoteRecord } from '@/features/quote/quoteStore';
 import { subscribeToQuotes } from '@/services/supabase/quotesRepo';
 import { documentsEqual } from '@/services/supabase/threeWayMerge';
+import './quote.css';
 
 const QUOTE_SUGGESTION_TYPES = [
   'customer_name',

@@ -5,8 +5,8 @@ import { AuthGate } from '@/features/auth/AuthGate';
 import { AccountMenu } from '@/features/auth/AccountMenu';
 import { ProductsView } from '@/features/products';
 import { QuoteView } from '@/features/quote/QuoteView';
-import { CatalogueView } from '@/features/catalogue/CatalogueView';
-import { AluminumEstimatorView } from '@/features/aluminum/AluminumEstimatorView';
+import { CatalogueView } from '@/features/catalogue';
+import { AluminumEstimatorView } from '@/features/aluminum';
 import { GlobalImageLightbox } from '@/components/ImageLightbox';
 
 type Tab = 'products' | 'quotes' | 'catalogue' | 'aluminum';

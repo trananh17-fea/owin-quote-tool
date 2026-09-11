@@ -13,20 +13,26 @@
   /* ─── iOS system palette ─── */
   --ios-bg: #f2f2f7; /* secondarySystemBackground — nền app */
   --ios-card: #ffffff; /* systemBackground — mặt thẻ */
-  --ios-fill: #f0f0f5; /* secondarySystemFill — nền input */
+  --ios-fill: #f2f2f7; /* systemGray6 — nền input/ghost control */
   --ios-fill-strong: #e5e5ea; /* tertiarySystemFill — track segmented */
-  --ios-separator: #e5e5ea; /* opaqueSeparator — hairline */
+  --ios-separator: rgba(60, 60, 67, 0.18); /* separator — hairline */
+  --ios-separator-opaque: #d1d1d6; /* systemGray4 — viền cần độ rõ ổn định */
+  --ios-control-border: #85858f; /* viền control cần đạt độ rõ trên nền sáng */
   --ios-label: #1c1c1e; /* label */
   --ios-label2: #55555e; /* secondaryLabel */
-  --ios-label3: #8e8e93; /* tertiaryLabel */
+  --ios-label3: #6e6e73; /* tertiaryLabel đã tăng tương phản cho chữ nhỏ */
   --ios-blue: #007aff; /* systemBlue */
-  --ios-blue-ink: #0a70f0; /* systemBlue đậm hơn cho chữ trên nền sáng */
-  --ios-blue-soft: rgba(0, 122, 255, 0.1);
-  --ios-green: #248a3d; /* systemGreen (biến thể đọc được trên nền sáng) */
+  --ios-blue-ink: #006edc; /* systemBlue đậm hơn cho chữ trên nền sáng */
+  --ios-blue-hover: #0055aa; /* hover/pressed của nút nền xanh */
+  --ios-blue-soft: rgba(0, 122, 255, 0.12);
+  --ios-green: #248a3d; /* systemGreen cho chữ */
+  --ios-green-fill: #34c759; /* systemGreen cho control */
   --ios-green-soft: rgba(52, 199, 89, 0.12);
-  --ios-red: #d70015; /* systemRed (biến thể chữ) */
+  --ios-red: #d70015; /* systemRed cho chữ */
+  --ios-red-fill: #ff3b30; /* systemRed cho control */
   --ios-red-soft: rgba(255, 59, 48, 0.1);
-  --ios-orange: #c93400; /* systemOrange (biến thể chữ) */
+  --ios-orange: #c93400; /* systemOrange cho chữ */
+  --ios-orange-fill: #ff9500; /* systemOrange cho control */
 
   /* ─── Radius — thang bo góc iOS ─── */
   --r-xs: 8px;
@@ -38,15 +44,16 @@
   --ios-radius: var(--r-lg);
   --ios-radius-sm: var(--r-md);
 
-  /* ─── Type scale — giữ nguyên như bản cũ để layout 3 tab chưa chuyển không xê dịch ─── */
-  --fs-xs: 11.5px;
-  --fs-sm: 13px;
-  --fs-md: 14.5px;
-  --fs-lg: 16px;
-  --fs-xl: 19px;
+  /* ─── Type scale — dễ đọc, đồng nhất trên desktop và mobile ─── */
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-md: 16px;
+  --fs-lg: 17px;
+  --fs-xl: 20px;
   --fs-2xl: 24px;
-  --fs-title: clamp(20px, 2vw, 26px);
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --fs-title: clamp(24px, 2vw, 28px);
+  /* Một family duy nhất cho toàn bộ UI, đủ glyph tiếng Việt. */
+  --font-sans: 'Roboto', sans-serif;
   --track-tight: -0.02em;
 
   /* ─── Spacing / chiều cao control ─── */
@@ -56,9 +63,9 @@
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
-  --control-h: 42px;
-  --control-h-sm: 36px;
-  --icon-btn: 38px;
+  --control-h: 44px;
+  --control-h-sm: 40px;
+  --icon-btn: 44px;
   --touch: 44px;
 
   /* ─── Shadow — iOS mềm, gần như phẳng ─── */
@@ -73,7 +80,7 @@
   --owin-primary: var(--ios-label);
   --owin-primary-soft: var(--ios-label2);
   --owin-action: var(--ios-blue);
-  --owin-action-hover: var(--ios-blue-ink);
+  --owin-action-hover: var(--ios-blue-hover);
   --owin-action-soft: var(--ios-blue-soft);
   --owin-ink: var(--ios-label);
   --owin-ink-muted: var(--ios-label2);
@@ -81,7 +88,7 @@
   --owin-bg: var(--ios-bg);
   --owin-bg-accent: var(--ios-bg);
   --owin-border: var(--ios-separator);
-  --owin-border-strong: #d8d8de;
+  --owin-border-strong: var(--ios-separator-opaque);
   --owin-surface: var(--ios-card);
   --owin-soft: var(--ios-fill);
   --owin-success: var(--ios-green);
