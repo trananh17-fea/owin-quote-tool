@@ -4,7 +4,7 @@ import { formatVND } from '@/lib/format/currency';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
 import { titleCaseVi } from '@/lib/format/titleCase';
 import { PAGE_SIZES, type PageSize, type PaginationResult } from '@/lib/list/paginateItems';
-import { DragHandle, useDragReorder } from '@/components/DragReorder';
+import { mergeRowDragProps, useDragReorder } from '@/components/DragReorder';
 import { ProductThumb } from '@/components/ProductThumb';
 import { unitLabel } from '@/features/products/productUnits';
 
@@ -50,6 +50,10 @@ export function ProductList({
   const { handleProps, rowProps } = useDragReorder((from, to) =>
     onReorder?.(pageOffset + from, pageOffset + to),
   );
+  // Không có cột tay cầm: chính hàng vừa là thứ kéo được, vừa là vùng thả. Hai
+  // nhóm prop không trùng key nên trải cả hai lên <tr> là đủ.
+  const dragRowProps = (index: number) =>
+    reorderable ? mergeRowDragProps(handleProps(index), rowProps(index)) : {};
 
   if (loading) {
     return (
@@ -83,7 +87,6 @@ export function ProductList({
         <table className="product-table">
           <thead>
             <tr>
-              {reorderable && <th scope="col" data-col="drag" aria-label="Kéo để đổi thứ tự" />}
               <th scope="col" data-col="image">Hình ảnh</th>
               <th scope="col" data-col="name">Tên sản phẩm</th>
               <th scope="col" data-col="category">Nhóm sản phẩm</th>
@@ -100,7 +103,9 @@ export function ProductList({
                 data-ma={p.code}
                 className={reorderable ? 'product-row product-row-reorderable' : 'product-row'}
                 tabIndex={0}
-                aria-label={`Xem chi tiết sản phẩm ${p.code}`}
+                aria-label={reorderable
+                  ? `Xem chi tiết sản phẩm ${p.code}. Kéo hàng để đổi thứ tự.`
+                  : `Xem chi tiết sản phẩm ${p.code}`}
                 onClick={() => onPreview(p)}
                 onKeyDown={(event) => {
                   if (event.target !== event.currentTarget) return;
@@ -109,17 +114,8 @@ export function ProductList({
                     onPreview(p);
                   }
                 }}
-                {...(reorderable ? rowProps(index) : {})}
+                {...dragRowProps(index)}
               >
-                {reorderable && (
-                  <td
-                    className="product-drag-cell"
-                    data-col="drag"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <DragHandle {...handleProps(index)} label={`Kéo để đổi thứ tự ${p.name}`} />
-                  </td>
-                )}
                 <td data-col="image">
                   <button
                     className="product-image-button"

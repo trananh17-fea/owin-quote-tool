@@ -1,4 +1,4 @@
-import { Package, Pencil, X } from 'lucide-react';
+import { Pencil, X } from 'lucide-react';
 import type { ProductRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
@@ -54,14 +54,9 @@ export function ProductPreviewCard({
   const accessories = parseFixedItems(product);
   const extras = extraItems(product);
   const specs = product.specs.filter((spec) => spec.key.trim());
-  const description =
-    product.shortDesc?.trim() ||
-    (specs.length
-      ? specs
-          .slice(0, 4)
-          .map((spec) => `${spec.key}: ${spec.value || '—'}`)
-          .join(' · ')
-      : null);
+  // Chỉ hiện mô tả thật. Trước đây khi thiếu shortDesc thì ô này ghép 4 thông số
+  // đầu — trùng đúng bảng "Thông số kỹ thuật" ngay bên dưới.
+  const description = product.shortDesc?.trim() || null;
 
   return (
     <div
@@ -78,9 +73,6 @@ export function ProductPreviewCard({
       >
         <div className="product-modal-header">
           <div className="product-modal-title">
-            <span className="product-modal-icon" aria-hidden="true">
-              <Package size={22} />
-            </span>
             <div className="product-modal-title-copy">
               <div className="product-modal-kicker">{normalizeCategoryName(product.category) || 'Sản phẩm'}</div>
               <h2>{titleCaseVi(product.name) || product.name}</h2>
@@ -106,81 +98,81 @@ export function ProductPreviewCard({
 
             {description && (
               <div className="product-preview-desc">
-                <span>Mô tả / thông số</span>
+                <span>Mô tả</span>
                 <p>{description}</p>
               </div>
             )}
 
-            {specs.length > 0 && (
-              <div className="product-preview-specs">
-                <span>Thông số kỹ thuật</span>
-                <ul>
-                  {specs.map((spec, index) => (
-                    <li key={`${spec.key}-${index}`}>
-                      <em>{spec.key}</em>
-                      <strong>{spec.value || '—'}</strong>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="product-preview-accessories">
-              <span>Phụ kiện đi kèm</span>
-              {fixedMeta && (
-                <div className="product-preview-pkg-name">
-                  <strong>{fixedMeta.name}</strong>
-                  {fixedMeta.unitPrice > 0 && (
-                    <em>{formatVND(fixedMeta.unitPrice)}/bộ</em>
-                  )}
+            <div className="product-preview-detail-grid">
+              {specs.length > 0 && (
+                <div className="product-preview-specs">
+                  <span>Thông số kỹ thuật</span>
+                  <ul>
+                    {specs.map((spec, index) => (
+                      <li key={`${spec.key}-${index}`}>
+                        <em>{spec.key}</em>
+                        <strong>{spec.value || '—'}</strong>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
-              {accessories.length === 0 ? (
-                <p className="product-preview-empty">Chưa khai báo phụ kiện.</p>
-              ) : (
-                <ul className="product-preview-acc-list">
-                  {accessories.map((item, index) => (
-                    <li key={`${item.name}-${index}`}>
-                      <strong>{item.name}</strong>
-                      <em>×{item.quantity || 0}</em>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
 
-            {extras.length > 0 && (
               <div className="product-preview-accessories">
-                <span>Phụ kiện phát sinh mẫu</span>
-                <ul className="product-preview-acc-list">
-                  {extras.map((item, index) => (
-                    <li key={`${item.name}-${index}`}>
-                      <strong>{item.name}</strong>
-                      <em>
-                        {item.quantity > 0 ? `×${item.quantity} · ` : ''}
-                        {formatVND(item.unitPrice)}
-                      </em>
-                    </li>
-                  ))}
-                </ul>
+                <span>Phụ kiện đi kèm</span>
+                {fixedMeta && (
+                  <div className="product-preview-pkg-name">
+                    <strong>{fixedMeta.name}</strong>
+                    {fixedMeta.unitPrice > 0 && <em>{formatVND(fixedMeta.unitPrice)}/bộ</em>}
+                  </div>
+                )}
+                {accessories.length === 0 ? (
+                  <p className="product-preview-empty">Chưa khai báo phụ kiện.</p>
+                ) : (
+                  <ul className="product-preview-acc-list">
+                    {accessories.map((item, index) => (
+                      <li key={`${item.name}-${index}`}>
+                        <strong>{item.name}</strong>
+                        <em>×{item.quantity || 0}</em>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-            )}
 
-            <div className="product-preview-actions">
-              {onSelect && (
-                <button type="button" className="btn btn-primary" onClick={() => onSelect(product)}>
-                  {selectLabel}
-                </button>
-              )}
-              {onEdit && (
-                <button type="button" className="btn btn-ghost" onClick={() => onEdit(product)}>
-                  <Pencil size={16} aria-hidden="true" />
-                  Chỉnh sửa
-                </button>
+              {extras.length > 0 && (
+                <div className="product-preview-accessories">
+                  <span>Phụ kiện phát sinh mẫu</span>
+                  <ul className="product-preview-acc-list">
+                    {extras.map((item, index) => (
+                      <li key={`${item.name}-${index}`}>
+                        <strong>{item.name}</strong>
+                        <em>
+                          {item.quantity > 0 ? `×${item.quantity} · ` : ''}
+                          {formatVND(item.unitPrice)}
+                        </em>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           </div>
         </div>
+
+        <footer className="product-preview-footer">
+          {onEdit && (
+            <button type="button" className="btn btn-ghost" onClick={() => onEdit(product)}>
+              <Pencil size={16} aria-hidden="true" />
+              Chỉnh sửa
+            </button>
+          )}
+          {onSelect && (
+            <button type="button" className="btn btn-primary" onClick={() => onSelect(product)}>
+              {selectLabel}
+            </button>
+          )}
+        </footer>
       </div>
     </div>
   );

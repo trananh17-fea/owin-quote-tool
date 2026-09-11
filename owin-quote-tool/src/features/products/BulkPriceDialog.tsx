@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Percent, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { ProductRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { bulkAdjustProductPrices } from '@/features/products/productStore';
@@ -60,9 +60,6 @@ export function BulkPriceDialog({
       >
         <div className="product-modal-header">
           <div className="product-modal-title">
-            <span className="product-modal-icon" aria-hidden="true">
-              <Percent size={22} />
-            </span>
             <div className="product-modal-title-copy">
               <div className="product-modal-kicker">Danh mục sản phẩm</div>
               <h2 id="bulk-price-title">Cập nhật giá hàng loạt</h2>

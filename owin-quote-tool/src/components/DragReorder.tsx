@@ -57,6 +57,32 @@ export function useDragReorder(onReorder: (from: number, to: number) => void) {
   return { handleProps, rowProps, dragIndex, overIndex };
 }
 
+/** Nơi kéo phải nhường cho hành vi gốc: chọn chữ trong ô nhập, bấm nút. */
+const INTERACTIVE_IN_ROW = 'input, select, textarea, button, a, [contenteditable="true"]';
+
+/**
+ * Gộp `handleProps` + `rowProps` để kéo bằng CẢ DÒNG (không cần tay cầm riêng).
+ * Kéo bắt đầu từ ô nhập hoặc nút bị bỏ qua, nhờ vậy người dùng vẫn chọn được chữ
+ * và bấm được nút; vùng nhấc là phần viền / số thứ tự của dòng.
+ */
+export function mergeRowDragProps(
+  handle: ReturnType<ReturnType<typeof useDragReorder>['handleProps']>,
+  row: ReturnType<ReturnType<typeof useDragReorder>['rowProps']>,
+) {
+  return {
+    ...handle,
+    ...row,
+    onDragStart: (event: DragEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest?.(INTERACTIVE_IN_ROW)) {
+        event.preventDefault();
+        return;
+      }
+      handle.onDragStart(event);
+    },
+  };
+}
+
 /** Grip affordance for a draggable row. Spread `handleProps(index)` onto it. */
 export function DragHandle({
   label = 'Kéo để đổi thứ tự',

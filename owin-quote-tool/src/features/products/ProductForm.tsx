@@ -275,6 +275,7 @@ export function ProductForm({ editing, suggestions, onSave, onCancel }: Props) {
           <FixedAccessoryPackageEditor
             value={fixedPackage}
             onChange={setFixedPackage}
+            rowDrag
             suggestions={{
               accessoryName: suggestions.accessoryName,
               packageName: suggestions.accessoryPackageName,
@@ -290,6 +291,7 @@ export function ProductForm({ editing, suggestions, onSave, onCancel }: Props) {
             onChange={setExtraAccessories}
             suggestions={{ accessoryName: suggestions.extraAccessoryName ?? [] }}
             title="Phụ kiện phát sinh thêm"
+            rowDrag
           />
         </div>
 

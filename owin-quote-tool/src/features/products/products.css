@@ -5,8 +5,8 @@
  * Bố cục, thang chữ và thang bo góc lấy màn "Thiết kế & Lập báo giá"
  * (features/quote/quote.css) làm tham chiếu, theo FONT_WEIGHT_GUIDE.md và
  * BORDER_RADIUS_GUIDE.md: danh sách có toolbar sticky trên nền sáng, bảng nằm
- * trong một card duy nhất, form dùng nav bar phẳng với nút pill, modal dùng
- * header có ô icon.
+ * trong một card duy nhất, form dùng nav bar phẳng với nút pill, modal có header
+ * và footer cố định còn thân chia hai cột để nội dung vừa một khung nhìn.
  *
  * Chỉ chứa selector `.product-*` / `.bulk-price-*` / `.modal-backdrop`; ngoại lệ
  * là selector shell có `:has(.product-list-page)` để đổi nền riêng màn danh sách.
@@ -39,6 +39,10 @@
   --ios-radius: var(--r-lg);
   --ios-radius-sm: var(--r-md);
 
+  /* Nền cho bề mặt cấp hai (panel trong card, ô tổng): tint xanh rất nhẹ, dùng
+     thay cho các mảng xám. Đủ để tách khỏi card trắng và khỏi dòng trắng. */
+  --product-tint: #f4f8ff;
+
   font-weight: var(--product-weight-regular);
 }
 
@@ -50,8 +54,12 @@
 :is(.product-list-page, .product-workflow-page) .section-label {
   font-weight: var(--product-weight-semibold) !important;
 }
-:is(.product-list-page, .product-workflow-page, .product-modal) :is(.app-subtitle, .product-sub, .hint) {
+:is(.product-list-page, .product-workflow-page, .product-modal) :is(.app-subtitle, .hint) {
   font-weight: var(--product-weight-regular);
+}
+/* Metadata phụ dưới tiêu đề (mã sản phẩm, "3 dòng · …") — guide §2: 500. */
+:is(.product-list-page, .product-workflow-page, .product-modal) .product-sub {
+  font-weight: var(--product-weight-medium);
 }
 :is(.product-list-page, .product-workflow-page, .product-modal) .field > label {
   font-weight: var(--product-weight-medium);
@@ -367,14 +375,13 @@
   background: var(--ios-row-hover);
   box-shadow: inset 3px 0 0 var(--ios-blue);
 }
-/* Ô kéo không mở chi tiết nên cũng không nhận con trỏ bấm của hàng. */
-.product-drag-cell { cursor: default; }
+/* Cả hàng là thứ kéo được (không còn cột tay cầm): con trỏ báo có thể nhấc,
+   hàng đang kéo mờ đi, hàng đích hiện vạch chèn ở lớp `[data-drag-over]`. */
+.product-row-reorderable { cursor: grab; }
+.product-row-reorderable:active { cursor: grabbing; }
+.product-row-reorderable[data-dragging] { opacity: 0.45; }
 .product-table tbody tr[data-drag-over] td {
   box-shadow: inset 0 2px 0 0 var(--ios-blue);
-}
-.product-drag-cell {
-  width: 36px;
-  text-align: center;
 }
 
 .product-image-button {
@@ -698,7 +705,16 @@
   margin-bottom: 0;
   min-width: 0;
 }
-.product-editor-card .field > label,
+/* KHÔNG khai `display` ở đây: lớp chung đã ẩn nhãn lặp của từng dòng thông số /
+   phụ kiện (`.spec-editor-row .field > label` và bạn bè) vì các bảng đó đã có
+   header cột. Khai `display: block` ở selector cùng độ ưu tiên sẽ bật lại toàn
+   bộ nhãn lặp và làm form rối. */
+.product-editor-card .field > label {
+  margin-bottom: 6px;
+  color: var(--ios-label2);
+  font-size: var(--fs-sm);
+  font-weight: var(--product-weight-medium);
+}
 .product-image-panel > label {
   display: block;
   margin-bottom: 6px;
@@ -706,12 +722,22 @@
   font-size: var(--fs-sm);
   font-weight: var(--product-weight-medium);
 }
-/* Ô nhập của form: đè padding và bo của control dùng chung. */
-.product-editor-card .input {
-  min-height: var(--control-h);
+/* MỘT chiều cao và MỘT cỡ chữ cho mọi control của form — ô nhập, select và cả ô
+   chỉ đọc. Trước đây mỗi nơi một kiểu: ô nhập 45px/16px, select 44px, dòng món
+   phụ kiện 41px, còn "Thành tiền" (số quan trọng nhất của dòng) lại nhỏ nhất ở
+   38px/13px. `height` đặt tường minh để mọi ô trong cùng một hàng bằng nhau bất
+   kể box-model của từng loại thẻ; `!important` để đè các rule chung đang khai
+   min-height / font-size / padding kèm `!important`. */
+.product-editor-card :is(.input, .readonly-money) {
+  box-sizing: border-box;
+  height: var(--control-h);
+  min-height: var(--control-h) !important;
   padding: 10px 14px !important;
   border-radius: var(--r-md) !important;
   font-size: var(--fs-md) !important;
+}
+.product-editor-card textarea.input {
+  height: auto;
 }
 .product-editor-card textarea.input {
   min-height: 78px;
@@ -723,6 +749,172 @@
   border-color: rgba(60, 60, 67, 0.16);
   border-radius: var(--r-md) !important;
   box-shadow: none;
+}
+
+/* ─── Kéo bằng cả dòng ───
+   Không còn ô tay cầm nên bỏ luôn cột 36px/28px mà lớp chung dành cho nó. Vùng
+   nhấc là phần viền và số thứ tự của dòng; kéo từ trong ô nhập bị chặn ở JS để
+   người dùng vẫn chọn được chữ (xem mergeRowDragProps). */
+/* Cột đầu 12px là chấm bullet của dòng thông số. Header dùng cùng padding ngang
+   với dòng, nếu lệch thì nhãn cột không thẳng hàng với ô nhập bên dưới. */
+.product-editor-card .spec-table-head,
+.product-editor-card .spec-editor-row.is-row-drag {
+  grid-template-columns: 12px minmax(0, 0.9fr) minmax(0, 1.4fr) 40px;
+}
+.product-editor-card .spec-table-head { padding-inline: 10px; }
+.product-spec-bullet {
+  justify-self: center;
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%; /* chấm tròn thật, theo ngoại lệ của BORDER_RADIUS_GUIDE */
+  background: var(--ios-blue);
+}
+.product-editor-card .accessory-item-line.is-row-drag {
+  grid-template-columns: 26px minmax(0, 1fr) 76px 40px;
+}
+.product-editor-card .extra-accessory-head.is-row-drag,
+.product-editor-card .extra-accessory-line.is-row-drag {
+  grid-template-columns: minmax(160px, 1.2fr) minmax(420px, 2.2fr) 36px;
+}
+/* Header ăn cùng padding ngang với dòng để nhãn DV / SL / KL thẳng hàng với ô
+   nhập; cột DV nới 64 → 80px vì "md" bị mũi chevron của select che mất. */
+.product-editor-card .extra-accessory-head.is-row-drag { padding-inline: 10px; }
+.product-editor-card :is(.extra-acc-metrics, .extra-acc-metrics-head) {
+  grid-template-columns: 80px 56px 64px minmax(100px, 1fr) minmax(110px, 1fr);
+}
+.product-editor-card :is(.spec-editor-row, .accessory-item-line, .extra-accessory-line).is-row-drag {
+  padding: 8px 10px;
+  cursor: grab;
+}
+.product-editor-card :is(.spec-editor-row, .accessory-item-line, .extra-accessory-line).is-row-drag:active {
+  cursor: grabbing;
+}
+/* Con trỏ của dòng không được lan vào ô nhập và nút. */
+.product-editor-card .is-row-drag :is(input, select, textarea) { cursor: auto; }
+.product-editor-card .is-row-drag button { cursor: pointer; }
+.product-editor-card .is-row-drag[data-dragging] { opacity: 0.45; }
+.product-editor-card .is-row-drag[data-drag-over] {
+  box-shadow: inset 0 2px 0 0 var(--ios-blue);
+}
+
+/* ─── Ít xám, ít viền ───
+   Bản cũ xếp ba tầng khung: card có viền → panel có viền → mỗi dòng lại một
+   khung viền, bên trong là ô nhập nền xám cũng có viền. Ở đây panel đổi sang nền
+   xanh rất nhạt và bỏ viền, dòng bỏ hẳn khung, chỉ ô nhập giữ một hairline trên
+   nền trắng — cấu trúc vẫn đọc được mà bớt hẳn đường kẻ và mảng xám. */
+/* Ba mức bề mặt tách rõ mà không cần viền: card trắng → panel tint xanh →
+   từng dòng trắng nổi lên trên panel. */
+.product-editor-card .editor-panel {
+  border-color: transparent;
+  background: var(--product-tint);
+}
+.product-editor-card :is(.spec-editor-row, .accessory-item-line, .extra-accessory-line) {
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--ios-card);
+}
+.product-editor-card :is(.spec-editor-row, .accessory-item-line, .extra-accessory-line):hover {
+  background: #fafcff;
+}
+/* Ô nhập nền trắng thay cho nền xám `--ios-fill`; `!important` vì lớp chung khai
+   `background` và `border` của `.input` kèm `!important`. */
+.product-editor-card :is(input.input, select.input, textarea.input) {
+  border-color: rgba(60, 60, 67, 0.16) !important;
+  background: var(--ios-card) !important;
+}
+.product-editor-card :is(input.input, select.input, textarea.input):hover {
+  border-color: rgba(0, 122, 255, 0.28) !important;
+}
+/* Guide §2: tab chưa chọn 500, tab đang chọn 600. Lớp chung đặt cả hai thành
+   600 nên phải hạ tab chưa chọn xuống — `!important` vì rule chung có
+   `!important`. */
+.product-editor-card .segmented button {
+  font-weight: var(--product-weight-medium) !important;
+}
+.product-editor-card .segmented button.active {
+  font-weight: var(--product-weight-semibold) !important;
+}
+/* Guide §2: 700 chỉ dành cho tổng cuối cùng. "Thành tiền" từng dòng là số cần
+   nhấn nhưng không phải tổng cuối → 600 (lớp chung đang để 700). */
+.product-editor-card .readonly-money {
+  font-weight: var(--product-weight-semibold);
+}
+/* Ghi chú trong nhãn ("· auto 1×SL cửa") là helper text → 400. */
+.product-editor-card .field-hint-inline {
+  font-weight: var(--product-weight-regular);
+}
+
+/* Thẻ đang chọn của "Đơn vị tính": nền cam thay vì trắng, để thấy ngay đang ở
+   đơn vị nào mà không phải đọc kỹ. `!important` vì lớp chung khai nền / màu chữ
+   / shadow của `.segmented button.active` kèm `!important`. */
+.product-editor-card .segmented button.active {
+  background: var(--ios-orange-fill) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 6px rgba(255, 149, 0, 0.35) !important;
+}
+
+/* Select đơn vị: bỏ control mặc định của hệ điều hành và tự vẽ chevron, chừa
+   đúng chỗ cho nó — mũi native đè lên chữ nên "md" chỉ còn thấy "m". Danh sách
+   option lúc mở do hệ điều hành vẽ, CSS không chạm tới được.
+   `!important` vì lớp chung khai `background` của `.input` kèm `!important`. */
+.product-editor-card select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 10px 28px 10px 12px !important;
+  background: var(--ios-card)
+    url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%20fill='none'%20stroke='%236e6e73'%20stroke-width='1.6'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M4%206.5%208%2010.5l4-4'/%3E%3C/svg%3E")
+    no-repeat right 7px center / 13px !important;
+  text-overflow: ellipsis;
+}
+.product-editor-card select.input:hover {
+  border-color: rgba(0, 122, 255, 0.28) !important;
+}
+
+/* Ô chỉ đọc: nền xanh nhạt thay vì xám, không viền, số căn phải như cột tiền. */
+.product-editor-card .readonly-money {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border: 1px solid transparent;
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+}
+/* Số thứ tự món: dùng tint xanh làm luôn affordance vùng nhấc. */
+.product-editor-card .line-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-pill);
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+  font-size: var(--fs-xs);
+  font-weight: var(--product-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Ba cấp nhãn trong form ───
+   Trước đây nhãn nhóm, tiêu đề panel và header cột đều 12px / 600 / UPPERCASE
+   nên không thấy được cấp nào trên cấp nào. Phân lại:
+   nhóm = eyebrow 12px hoa · panel = 14px chữ thường đậm · cột = 12px nhạt. */
+.product-editor-card .editor-toolbar .section-label {
+  /* `!important` để đè `.section-label` dùng chung (khai cỡ chữ kèm !important). */
+  font-size: var(--fs-sm) !important;
+  font-weight: var(--product-weight-semibold) !important;
+  color: var(--ios-label);
+  letter-spacing: 0;
+  text-transform: none;
+}
+/* Header cột giữ 600 theo guide §2 (table header); tách cấp với tiêu đề panel
+   bằng cỡ chữ 12 vs 14 và màu nhạt hơn, không hạ độ đậm. */
+.product-editor-card :is(.spec-table-head, .extra-accessory-head) {
+  color: var(--ios-label3);
+  font-size: var(--fs-xs);
+  font-weight: var(--product-weight-semibold);
+  letter-spacing: 0;
+  text-transform: none;
 }
 .product-editor-card .spec-editor-row,
 .product-editor-card .accessory-item-line {
@@ -758,12 +950,14 @@
   display: grid;
   gap: 12px;
 }
+/* Bốn cột, tên sản phẩm chiếm ba: hàng 1 = nhóm + tên, hàng 2 = đơn vị, rộng,
+   cao, đơn giá. Lưới 3 cột của bản cũ đẩy "Đơn giá" xuống nằm trơ một mình. */
 .product-basic-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
-.product-basic-grid > :nth-child(2) { grid-column: span 2; }
+.product-basic-grid > :nth-child(2) { grid-column: span 3; }
 
 .product-editor-section-grid {
   display: grid;
@@ -832,9 +1026,9 @@
   min-width: 0;
   min-height: 76px;
   padding: 12px 14px;
-  border: 1px solid var(--ios-separator);
+  border: 0;
   border-radius: var(--r-md);
-  background: var(--ios-surface-muted);
+  background: var(--product-tint);
 }
 .product-summary-strip .summary-metric span {
   color: var(--ios-label3);
@@ -853,7 +1047,6 @@
   font-weight: var(--product-weight-regular);
 }
 .product-summary-strip .summary-metric-strong {
-  border-color: rgba(0, 122, 255, 0.28);
   background: var(--ios-blue-soft);
 }
 .product-summary-strip .summary-metric-strong :is(span, strong, small) { color: var(--ios-blue-ink); }
@@ -897,21 +1090,7 @@
 .product-modal-title {
   display: flex;
   align-items: center;
-  gap: 12px;
   min-width: 0;
-}
-.product-modal-icon {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid rgba(0, 122, 255, 0.1);
-  border-radius: var(--r-md);
-  background: linear-gradient(145deg, #edf6ff 0%, #d9edff 100%);
-  color: var(--ios-blue);
-  box-shadow: 0 5px 12px rgba(0, 122, 255, 0.13), 0 1px 0 #fff inset;
 }
 .product-modal-title-copy {
   display: flex;
@@ -958,9 +1137,12 @@
   color: var(--ios-red);
 }
 
+/* Modal rộng và thấp: ưu tiên chỗ ngang để mọi khối hiện hết trong một khung
+   nhìn thay vì phải cuộn. `overflow: auto` ở body chỉ là phao cho dữ liệu cực
+   dài (rất nhiều thông số), không phải cách xem thường ngày. */
 .product-preview-modal {
-  width: min(980px, 100%);
-  max-height: min(900px, calc(100dvh - 32px));
+  width: min(1040px, 100%);
+  max-height: min(800px, calc(100dvh - 32px));
 }
 
 .product-preview-body {
@@ -968,20 +1150,23 @@
   min-height: 0;
   overflow: auto;
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.95fr);
+  grid-template-columns: minmax(0, 0.88fr) minmax(320px, 1.12fr);
 }
+/* Ảnh thấp hơn bản cũ (540px → 340px) để phần thông tin mới là thứ quyết định
+   chiều cao modal. Không dùng `height: auto`: ảnh placeholder không có kích
+   thước nội tại nên cả modal sẽ sụp về 0. */
 .product-preview-image {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 380px;
-  padding: 20px;
+  min-height: 0;
+  padding: 18px;
   background: var(--ios-bg);
 }
 .product-preview-image .ph,
 .product-preview-image img {
   width: 100%;
-  height: min(64vh, 540px);
+  height: min(40vh, 340px);
   object-fit: contain;
   border-radius: var(--r-md);
 }
@@ -989,9 +1174,17 @@
 .product-preview-meta {
   display: grid;
   align-content: start;
-  gap: 14px;
-  padding: 20px 22px 24px;
+  gap: 12px;
+  padding: 18px 20px;
   background: var(--ios-card);
+}
+/* Thông số và phụ kiện nằm cạnh nhau: chiều cao khối bằng cột cao nhất thay vì
+   tổng cả hai, nên vừa một khung nhìn mà vẫn giữ khoảng thở. */
+.product-preview-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px 16px;
 }
 .product-preview-meta > div > span,
 .product-preview-desc > span,
@@ -1005,31 +1198,32 @@
   text-transform: uppercase;
 }
 
+/* Gọn trong một dòng: nhãn bên trái, giá và đơn vị đi liền nhau bên phải —
+   thay vì nhãn chiếm trọn dòng trên rồi đơn vị trôi sang lề phải. */
 .product-preview-price-block {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  gap: 2px 10px;
-  padding: 14px 16px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 10px 16px;
   border: 1px solid rgba(0, 122, 255, 0.22);
   border-radius: var(--r-md);
   background: var(--ios-blue-soft);
 }
 .product-preview-price-block > span {
-  grid-column: 1 / -1;
+  margin-right: auto;
   color: var(--ios-blue-ink);
 }
 .product-preview-price {
   margin: 0;
   color: var(--ios-blue-ink);
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-xl);
   font-weight: var(--product-weight-bold);
-  line-height: 1.1;
+  line-height: 1.2;
   letter-spacing: var(--track-tight);
   font-variant-numeric: tabular-nums;
 }
 .product-preview-price-block small {
-  padding-bottom: 4px;
   color: var(--ios-blue-ink);
   font-size: var(--fs-sm);
   font-weight: var(--product-weight-medium);
@@ -1066,7 +1260,7 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--ios-separator);
 }
 .product-preview-specs li:last-child,
@@ -1086,10 +1280,13 @@
   font-size: var(--fs-sm);
   font-weight: var(--product-weight-medium);
 }
+/* Giá bộ phụ kiện xuống dòng dưới tên: cột này hẹp nên tên thường phải xuống
+   dòng, để giá cùng hàng thì nó trôi lệch khỏi dòng cuối của tên. */
 .product-preview-pkg-name {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   margin: 8px 0 4px;
 }
 .product-preview-pkg-name strong {
@@ -1097,31 +1294,37 @@
   color: var(--ios-label);
   font-size: var(--fs-md);
   font-weight: var(--product-weight-semibold);
+  line-height: 1.3;
 }
 
-.product-preview-actions {
+/* Hành động tách xuống footer cố định: luôn thấy được và không chiếm chiều cao
+   của cột thông tin. */
+.product-preview-footer {
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
   gap: 10px;
-  margin-top: 6px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--ios-separator);
+  background: var(--ios-card);
 }
+.product-preview-footer:empty { display: none; }
 /* Hành động trong modal dùng pill như nav bar của form. */
-.product-preview-actions .btn {
-  flex: 1 1 140px;
-  justify-content: center;
+.product-preview-footer .btn {
   min-height: 38px;
-  padding: 0 16px !important;
+  padding: 0 18px !important;
   border: 0;
   border-radius: var(--r-pill) !important;
   font-size: var(--fs-sm) !important;
 }
-.product-preview-actions .btn-primary { background: var(--ios-blue); }
-.product-preview-actions .btn-primary:hover:not(:disabled) { background: var(--ios-blue-ink); }
-.product-preview-actions .btn-ghost {
+.product-preview-footer .btn-primary { background: var(--ios-blue); }
+.product-preview-footer .btn-primary:hover:not(:disabled) { background: var(--ios-blue-ink); }
+.product-preview-footer .btn-ghost {
   background: rgba(120, 120, 128, 0.12);
   color: var(--ios-label);
 }
-.product-preview-actions .btn-ghost:hover:not(:disabled) { background: rgba(120, 120, 128, 0.18); }
+.product-preview-footer .btn-ghost:hover:not(:disabled) { background: rgba(120, 120, 128, 0.18); }
 
 .bulk-price-modal {
   width: min(720px, calc(100vw - 32px));
@@ -1209,6 +1412,8 @@
   .product-basic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .product-basic-grid > :nth-child(2) { grid-column: auto; }
   .product-editor-section-grid { grid-template-columns: 1fr; }
+  /* Bốn ô tổng dưới 1180px thì mỗi ô hẹp hơn cả con số tiền — chia đôi. */
+  .product-summary-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 1080px) {
@@ -1220,8 +1425,7 @@
 }
 
 @media (max-width: 900px) {
-  .product-editor-section-grid,
-  .product-basic-grid { grid-template-columns: 1fr; }
+  .product-editor-section-grid { grid-template-columns: 1fr; }
   .product-form-heading { flex-wrap: wrap; }
   .product-form-actions {
     width: 100%;
@@ -1239,8 +1443,9 @@
   .product-toolbar-actions > .btn { flex: 1 1 140px; }
   .product-toolbar-actions .product-create-button { flex: 1 1 100%; }
   .product-preview-body,
-  .product-editor-top,
-  .product-summary-strip { grid-template-columns: 1fr; }
+  .product-preview-detail-grid,
+  .product-editor-top { grid-template-columns: 1fr; }
+  .product-preview-footer .btn { flex: 1 1 140px; justify-content: center; }
     .product-image-panel { max-width: min(220px, 100%); }
   .product-list-pagination {
     align-items: flex-start;
@@ -1251,6 +1456,13 @@
 }
 
 /* ─── Điện thoại dọc: danh sách thành thẻ, nút Lưu ghim đáy ─── */
+/* ─── Điện thoại: một cột cho thông tin cơ bản và dải tổng ─── */
+@media (max-width: 560px) {
+  .product-basic-grid,
+  .product-summary-strip { grid-template-columns: 1fr; }
+  .product-editor-card { padding: 14px; }
+}
+
 @media (max-width: 720px) {
 
   .product-table-card {
@@ -1286,7 +1498,6 @@
     border: 0;
     background: transparent;
   }
-  .product-table td[data-col='drag'],
   .product-table td[data-col='category'],
   .product-table td[data-col='unit'],
   .product-table td[data-col='size'] { display: none; }
@@ -1333,6 +1544,47 @@
     border: 1px solid var(--ios-separator);
     border-radius: var(--r-md);
   }
+
+  /* Các rule mobile của lớp chung đều chừa một cột đầu cho tay cầm. Dòng kéo-cả-
+     dòng không có tay cầm nữa nên phải khai lại lưới, nếu không ô "Tên phụ kiện"
+     rơi vào đúng cột 28px đó và bị co mất. `!important` để đè rule chung cũng
+     đang `!important`. */
+  .product-editor-card .extra-accessory-line.is-row-drag {
+    grid-template-columns: minmax(0, 1fr) 34px !important;
+  }
+  .product-editor-card .extra-accessory-line.is-row-drag > .extra-acc-metrics {
+    grid-column: 1 / -1 !important;
+  }
+  /* Nút xoá về cùng hàng với ô tên, thay vì chiếm riêng một dòng phía dưới. */
+  .product-editor-card .extra-accessory-line.is-row-drag > .row-action-group {
+    grid-column: 2 !important;
+    grid-row: 1;
+  }
+  /* Điện thoại ẩn header cột, nên phải trả lại nhãn cho từng ô đo — không thì
+     không biết ô nào là DV / SL / KL / đơn giá. Rule chung đã đặt lại
+     position và size cho nhãn nhưng thiếu `display`. */
+  .product-editor-card .extra-acc-metrics .field > label { display: block; }
+  /* Dòng thông số xếp dọc: bullet cột 1, tên và giá trị chồng nhau ở cột 2,
+     nút xoá cột 3 trải hết chiều cao. */
+  .product-editor-card .spec-editor-row.is-row-drag {
+    grid-template-columns: 12px minmax(0, 1fr) 40px !important;
+  }
+  .product-editor-card .spec-editor-row.is-row-drag > :is(.autosuggest, .field) {
+    grid-column: 2 !important;
+  }
+  .product-editor-card .spec-editor-row.is-row-drag > .product-spec-bullet {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .product-editor-card .spec-editor-row.is-row-drag > .row-action-group {
+    grid-column: 3 !important;
+    grid-row: 1 / -1;
+    align-self: center;
+  }
+  /* Header cột ẩn đi thì phải trả nhãn về từng ô, không thì không biết ô nào là
+     tên, ô nào là giá trị. */
+  .product-editor-card .spec-table-head { display: none; }
+  .product-editor-card .spec-editor-row.is-row-drag .field > label { display: block; }
 
   .product-image-panel { max-width: 100%; }
   .product-image-panel .dropzone {
@@ -1406,6 +1658,11 @@
   .product-form-actions > .btn {
     width: auto;
     min-height: 34px;
+  }
+
+  /* Cùng lý do như breakpoint dọc: bỏ cột tay cầm khỏi lưới ngang. */
+  .product-editor-card .extra-accessory-line.is-row-drag {
+    grid-template-columns: minmax(140px, 1.2fr) minmax(0, 2.2fr) 28px !important;
   }
 
   .product-table tbody tr.product-row {

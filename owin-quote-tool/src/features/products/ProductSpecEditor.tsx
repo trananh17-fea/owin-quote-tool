@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { ProductSpecRecord } from '@/types/models';
 import { AutoSuggestInput } from '@/components/AutoSuggestInput';
-import { DragHandle, reorderList, useDragReorder } from '@/components/DragReorder';
+import { mergeRowDragProps, reorderList, useDragReorder } from '@/components/DragReorder';
 import { DEFAULT_SPEC_KEYS, suggestionTypesForSpecKey } from '@/features/suggestions/suggestionStore';
 import { newRowId, type SpecDraft } from '@/features/products/productDraft';
 import type { ProductSuggestions } from '@/features/products/productSuggestions';
@@ -72,8 +72,13 @@ export function ProductSpecEditor({
           </div>
         )}
         {specs.map((spec, index) => (
-          <div key={spec.id} className="spec-editor-row" data-row-id={spec.id} {...drag.rowProps(index)}>
-            <DragHandle {...drag.handleProps(index)} label="Kéo để đổi thứ tự thông số" />
+          <div
+            key={spec.id}
+            className="spec-editor-row is-row-drag"
+            data-row-id={spec.id}
+            {...mergeRowDragProps(drag.handleProps(index), drag.rowProps(index))}
+          >
+            <span className="product-spec-bullet" aria-hidden="true" />
             <AutoSuggestInput
               label="Tên"
               fieldKey="spec_key"
