@@ -9,7 +9,7 @@
  *
  * Pattern dùng chung vẫn ở lớp chung, KHÔNG khai lại ở đây: .preview-doc (và các
  * con của nó), .admin-page*, .toolbar, .app-title, .app-subtitle, .card, .field,
- * .input, .btn*, .icon-btn, .ph, .image-fit-*, .no-print, .product-data-error.
+ * .input, .btn*, .icon-btn, .ph, .image-fit-*, .no-print, .data-error.
  *
  * File chia 4 phần:
  *   1) Chrome (thanh công cụ, bộ lọc, nút xuất) — chuyển hẳn sang iOS.

@@ -11,62 +11,6 @@
  * tách tab Báo giá thì đổi tên cho đúng chủ sở hữu.
  */
 
-/* ═══════════════ Trang danh mục ═══════════════ */
-
-.product-header-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.product-filter-card {
-  display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(220px, 0.7fr);
-  gap: 14px;
-  align-items: end;
-  margin-bottom: 20px;
-  padding: 16px 18px;
-  border: 1px solid var(--ios-separator);
-  border-radius: var(--r-lg);
-  background: var(--ios-card);
-  box-shadow: var(--shadow-md);
-}
-.product-filter-card .field { margin-bottom: 0; }
-.product-filter-search label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Thông báo thành công / lỗi dữ liệu — banner mềm kiểu iOS */
-.product-toast,
-.product-data-error {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding: 11px 14px;
-  border-radius: var(--r-md);
-  font-size: var(--fs-sm);
-  font-weight: 500;
-}
-.product-toast {
-  width: min(420px, 100%);
-  border: 1px solid rgba(52, 199, 89, 0.24);
-  background: var(--ios-green-soft);
-  color: var(--ios-green);
-}
-.product-data-error {
-  justify-content: space-between;
-  width: min(680px, 100%);
-  border: 1px solid rgba(255, 59, 48, 0.22);
-  background: var(--ios-red-soft);
-  color: var(--ios-red);
-}
-.product-data-error .btn { flex: 0 0 auto; }
-
 /* ═══════════════ Bảng danh sách ═══════════════ */
 
 .product-table-card {
@@ -143,27 +87,6 @@
 .product-row-mobile-meta { display: none; }
 
 /* Trạng thái trống / đang tải */
-.product-empty-card {
-  min-height: 250px;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 8px;
-  padding: 36px 20px;
-  border: 1px dashed var(--ios-separator);
-  border-radius: var(--r-lg);
-  background: var(--ios-card);
-  color: var(--ios-label2);
-  text-align: center;
-}
-.product-empty-card svg { color: var(--ios-label3); }
-.product-empty-card h3,
-.product-empty-card p { margin: 0; }
-.product-empty-card h3 {
-  color: var(--ios-label);
-  font-size: var(--fs-lg);
-  font-weight: 600;
-}
 
 .product-list-skeleton {
   display: grid;
@@ -542,32 +465,14 @@
 }
 
 @media (max-width: 760px) {
-  .product-filter-card,
-  .product-preview-body,
-  .product-editor-top,
-  .product-summary-strip { grid-template-columns: 1fr; }
-  .product-header-actions { justify-content: stretch; }
-  .product-header-actions .btn {
-    flex: 1 1 180px;
-    justify-content: center;
-  }
+.product-preview-body,
+.product-editor-top,
+.product-summary-strip { grid-template-columns: 1fr; }
   .product-image-panel { max-width: min(220px, 100%); }
 }
 
 /* ─── Điện thoại dọc: danh sách thành thẻ, thanh lưu ghim đáy ─── */
 @media (max-width: 720px) {
-  .product-header-actions {
-    width: 100%;
-    gap: 8px;
-  }
-  .product-header-actions .btn {
-    flex: 1 1 calc(50% - 8px);
-    min-width: 0;
-  }
-  .product-filter-card {
-    gap: 8px;
-    padding: 10px;
-  }
 
   .product-table-card {
     padding: 0;
@@ -696,11 +601,10 @@
 
 /* ─── Điện thoại ngang: 2 cột, ô thấp, thanh lưu trở lại trong luồng ─── */
 @media (orientation: landscape) and (max-height: 500px) and (max-width: 960px) {
-  .product-filter-card,
-  .product-basic-grid,
-  .product-editor-top,
-  .product-editor-section-grid,
-  .product-summary-strip {
+.product-basic-grid,
+.product-editor-top,
+.product-editor-section-grid,
+.product-summary-strip {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
@@ -751,10 +655,6 @@
     border-radius: var(--r-md);
   }
   .product-preview-body { grid-template-columns: 1fr 1fr; }
-}
-
-@media (max-width: 380px) {
-  .product-header-actions .btn { flex: 1 1 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

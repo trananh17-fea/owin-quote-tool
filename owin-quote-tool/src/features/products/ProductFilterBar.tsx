@@ -15,8 +15,8 @@ export function ProductFilterBar({
   categories: string[];
 }) {
   return (
-    <div className="product-filter-card">
-      <div className="field product-filter-search">
+    <div className="filter-card">
+      <div className="field filter-search">
         <label htmlFor="product-search">
           <Search size={14} aria-hidden="true" /> Tìm sản phẩm
         </label>

@@ -46,7 +46,7 @@ export function ProductList({
 
   if (products.length === 0) {
     return (
-      <div className="product-empty-card">
+      <div className="empty-card">
         <Package size={44} />
         <h3>Chưa có sản phẩm</h3>
         <p>{totalCount ? 'Không tìm thấy sản phẩm phù hợp bộ lọc.' : 'Hãy tạo sản phẩm đầu tiên để bắt đầu quản lý báo giá.'}</p>

@@ -8,10 +8,9 @@
  * .two-col, .toolbar, .admin-page*, .preview-doc) vẫn ở lớp chung — ở đây chỉ
  * khai biến thể có tổ tiên `.quote-*`.
  *
- * Màn danh sách / chi tiết còn mượn vài class của tab Sản phẩm
- * (product-filter-card, product-toast, product-data-error, product-empty-card,
- * product-header-actions, product-name, product-sub). Chúng do features/products
- * sở hữu — KHÔNG style ở đây, chờ đợt đổi tên tập trung.
+ * Màn danh sách / chi tiết dùng pattern chung của trang danh sách
+ * (.filter-card, .toast, .data-error, .empty-card, .page-actions) cùng
+ * .product-name / .product-sub — tất cả ở lớp chung, KHÔNG style lại ở đây.
  *
  * `!important` chỉ còn ở chỗ buộc phải đè một `!important` khác vẫn sống ở lớp
  * chung (.input, .two-col) hoặc rule cũ chưa được xoá khỏi owinTheme.css; mỗi

@@ -51,7 +51,7 @@ export function CatalogueView() {
       />
 
       {(productsError || exportError) && (
-        <div className="product-data-error no-print" role="alert">
+        <div className="data-error no-print" role="alert">
           <span>{exportError || productsError}</span>
           {productsError && (
             <button type="button" className="btn btn-ghost" onClick={() => void retry()}>

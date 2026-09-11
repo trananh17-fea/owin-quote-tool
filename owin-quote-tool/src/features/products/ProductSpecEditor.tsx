@@ -45,7 +45,7 @@ export function ProductSpecEditor({
     onChange(specs.map((row, i) => (i === index ? { ...row, ...patch } : row)));
 
   return (
-    <div className="editor-panel product-spec-panel">
+    <div className="editor-panel">
       <div className="toolbar product-panel-head">
         <div className="section-label">Thông số kỹ thuật</div>
         <div className="spacer" />

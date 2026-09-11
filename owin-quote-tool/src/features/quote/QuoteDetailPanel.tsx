@@ -65,7 +65,7 @@ export function QuoteDetailPanel({
       </div>
 
       {message && (
-        <div className="product-toast" style={error ? { color: 'var(--ios-red)' } : undefined}>
+        <div className="toast" style={error ? { color: 'var(--ios-red)' } : undefined}>
           {message}
         </div>
       )}

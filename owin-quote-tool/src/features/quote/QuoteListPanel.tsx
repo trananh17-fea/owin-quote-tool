@@ -44,23 +44,23 @@ export function QuoteListPanel({
           <h1 className="app-title">Danh sách báo giá</h1>
           <p className="app-subtitle">Hồ sơ báo giá chi tiết nhôm kính hệ OWIN · {history.length} báo giá</p>
         </div>
-        <div className="product-header-actions">
+        <div className="page-actions">
           <button className="btn btn-primary" onClick={onCreate}>
             <Plus size={18} style={{ verticalAlign: '-3px' }} /> Tạo báo giá mới
           </button>
         </div>
       </div>
 
-      {message && <div className="product-toast">{message}</div>}
+      {message && <div className="toast">{message}</div>}
       {error && (
-        <div className="product-data-error" role="alert">
+        <div className="data-error" role="alert">
           <span>{error}</span>
           <button type="button" className="btn btn-ghost" onClick={onRetry}>Thử tải lại</button>
         </div>
       )}
 
-      <div className="product-filter-card">
-        <div className="field product-filter-search">
+      <div className="filter-card">
+        <div className="field filter-search">
           <label><Search size={15} style={{ verticalAlign: '-2px' }} /> Tìm báo giá</label>
           <input
             className="input"
@@ -86,15 +86,15 @@ export function QuoteListPanel({
 
       <div className="quote-history-table-wrap quote-list-table-card">
         {loading ? (
-          <div className="product-empty-card"><LoaderCircle className="spin" size={32} /><p>Đang tải báo giá từ Supabase…</p></div>
+          <div className="empty-card"><LoaderCircle className="spin" size={32} /><p>Đang tải báo giá từ Supabase…</p></div>
         ) : history.length === 0 ? (
-          <div className="product-empty-card">
+          <div className="empty-card">
             <FileDown size={44} />
             <h3>Chưa có báo giá</h3>
             <p>Tạo báo giá mới để bắt đầu lưu lịch sử.</p>
           </div>
         ) : filteredHistory.length === 0 ? (
-          <div className="product-empty-card">
+          <div className="empty-card">
             <Search size={44} />
             <h3>Không tìm thấy báo giá</h3>
             <p>Thử đổi từ khóa hoặc trạng thái lọc.</p>

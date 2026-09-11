@@ -1251,3 +1251,113 @@ textarea.input:focus {
     display: none !important;
   }
 }
+
+
+/* ═══════════════ Pattern dùng chung của trang danh sách ═══════════════
+ * Sản phẩm / Báo giá / Bảng giá cùng dùng: thẻ lọc, banner thông báo, banner
+ * lỗi dữ liệu, thẻ trạng thái rỗng, hàng nút của tiêu đề trang.
+ * Trước đây mang tiền tố `product-` và nằm trong products.css, khiến hai tab
+ * kia phải phụ thuộc chéo vào stylesheet của tab Sản phẩm.
+ */
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filter-card {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(220px, 0.7fr);
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-lg);
+  background: var(--ios-card);
+  box-shadow: var(--shadow-md);
+}
+.filter-card .field { margin-bottom: 0; }
+.filter-search label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.toast,
+.data-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 11px 14px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+.toast {
+  width: min(420px, 100%);
+  border: 1px solid rgba(52, 199, 89, 0.24);
+  background: var(--ios-green-soft);
+  color: var(--ios-green);
+}
+.data-error {
+  justify-content: space-between;
+  width: min(680px, 100%);
+  border: 1px solid rgba(255, 59, 48, 0.22);
+  background: var(--ios-red-soft);
+  color: var(--ios-red);
+}
+.data-error .btn { flex: 0 0 auto; }
+.empty-card {
+  min-height: 250px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 36px 20px;
+  border: 1px dashed var(--ios-separator);
+  border-radius: var(--r-lg);
+  background: var(--ios-card);
+  color: var(--ios-label2);
+  text-align: center;
+}
+.empty-card svg { color: var(--ios-label3); }
+.empty-card h3,
+.empty-card p { margin: 0; }
+.empty-card h3 {
+  color: var(--ios-label);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+@media (max-width: 760px) {
+  .filter-card { grid-template-columns: 1fr; }
+  .page-actions { justify-content: stretch; }
+  .page-actions .btn {
+      flex: 1 1 180px;
+      justify-content: center;
+    }
+}
+@media (max-width: 720px) {
+  .page-actions {
+      width: 100%;
+      gap: 8px;
+    }
+  .page-actions .btn {
+      flex: 1 1 calc(50% - 8px);
+      min-width: 0;
+    }
+  .filter-card {
+      gap: 8px;
+      padding: 10px;
+    }
+}
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 960px) {
+  .filter-card {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+}
+@media (max-width: 380px) {
+  .page-actions .btn { flex: 1 1 100%; }
+}

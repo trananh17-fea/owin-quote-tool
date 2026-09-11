@@ -70,7 +70,7 @@ export function ProductPreviewCard({
       onClick={onClose}
     >
       <div
-        className="product-preview-modal product-preview-modal-rich"
+        className="product-preview-modal"
         role="dialog"
         aria-modal="true"
         aria-label={`Xem ${product.name}`}
@@ -87,12 +87,12 @@ export function ProductPreviewCard({
           </button>
         </div>
 
-        <div className="product-preview-body product-preview-body-rich">
-          <div className="product-preview-image product-preview-image-rich">
+        <div className="product-preview-body">
+          <div className="product-preview-image">
             <ProductThumb imagePath={product.coverImagePath} fill />
           </div>
 
-          <div className="product-preview-meta product-preview-meta-rich">
+          <div className="product-preview-meta">
             <div className="product-preview-price-block">
               <span>Đơn giá</span>
               <strong className="product-preview-price">{formatVND(product.unitPriceVnd)}</strong>

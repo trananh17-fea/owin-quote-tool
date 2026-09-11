@@ -231,7 +231,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
               : `Danh mục sản phẩm nhôm kính của hệ thống · ${productRecords.length} sản phẩm`}
           </p>
         </div>
-        <div className="product-header-actions">
+        <div className="page-actions">
           <button className="btn btn-ghost" onClick={onOpenCatalogue}>
             <BookOpen size={16} /> Bảng giá
           </button>
@@ -244,9 +244,9 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
         </div>
       </div>
 
-      {message && <div className="product-toast">{message}</div>}
+      {message && <div className="toast">{message}</div>}
       {dataError && (
-        <div className="product-data-error" role="alert">
+        <div className="data-error" role="alert">
           <span>{dataError}</span>
           {(productsError || suggestionsError) && (
             <button
