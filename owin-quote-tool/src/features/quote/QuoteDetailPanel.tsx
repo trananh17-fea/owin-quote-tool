@@ -73,23 +73,31 @@ export function QuoteDetailPanel({
   return (
     <section className="admin-page quote-detail-page">
       <header className="quote-detail-heading">
-        <button className="quote-form-back" onClick={onBack} aria-label="Quay lại danh sách báo giá">
+        <button
+          className="quote-form-back"
+          onClick={onBack}
+          aria-label="Quay lại danh sách báo giá"
+        >
           <ChevronLeft size={20} />
         </button>
         <div className="quote-detail-heading-copy">
-          <span className="quote-detail-eyebrow">Chi tiết báo giá</span>
           <h1 className="quote-detail-title">{quote.code}</h1>
           <div className="quote-detail-meta">
-            <span>{quote.customerName || 'Khách chưa đặt tên'}</span>
+            <span>{quote.customerName || "Khách chưa đặt tên"}</span>
             <span aria-hidden="true">·</span>
             <span>{formatShortDate(quote.quoteDate || quote.createdAt)}</span>
-            <span className={`quote-status-pill quote-status-${quote.status.toLowerCase()}`}>
+            <span
+              className={`quote-status-pill quote-status-${quote.status.toLowerCase()}`}
+            >
               {statusLabel(quote.status)}
             </span>
           </div>
         </div>
         <div className="quote-detail-actions no-print">
-          <button className="btn quote-detail-secondary-action" onClick={onDuplicate}>
+          <button
+            className="btn quote-detail-secondary-action"
+            onClick={onDuplicate}
+          >
             <Copy size={16} aria-hidden="true" />
             Nhân bản
           </button>
@@ -104,21 +112,50 @@ export function QuoteDetailPanel({
             >
               <FileDown size={16} aria-hidden="true" />
               Xuất
-              <ChevronDown className="quote-export-chevron" size={15} aria-hidden="true" />
+              <ChevronDown
+                className="quote-export-chevron"
+                size={15}
+                aria-hidden="true"
+              />
             </button>
             {exportOpen && (
-              <div className="quote-export-menu" role="menu" aria-label="Định dạng xuất file">
-                <button type="button" role="menuitem" onClick={() => runExport(onExport)}>
+              <div
+                className="quote-export-menu"
+                role="menu"
+                aria-label="Định dạng xuất file"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => runExport(onExport)}
+                >
                   <FileText size={16} aria-hidden="true" />
-                  <span><strong>Word</strong><small>Tài liệu chỉnh sửa</small></span>
+                  <span>
+                    <strong>Word</strong>
+                    <small>Tài liệu chỉnh sửa</small>
+                  </span>
                 </button>
-                <button type="button" role="menuitem" onClick={() => runExport(onExportExcel)}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => runExport(onExportExcel)}
+                >
                   <FileSpreadsheet size={16} aria-hidden="true" />
-                  <span><strong>Excel</strong><small>Bảng tính chi tiết</small></span>
+                  <span>
+                    <strong>Excel</strong>
+                    <small>Bảng tính chi tiết</small>
+                  </span>
                 </button>
-                <button type="button" role="menuitem" onClick={() => runExport(onExportPdf)}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => runExport(onExportPdf)}
+                >
                   <FileDown size={16} aria-hidden="true" />
-                  <span><strong>PDF</strong><small>Bản trình bày cố định</small></span>
+                  <span>
+                    <strong>PDF</strong>
+                    <small>Bản trình bày cố định</small>
+                  </span>
                 </button>
               </div>
             )}
@@ -127,14 +164,22 @@ export function QuoteDetailPanel({
             <Pencil size={16} aria-hidden="true" />
             Chỉnh sửa
           </button>
-          <button className="quote-detail-delete" onClick={onDelete} aria-label="Xóa báo giá" title="Xóa báo giá">
+          <button
+            className="quote-detail-delete"
+            onClick={onDelete}
+            aria-label="Xóa báo giá"
+            title="Xóa báo giá"
+          >
             <Trash2 size={17} aria-hidden="true" />
           </button>
         </div>
       </header>
 
       {message && (
-        <div className={`toast quote-detail-toast${error ? ' is-error' : ''}`} role={error ? 'alert' : 'status'}>
+        <div
+          className={`toast quote-detail-toast${error ? " is-error" : ""}`}
+          role={error ? "alert" : "status"}
+        >
           {message}
         </div>
       )}
@@ -146,11 +191,28 @@ export function QuoteDetailPanel({
           </div>
           <div className="card quote-detail-customer-card">
             <div className="quote-detail-info">
-              <div><span>Khách hàng</span><strong>{quote.customerName || '—'}</strong></div>
-              <div><span>Số điện thoại</span><strong>{quote.customerPhone || '—'}</strong></div>
-              <div><span>Email</span><strong>{quote.customerEmail || '—'}</strong></div>
-              <div className="quote-detail-address"><span>Địa chỉ</span><strong>{quote.customerAddress || '—'}</strong></div>
-              <div><span>Ngày báo giá</span><strong>{formatShortDate(quote.quoteDate || quote.createdAt)}</strong></div>
+              <div>
+                <span>Khách hàng</span>
+                <strong>{quote.customerName || "—"}</strong>
+              </div>
+              <div>
+                <span>Số điện thoại</span>
+                <strong>{quote.customerPhone || "—"}</strong>
+              </div>
+              <div>
+                <span>Email</span>
+                <strong>{quote.customerEmail || "—"}</strong>
+              </div>
+              <div className="quote-detail-address">
+                <span>Địa chỉ</span>
+                <strong>{quote.customerAddress || "—"}</strong>
+              </div>
+              <div>
+                <span>Ngày báo giá</span>
+                <strong>
+                  {formatShortDate(quote.quoteDate || quote.createdAt)}
+                </strong>
+              </div>
             </div>
           </div>
         </section>
@@ -161,12 +223,25 @@ export function QuoteDetailPanel({
           </div>
           <div className="card quote-detail-summary-card">
             <div className="quote-detail-summary-lines">
-              <TotalLine label="Sản phẩm chính" value={quote.subtotalProductVnd} />
-              <TotalLine label="Phụ kiện lắp đặt" value={quote.subtotalAccessoryVnd} />
+              <TotalLine
+                label="Sản phẩm chính"
+                value={quote.subtotalProductVnd}
+              />
+              <TotalLine
+                label="Phụ kiện lắp đặt"
+                value={quote.subtotalAccessoryVnd}
+              />
               <TotalLine label="Tổng trước làm tròn" value={quote.totalVnd} />
-              <TotalLine label="Tổng sau làm tròn" value={quote.roundedTotalVnd} />
+              <TotalLine
+                label="Tổng sau làm tròn"
+                value={quote.roundedTotalVnd}
+              />
               <TotalLine label="Tạm ứng" value={quote.depositVnd} />
-              <TotalLine label="Cần thanh toán" value={quote.balanceVnd} strong />
+              <TotalLine
+                label="Cần thanh toán"
+                value={quote.balanceVnd}
+                strong
+              />
             </div>
           </div>
         </section>
@@ -175,13 +250,20 @@ export function QuoteDetailPanel({
       <section className="quote-detail-section quote-detail-items-section">
         <div className="quote-section-heading">
           <div className="quote-section-label">Hạng mục báo giá</div>
-          <span className="quote-detail-count">{quote.snapshot.items.length} hạng mục</span>
+          <span className="quote-detail-count">
+            {quote.snapshot.items.length} hạng mục
+          </span>
         </div>
         <div className="card quote-detail-items-card">
           <div className="quote-detail-items">
             {quote.snapshot.items.map((item, index) => (
-              <article key={`${item.quoteItemCode}-${item.sortOrder}`} className="quote-detail-item">
-                <div className="quote-detail-item-index" aria-hidden="true">{index + 1}</div>
+              <article
+                key={`${item.quoteItemCode}-${item.sortOrder}`}
+                className="quote-detail-item"
+              >
+                <div className="quote-detail-item-index" aria-hidden="true">
+                  {index + 1}
+                </div>
                 <div className="quote-detail-thumb">
                   <ProductThumb
                     fill
@@ -193,11 +275,15 @@ export function QuoteDetailPanel({
                 </div>
                 <div className="quote-detail-item-copy">
                   <div className="quote-detail-item-heading">
-                    <span className="quote-detail-item-code">{item.quoteItemCode}</span>
+                    <span className="quote-detail-item-code">
+                      {item.quoteItemCode}
+                    </span>
                     <h2 className="quote-detail-item-name">{item.itemName}</h2>
                   </div>
                   <div className="quote-detail-item-meta">
-                    <span>{item.category || item.groupName || 'Chưa phân loại'}</span>
+                    <span>
+                      {item.category || item.groupName || "Chưa phân loại"}
+                    </span>
                     <span>Sản phẩm {formatVND(item.productSubtotalVnd)}</span>
                     <span>Phụ kiện {formatVND(item.accessorySubtotalVnd)}</span>
                   </div>
