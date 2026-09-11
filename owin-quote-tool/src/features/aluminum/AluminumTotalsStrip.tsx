@@ -1,4 +1,4 @@
-import { formatEstimatorMoney } from '@/lib/aluminumEstimator/estimator';
+import { formatEstimatorMoney } from '@/features/aluminum/estimator/estimator';
 
 export type AutosavePhase = 'loading' | 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 

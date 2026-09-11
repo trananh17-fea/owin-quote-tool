@@ -38,12 +38,12 @@ Build kiểm tra TypeScript và tạo `dist/`; preview phục vụ bản build l
 | CSS chung + 3 tab chưa tách | `src/styles/owinTheme.css` |
 | Màn hình/store | `src/features/` |
 | Công thức báo giá | `src/lib/quoteEngine/`, `src/lib/quote/quoteCalculator.ts` |
-| Bảng giá/thứ tự | `src/lib/catalogue/`, `src/lib/products/`, `src/lib/quote/quoteItemOrder.ts` |
-| Tính nhôm | `src/lib/aluminumEstimator/`, `src/features/aluminum/` |
+| Bảng giá/thứ tự | `src/lib/catalogue/`, `src/lib/products/`, `src/features/quote/quoteItemOrder.ts` |
+| Tính nhôm | `src/features/aluminum/` (kèm `estimator/`) |
 | Dữ liệu/đồng bộ | `src/services/supabase/`, `supabase/schema.sql` |
 | Kiểu document | `src/types/models.ts` |
 | Ảnh | `src/lib/media/`, `src/services/supabase/imagesRepo.ts` |
-| Word/Excel/PDF | `src/features/export/`; Word/in nhôm ở `src/lib/aluminumEstimator/` |
+| Word/Excel/PDF | `src/features/export/`; Word/in nhôm ở `src/features/aluminum/estimator/` |
 | Template | `src/assets/templates/` |
 
 ## Cấu trúc một tính năng
@@ -71,6 +71,9 @@ src/features/products/
 
 Quy ước: cái gì CHỈ một feature dùng thì nằm trong feature đó; logic domain dùng
 chung từ hai feature trở lên ở lại `src/lib/`; UI dùng chung ở `src/components/`.
+Quy ước này đã được áp: mọi module còn lại trong `src/lib/` đều có từ hai feature
+trở lên dùng tới. Trước khi thêm file vào `src/lib/`, kiểm tra xem nó có thật sự
+dùng chung không.
 CSS xếp lớp theo thứ tự import trong `main.tsx`: `tokens.css` → `ios.css` →
 `shell.css` → `owinTheme.css` → stylesheet của từng feature (nạp sau nên thắng).
 Sau khi cả bốn tab đã tách, `owinTheme.css` chỉ còn primitive dùng chung —
@@ -79,6 +82,6 @@ Sau khi cả bốn tab đã tách, `owinTheme.css` chỉ còn primitive dùng ch
 Chuẩn giao diện nằm ở [IOS_STYLE_GUIDE.md](../IOS_STYLE_GUIDE.md); đọc mục 4–6
 trước khi sửa UI và dùng checklist mục 15 trước khi hoàn tất.
 
-Sửa công thức chạy `npx vitest run src/lib/quoteEngine src/lib/quote`; sửa template chạy `npx vitest run src/features/export` và kiểm tra trực quan file xuất. Giữ marker đúng hợp đồng DOCX, import bằng `@/`, component PascalCase và file logic camelCase.
+Sửa công thức chạy `npx vitest run src/lib/quoteEngine src/lib/quote src/features/quote`; sửa template chạy `npx vitest run src/features/export` và kiểm tra trực quan file xuất. Giữ marker đúng hợp đồng DOCX, import bằng `@/`, component PascalCase và file logic camelCase.
 
 Sản phẩm/báo giá lưu thủ công; xuất từ form báo giá không tự lưu. Đơn giá tính nhôm tự lưu còn số lượng chỉ trong phiên. Đọc quy tắc chi tiết trong README gốc trước khi sửa store/công thức.

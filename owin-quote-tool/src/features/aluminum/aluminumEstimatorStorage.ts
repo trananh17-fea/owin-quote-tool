@@ -1,5 +1,5 @@
-import { ALUMINUM_SYSTEMS } from '@/lib/aluminumEstimator/systems';
-import { parseEstimatorNumber } from '@/lib/aluminumEstimator/estimator';
+import { ALUMINUM_SYSTEMS } from '@/features/aluminum/estimator/systems';
+import { parseEstimatorNumber } from '@/features/aluminum/estimator/estimator';
 import {
   compareAndSwapHostedAppData,
   getHostedAppData,

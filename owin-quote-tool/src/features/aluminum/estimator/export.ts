@@ -5,7 +5,7 @@ import {
   type AluminumPrintModel,
   type AluminumPrintRow,
   type AluminumPrintSystemSection,
-} from '@/lib/aluminumEstimator/print/index';
+} from '@/features/aluminum/estimator/print/index';
 import { downloadBlob } from '@/lib/browser/download';
 import { withBasePath } from '@/lib/media/imagePaths';
 

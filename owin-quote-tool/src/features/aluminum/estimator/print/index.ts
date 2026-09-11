@@ -1,9 +1,9 @@
-export { buildAluminumPrintModel, type BuildAluminumPrintModelInput } from "@/lib/aluminumEstimator/print/buildPrintModel";
+export { buildAluminumPrintModel, type BuildAluminumPrintModelInput } from "@/features/aluminum/estimator/print/buildPrintModel";
 export {
   formatAluminumPrintCurrency,
   formatAluminumPrintDate,
   formatAluminumPrintQuantity,
-} from "@/lib/aluminumEstimator/print/formatters";
+} from "@/features/aluminum/estimator/print/formatters";
 export type {
   AluminumPrintInputRow,
   AluminumPrintInputSystem,
@@ -11,4 +11,4 @@ export type {
   AluminumPrintRow,
   AluminumPrintScope,
   AluminumPrintSystemSection,
-} from "@/lib/aluminumEstimator/print/types";
+} from "@/features/aluminum/estimator/print/types";

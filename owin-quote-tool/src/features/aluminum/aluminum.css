@@ -8,7 +8,7 @@
  * chỉ được nhắc tới dưới dạng con của một selector `.aluminum-*`.
  *
  * KHÔNG chứa CSS in: `.aluminum-print-document` / `.aluminum-print-table` sinh
- * từ ALUMINUM_PRINT_CSS (lib/aluminumEstimator/export.ts) và dùng chung với xuất
+ * từ ALUMINUM_PRINT_CSS (features/aluminum/estimator/export.ts) và dùng chung với xuất
  * Word; khối `@media print` nằm trong thẻ <style> nội tuyến của vùng in, vì nó
  * nhắm theo #aluminum-estimator-print-root. Đừng kéo hai thứ đó vào đây.
  *

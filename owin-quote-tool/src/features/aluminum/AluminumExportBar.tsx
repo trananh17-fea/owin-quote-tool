@@ -1,5 +1,5 @@
 import { FileText, Printer } from 'lucide-react';
-import type { AluminumPrintScope } from '@/lib/aluminumEstimator/print/index';
+import type { AluminumPrintScope } from '@/features/aluminum/estimator/print/index';
 
 /** Hero của tab: tiêu đề + chọn phạm vi xuất + nút Word / In PDF. */
 export function AluminumExportBar({

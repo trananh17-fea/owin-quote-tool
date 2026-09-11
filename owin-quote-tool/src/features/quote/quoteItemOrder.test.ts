@@ -5,7 +5,7 @@ import {
   rankingAmountForQuoteItem,
   sortQuoteItemsByMaxLineAmount,
   sumItemDimensionQuantity,
-} from '@/lib/quote/quoteItemOrder';
+} from '@/features/quote/quoteItemOrder';
 import { enrichFixedAccessoryPackageValue } from '@/lib/quoteEngine/fixedAccessoryRules';
 
 function item(

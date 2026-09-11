@@ -13,16 +13,16 @@ import { useProducts } from '@/features/products';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
 import { reorderList, useDragReorder } from '@/components/DragReorder';
 import { calculateQuote } from '@/lib/quote/quoteCalculator';
-import { generateQuoteCode } from '@/lib/quote/quoteCode';
-import { generateSnapshot } from '@/lib/quote/quoteSnapshot';
-import { createCustomQuoteItem, createQuoteItemFromProduct } from '@/lib/quote/productToQuoteItem';
+import { generateQuoteCode } from '@/features/quote/quoteCode';
+import { generateSnapshot } from '@/features/quote/quoteSnapshot';
+import { createCustomQuoteItem, createQuoteItemFromProduct } from '@/features/quote/productToQuoteItem';
 import { rememberQuoteSuggestions } from '@/features/suggestions/suggestionStore';
 import { useSuggestions } from '@/features/suggestions/useSuggestions';
 import {
   sortQuoteItemsByMaxLineAmount,
   sortQuoteItemsWithKeys,
   sumItemDimensionQuantity,
-} from '@/lib/quote/quoteItemOrder';
+} from '@/features/quote/quoteItemOrder';
 import {
   buildAccessoryPackageCatalog,
   findOrphanAccessoryNames,

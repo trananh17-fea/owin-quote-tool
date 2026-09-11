@@ -1,5 +1,5 @@
-import type { AluminumPrintModel } from '@/lib/aluminumEstimator/print/index';
-import { ALUMINUM_PRINT_CSS, buildAluminumPrintHtml } from '@/lib/aluminumEstimator/export';
+import type { AluminumPrintModel } from '@/features/aluminum/estimator/print/index';
+import { ALUMINUM_PRINT_CSS, buildAluminumPrintHtml } from '@/features/aluminum/estimator/export';
 
 /**
  * Vùng in của tab (ẩn trên màn hình, chỉ hiện khi in).

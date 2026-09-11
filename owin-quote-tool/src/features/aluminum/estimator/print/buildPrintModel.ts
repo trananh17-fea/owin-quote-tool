@@ -1,12 +1,12 @@
-import { parseEstimatorNumber } from "@/lib/aluminumEstimator/estimator";
-import { formatAluminumPrintDate } from "@/lib/aluminumEstimator/print/formatters";
+import { parseEstimatorNumber } from "@/features/aluminum/estimator/estimator";
+import { formatAluminumPrintDate } from "@/features/aluminum/estimator/print/formatters";
 import type {
   AluminumPrintInputSystem,
   AluminumPrintModel,
   AluminumPrintRow,
   AluminumPrintScope,
   AluminumPrintSystemSection,
-} from "@/lib/aluminumEstimator/print/types";
+} from "@/features/aluminum/estimator/print/types";
 
 export type BuildAluminumPrintModelInput = {
   title?: string;

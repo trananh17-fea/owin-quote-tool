@@ -1,4 +1,4 @@
-import type { AluminumEstimatorDefaultRow } from "@/lib/aluminumEstimator/systems";
+import type { AluminumEstimatorDefaultRow } from "@/features/aluminum/estimator/systems";
 
 export type AluminumEstimatorRowInput = {
   quantity?: number | string | null;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateQuoteCode } from '@/lib/quote/quoteCode';
+import { generateQuoteCode } from '@/features/quote/quoteCode';
 
 describe('multi-client code generation', () => {
   it('keeps a readable quote prefix and adds a per-client suffix', () => {

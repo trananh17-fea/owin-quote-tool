@@ -1,8 +1,8 @@
 import { openImageLightbox } from '@/components/imageLightboxStore';
 import { SmartNumberInput } from '@/components/SmartNumberInput';
 import { parseSmartNumber } from '@/lib/format/smartNumber';
-import { formatEstimatorMoney } from '@/lib/aluminumEstimator/estimator';
-import { getAluminumProfileImageDisplay } from '@/lib/aluminumEstimator/profileImage';
+import { formatEstimatorMoney } from '@/features/aluminum/estimator/estimator';
+import { getAluminumProfileImageDisplay } from '@/features/aluminum/estimator/profileImage';
 import type { AluminumEstimatorRowPatch } from '@/features/aluminum/aluminumEstimatorStorage';
 import type { AluminumEstimatorRowViewModel } from '@/features/aluminum/aluminumRowModel';
 

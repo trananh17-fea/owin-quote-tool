@@ -242,4 +242,4 @@ export function getDefaultAluminumEstimatorRows(systemId: string): AluminumEstim
     color: system.color,
   }));
 }
-import { ALUMINUM_PROFILE_IMAGES } from "@/lib/aluminumEstimator/profileImages.generated";
+import { ALUMINUM_PROFILE_IMAGES } from "@/features/aluminum/estimator/profileImages.generated";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDefaultAluminumEstimatorRows } from '@/lib/aluminumEstimator/systems';
+import { getDefaultAluminumEstimatorRows } from '@/features/aluminum/estimator/systems';
 import {
   createDefaultAluminumEstimatorState,
   type AluminumEstimatorPageState,

@@ -11,13 +11,13 @@ import {
   parseEstimatorNumber,
   type AluminumEstimatorCalculatedRow,
   type AluminumEstimatorTotals,
-} from '@/lib/aluminumEstimator/estimator';
+} from '@/features/aluminum/estimator/estimator';
 import {
   ALUMINUM_SYSTEMS,
   getDefaultAluminumEstimatorRows,
   type AluminumEstimatorDefaultRow,
-} from '@/lib/aluminumEstimator/systems';
-import type { AluminumPrintInputSystem } from '@/lib/aluminumEstimator/print/index';
+} from '@/features/aluminum/estimator/systems';
+import type { AluminumPrintInputSystem } from '@/features/aluminum/estimator/print/index';
 import {
   getAluminumEstimatorInput,
   type AluminumEstimatorInputState,

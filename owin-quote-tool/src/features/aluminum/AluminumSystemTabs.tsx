@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { formatEstimatorMoney } from '@/lib/aluminumEstimator/estimator';
-import { ALUMINUM_SYSTEMS } from '@/lib/aluminumEstimator/systems';
+import { formatEstimatorMoney } from '@/features/aluminum/estimator/estimator';
+import { ALUMINUM_SYSTEMS } from '@/features/aluminum/estimator/systems';
 import type { AluminumEstimatorSystemTotals } from '@/features/aluminum/aluminumRowModel';
 
 /** Dải nút chọn hệ nhôm, kèm thành tiền của hệ khi hệ đó đã có dòng nhập. */

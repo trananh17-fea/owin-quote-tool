@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { calculateAluminumEstimatorTotals } from '@/lib/aluminumEstimator/estimator';
-import { ALUMINUM_SYSTEMS, getAluminumSystemById } from '@/lib/aluminumEstimator/systems';
+import { calculateAluminumEstimatorTotals } from '@/features/aluminum/estimator/estimator';
+import { ALUMINUM_SYSTEMS, getAluminumSystemById } from '@/features/aluminum/estimator/systems';
 import {
   buildAluminumPrintModel,
   type AluminumPrintScope,
-} from '@/lib/aluminumEstimator/print/index';
-import { downloadAluminumDocx } from '@/lib/aluminumEstimator/export';
+} from '@/features/aluminum/estimator/print/index';
+import { downloadAluminumDocx } from '@/features/aluminum/estimator/export';
 import { subscribeToAppData } from '@/services/supabase/sharedDataRepo';
 import {
   ALUMINUM_ESTIMATOR_STORAGE_KEY,

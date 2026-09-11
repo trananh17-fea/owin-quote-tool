@@ -9,7 +9,7 @@ import type { ProductRecord } from '@/types/models';
 import { buildCatalogueBlockRows, type CatalogueBlockRow } from '@/lib/catalogue/catalogueRows';
 import { ensureVietnamesePdfFonts, PDF_FONT_FAMILY } from '@/features/export/pdfFonts';
 import { lightPdfImageDataUrl } from '@/features/export/pdfImage';
-import { cellImageMaxBox, containFitSize } from '@/lib/media/containFit';
+import { cellImageMaxBox, containFitSize } from '@/features/export/containFit';
 import { downloadBlob } from '@/lib/browser/download';
 import { formatVndNumber } from '@/lib/format/currency';
 

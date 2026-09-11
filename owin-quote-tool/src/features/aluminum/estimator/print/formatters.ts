@@ -1,4 +1,4 @@
-import { formatEstimatorMoney, formatEstimatorQuantity } from "@/lib/aluminumEstimator/estimator";
+import { formatEstimatorMoney, formatEstimatorQuantity } from "@/features/aluminum/estimator/estimator";
 
 export function formatAluminumPrintCurrency(value: number): string {
   return `${formatEstimatorMoney(value)} đ`;

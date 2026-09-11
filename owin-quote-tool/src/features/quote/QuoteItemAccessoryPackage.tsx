@@ -9,7 +9,7 @@ import {
   serializeFixedAccessoriesJson,
   updateFixedAccessoryDraft,
 } from '@/lib/quote/accessoryDrafts';
-import { sumItemDimensionQuantity } from '@/lib/quote/quoteItemOrder';
+import { sumItemDimensionQuantity } from '@/features/quote/quoteItemOrder';
 import type { AccessoryPackageTemplate } from '@/lib/quote/accessoryPackages';
 
 /**
