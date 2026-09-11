@@ -20,11 +20,14 @@
 }
 .image-lightbox-panel {
   background: #fff;
-  border-radius: 20px;
+  border-radius: 12px;
   box-shadow: 0 24px 64px rgba(15, 42, 61, 0.28);
   max-width: min(1100px, 100%);
   width: 100%;
-  max-height: min(94vh, 960px);
+  /* Cao cố định: zoom ảnh không được kéo khung modal to/nhỏ theo */
+  height: min(94vh, 960px);
+  /* dvh để không bị thanh địa chỉ của trình duyệt mobile cắt mất đáy modal */
+  height: min(94dvh, 960px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -34,35 +37,78 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--owin-border);
   font-weight: 700;
   color: var(--owin-ink);
 }
 .image-lightbox-stage {
   flex: 1;
-  min-height: min(62vh, 560px);
-  display: grid;
-  place-content: safe center;
-  place-items: center;
+  /* min-height:0 để stage lấy đúng phần cao còn lại của modal và tự cuộn */
+  min-height: 0;
+  display: flex;
   background: #f6f7f9;
   padding: 20px;
   overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+.image-lightbox-stage.is-pannable {
+  cursor: grab;
+}
+.image-lightbox-stage.is-panning {
+  cursor: grabbing;
 }
 .image-lightbox-img {
   display: block;
-  margin: 0 auto;
+  /* margin:auto canh giữa mà vẫn cuộn được hết khi ảnh lớn hơn stage */
+  margin: auto;
   object-fit: contain;
   border-radius: 12px;
   background: #fff;
   /* Ảnh thanh nhôm gốc nhỏ — scale mượt khi phóng to */
   image-rendering: auto;
-  transition: width 0.12s ease-out, max-height 0.12s ease-out;
+  /* Đổi cỡ tức thì: có transition thì vị trí cuộn neo theo con trỏ sẽ lệch */
+  transition: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .image-lightbox-zoom {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+.image-lightbox-zoom .icon-btn {
+  width: 42px;
+  height: 42px;
+  padding: 9px;
+  border-radius: 8px;
+}
+.image-lightbox-zoom .image-lightbox-zoom-out {
+  color: #667085;
+  background: #f6f7f9;
+}
+.image-lightbox-zoom .image-lightbox-zoom-in {
+  color: var(--ios-blue-ink);
+  background: var(--ios-blue-soft);
+  border-color: color-mix(in srgb, var(--ios-blue) 25%, var(--ios-separator));
+}
+.image-lightbox-zoom .image-lightbox-zoom-fit {
+  color: #6941c6;
+  background: #f4f0ff;
+  border-color: #ddd2ff;
+}
+.image-lightbox-zoom .image-lightbox-close {
+  color: var(--ios-red);
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+.image-lightbox-zoom .icon-btn:hover:not(:disabled) {
+  filter: brightness(0.97);
+  border-color: currentColor;
+}
+.image-lightbox-zoom .icon-btn:disabled {
+  opacity: 0.42;
 }
 .image-lightbox-zoom-level {
   min-width: 44px;
@@ -77,10 +123,66 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 14px;
+  padding: 8px 14px;
   color: var(--owin-ink-muted);
   font-size: 12px;
+  text-align: center;
   border-top: 1px solid var(--owin-border);
+}
+.image-lightbox-hint-touch {
+  display: none;
+}
+/* Thiết bị cảm ứng: không có chuột/bàn phím nên đổi sang hướng dẫn chụm 2 ngón */
+@media (hover: none) and (pointer: coarse) {
+  .image-lightbox-hint-mouse { display: none; }
+  .image-lightbox-hint-touch { display: inline; }
+}
+
+/* Tablet: thu gọn viền và nút để phần ảnh được rộng nhất có thể */
+@media (max-width: 900px) {
+  .image-lightbox-backdrop { padding: 12px; }
+  .image-lightbox-panel { height: min(96dvh, 960px); }
+  .image-lightbox-toolbar { padding: 8px 10px; gap: 8px; }
+  .image-lightbox-stage { padding: 12px; }
+  .image-lightbox-zoom .icon-btn {
+    width: 38px;
+    height: 38px;
+    padding: 8px;
+  }
+  .image-lightbox-hint { font-size: 11px; padding: 7px 10px; }
+}
+
+/* Điện thoại: modal chiếm trọn màn hình, tiêu đề nhường chỗ cho cụm nút zoom */
+@media (max-width: 560px) {
+  .image-lightbox-backdrop { padding: 0; }
+  .image-lightbox-panel {
+    height: 100dvh;
+    max-width: none;
+    border: none;
+    border-radius: 0;
+  }
+  .image-lightbox-toolbar { padding: 8px; }
+  .image-lightbox-toolbar > span {
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .image-lightbox-stage { padding: 8px; }
+  .image-lightbox-zoom { gap: 2px; }
+  .image-lightbox-zoom .icon-btn {
+    width: 36px;
+    height: 36px;
+    padding: 7px;
+  }
+  .image-lightbox-zoom-level { min-width: 36px; font-size: 11px; }
+  .image-lightbox-hint { padding: 6px 8px; line-height: 1.35; }
+}
+
+/* Màn hình rất hẹp: bỏ tiêu đề, cụm nút zoom trải hết chiều ngang */
+@media (max-width: 360px) {
+  .image-lightbox-toolbar > span { display: none; }
+  .image-lightbox-zoom { width: 100%; justify-content: space-between; }
 }
 .autosuggest-option-full {
   display: block;
