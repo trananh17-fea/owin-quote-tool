@@ -60,24 +60,25 @@
   font-weight: var(--aluminum-weight-regular);
 }
 
+.aluminum-heading,
 .aluminum-hero {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 8px 0 10px;
-  border: 1px solid var(--ios-separator);
-  /* đè lớp chung (--r-md !important) để bo lớn kiểu thẻ iOS */
-  border-radius: var(--r-lg);
-  /* đè lớp chung (gradient navy !important) — thẻ trắng phẳng */
-  background: var(--ios-card);
-  box-shadow: var(--shadow-md);
+  gap: 16px;
+  margin-bottom: 0;
+  padding: 2px 2px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .aluminum-hero-text {
   flex: 1 1 auto;
   min-width: 0;
 }
-.aluminum-hero-compact .app-title { margin-bottom: 2px; }
+.aluminum-hero .app-title,
+.aluminum-hero-compact .app-title { margin-bottom: 0 !important; }
 .aluminum-hero-compact .app-subtitle {
   margin: 0;
   max-width: none;
@@ -626,15 +627,7 @@
    specificity). Đừng đổi thành display khác hay thêm @media print ở đây. */
 .aluminum-print-root { display: none; }
 
-/* ═══════════════ Header phẳng theo luồng Báo giá ═══════════════ */
-.aluminum-hero {
-  padding-inline: 0;
-  border: 0;
-  border-bottom: 1px solid var(--ios-separator);
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
+/* Header phẳng đã chuyển lên đầu file cùng .admin-page-heading */
 
 /* ═══════════════ Responsive (giữ nguyên breakpoint của bản cũ) ═══════════════ */
 
@@ -669,7 +662,7 @@
   .aluminum-hero {
     flex-direction: column;
     gap: 8px;
-    padding: 10px;
+    padding: 2px;
   }
   .aluminum-subtitle-full { display: none; }
   .aluminum-subtitle-short {

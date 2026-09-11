@@ -11,7 +11,7 @@ export function AluminumExportBar({
   onPrintPdf: () => void;
 }) {
   return (
-    <div className="aluminum-hero aluminum-hero-compact">
+    <div className="admin-page-heading aluminum-heading aluminum-hero aluminum-hero-compact no-print">
       <div className="aluminum-hero-text">
         <h1 className="app-title">Bảng tính nhôm</h1>
         <p className="app-subtitle aluminum-subtitle-full">
