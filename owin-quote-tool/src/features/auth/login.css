@@ -111,6 +111,10 @@ body:has(.login-premium) { overflow:hidden; }
   .login-footer { display:none; }
 }
 
+/* Ô minh hoạ chỉ giữ lại phần hình. */
+.login-story-copy,
+.login-story-footer { display:none; }
+
 /* Banner lỗi đăng nhập (trước nằm ở lớp chung). */
 .login-error {
   margin: 4px 0 8px;
