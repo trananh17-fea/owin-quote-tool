@@ -1,6 +1,6 @@
 /*
  * TÍNH NĂNG: SẢN PHẨM — stylesheet riêng của tab "Sản phẩm".
- * Import bởi features/products/ProductsView.tsx, nạp SAU styles/owinTheme.css.
+ * Import bởi features/products/ProductsView.tsx, nạp SAU styles/patterns.css.
  *
  * Chỉ chứa selector `.product-*` / `.bulk-price-*` / `.modal-backdrop`.
  * Pattern dùng chung (.card, .field, .input, .btn, .icon-btn, .editor-panel,

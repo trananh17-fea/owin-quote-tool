@@ -256,3 +256,253 @@ button,
 
   .btn:active:not(:disabled) { transform: none; }
 }
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Tinh chỉnh control (trước ở lớp chung — lớp override cũ).
+ * Đặt sau phần trên để giữ đúng kết quả cascade như trước khi gộp file.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+html, body {
+  min-width: 0;
+  overflow-x: hidden;
+}
+body {
+  background: var(--ios-bg);
+  color: var(--ios-label);
+  font-size: var(--fs-md);
+}
+::selection {
+  background: var(--ios-blue-soft);
+  color: var(--ios-label);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(60, 60, 67, 0.28) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(60, 60, 67, 0.24);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(60, 60, 67, 0.4); background-clip: padding-box; }
+img, svg, video, canvas {
+  max-width: 100%;
+}
+button, input, select, textarea {
+  font: inherit;
+  max-width: 100%;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type='number']::-webkit-outer-spin-button, input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.input, .btn, .btn-primary, .btn-ghost, .btn-danger, select.input, textarea.input {
+  border-radius: var(--r-md) !important;
+  font-size: var(--fs-md) !important;
+  min-height: var(--control-h);
+  box-sizing: border-box;
+}
+.input, select.input, textarea.input {
+  padding: 10px 14px !important;
+  background: var(--ios-fill) !important;
+  border: 1px solid var(--ios-separator) !important;
+  color: var(--ios-label);
+  width: 100%;
+}
+.input:focus, select.input:focus, textarea.input:focus {
+  outline: none;
+  border-color: var(--ios-blue) !important;
+  box-shadow: var(--shadow-glow) !important;
+  background: var(--ios-card) !important;
+}
+.btn, .btn-primary, .btn-ghost, .btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px !important;
+  font-weight: 600 !important;
+  white-space: nowrap;
+}
+.icon-btn {
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  min-width: var(--icon-btn);
+  min-height: var(--icon-btn);
+  padding: 0 !important;
+  border-radius: var(--r-sm) !important;
+  background: var(--ios-card);
+  border: 1px solid var(--ios-separator);
+  color: var(--ios-label2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.field > label {
+  font-size: var(--fs-sm) !important;
+  font-weight: 500;
+  color: var(--ios-label2);
+  margin-bottom: 6px;
+}
+.btn-primary {
+  background: var(--ios-blue-ink);
+  color: #fff !important;
+  border: 0;
+}
+.btn-primary:hover { background: var(--ios-blue-hover); filter: none; }
+.btn-primary:active { transform: scale(0.985); }
+.btn-primary:disabled, .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+}
+.btn-ghost {
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+  border: 0;
+}
+.btn-ghost:hover { background: var(--ios-blue-soft-strong); }
+.btn-ghost:active { transform: scale(0.985); }
+.btn-danger {
+  background: var(--ios-red-soft);
+  color: var(--ios-red);
+  border: 0;
+}
+.toolbar { flex-wrap: wrap; gap: 10px; align-items: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .btn-primary, .btn-ghost { transition: none !important; }
+}
+.btn-primary, .btn-ghost {
+  min-height: var(--control-h);
+}
+.btn-link {
+  border: none;
+  background: transparent;
+  color: var(--owin-action);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 6px;
+  min-height: 36px;
+  border-radius: var(--r-xs);
+}
+.btn-link:hover { color: var(--owin-action-hover); background: color-mix(in srgb, var(--ios-blue) 6%, transparent); }
+.icon-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+[data-dragging] {
+  opacity: 0.45;
+}
+
+@media (max-width: 720px) {
+  :root {
+      --control-h: 36px;
+      --control-h-sm: 34px;
+      --icon-btn: 34px;
+      --fs-xs: 11px;
+      --fs-sm: 12px;
+      --fs-md: 13px;
+      --fs-title: 18px;
+    }
+  html { -webkit-tap-highlight-color: color-mix(in srgb, var(--ios-blue) 12%, transparent); }
+  .field { margin-bottom: 8px; }
+  .field > label {
+      font-size: 11px;
+      margin-bottom: 3px;
+      font-weight: 700;
+    }
+  .input, select.input, textarea.input {
+      min-height: var(--control-h);
+      padding: 6px 10px;
+      border-radius: 9px;
+      font-size: 16px; /* iOS no-zoom */
+      line-height: 1.25;
+    }
+  textarea.input { min-height: 56px; }
+  .btn {
+      min-height: 36px;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+  .icon-btn {
+      width: var(--icon-btn);
+      height: var(--icon-btn);
+      min-width: var(--icon-btn);
+    }
+  .toolbar { flex-wrap: wrap; gap: 6px; }
+  .toolbar .btn { min-height: 36px; }
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 960px) {
+  :root {
+      --control-h: 30px;
+      --control-h-sm: 28px;
+      --icon-btn: 28px;
+    }
+  .field { margin-bottom: 5px; }
+  .field > label { font-size: 10px; margin-bottom: 2px; }
+  .input, select.input, textarea.input {
+      min-height: 30px;
+      padding: 4px 8px;
+      font-size: 13px; /* ngang: ít zoom, ưu tiên gọn để thấy hết */
+      line-height: 1.2;
+    }
+  textarea.input { min-height: 48px; }
+  .btn {
+      min-height: 30px;
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+  .icon-btn {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+    }
+}
+.input, select.input, textarea.input {
+  background: var(--owin-soft) !important;
+  border: 1px solid var(--ios-separator) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
+}
+.input:hover, select.input:hover, textarea.input:hover {
+  border-color: var(--owin-border-strong) !important;
+}
+.input:focus, select.input:focus, textarea.input:focus {
+  border-color: var(--ios-blue) !important;
+  box-shadow: var(--shadow-glow) !important;
+  background: var(--ios-card) !important;
+}
+.input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.icon-btn {
+  border: 1px solid var(--owin-border);
+  background: var(--ios-card);
+  color: var(--owin-ink-muted);
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.icon-btn:hover {
+  background: var(--owin-soft);
+  color: var(--owin-ink);
+  border-color: var(--owin-border-strong);
+}
+.icon-btn.danger:hover {
+  background: var(--owin-danger-soft);
+  color: var(--owin-danger);
+  border-color: rgba(194, 65, 12, 0.3);
+}

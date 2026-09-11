@@ -1,6 +1,6 @@
 /*
  * TÍNH NĂNG: BÁO GIÁ — stylesheet riêng của tab "Báo giá".
- * Import bởi features/quote/QuoteView.tsx, nạp SAU styles/owinTheme.css.
+ * Import bởi features/quote/QuoteView.tsx, nạp SAU styles/patterns.css.
  *
  * Chỉ chứa selector `.quote-*` và `.legacy-accessory-row` (hàng phụ kiện kiểu
  * cũ của một hạng mục). Pattern dùng chung (.card, .field, .input, .btn,
@@ -13,7 +13,7 @@
  * .product-name / .product-sub — tất cả ở lớp chung, KHÔNG style lại ở đây.
  *
  * `!important` chỉ còn ở chỗ buộc phải đè một `!important` khác vẫn sống ở lớp
- * chung (.input, .two-col) hoặc rule cũ chưa được xoá khỏi owinTheme.css; mỗi
+ * chung (.input, .two-col) hoặc rule cũ chưa được xoá khỏi lớp chung; mỗi
  * chỗ đều có ghi chú lý do ngay tại rule.
  */
 
@@ -219,7 +219,7 @@
    ở đây chỉ đặt lại hành vi theo breakpoint, xem phần Responsive. */
 
 .quote-totals-card {
-  /* Đè gradient navy cũ còn `!important` trong owinTheme.css (~dòng 3307). */
+  /* Đè gradient navy cũ còn `!important` trong lớp chung. */
   background: var(--ios-card) !important;
   border-color: var(--ios-separator) !important;
 }
@@ -255,7 +255,7 @@
   justify-content: center;
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
     max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-  /* Đè nền navy cũ còn `!important` trong owinTheme.css (~dòng 3437). */
+  /* Đè nền navy cũ còn `!important` trong lớp chung. */
   background: rgba(28, 28, 40, 0.4) !important;
 }
 
@@ -268,7 +268,7 @@
   max-height: min(86vh, 860px);
   padding: 18px;
   overflow: hidden;
-  /* Đè viền trắng mờ cũ còn `!important` trong owinTheme.css (~dòng 3442). */
+  /* Đè viền trắng mờ cũ còn `!important` trong lớp chung. */
   border: 1px solid var(--ios-separator) !important;
   border-radius: var(--r-lg);
   background: var(--ios-card);
@@ -368,7 +368,7 @@
   color: var(--ios-card);
 }
 /* Nút thu gọn danh mục: kém đặc hiệu hơn `.quote-picker-categories button`
-   VÀ owinTheme.css (~dòng 331) còn 4 khai báo `!important` cho nó. */
+   VÀ lớp chung còn 4 khai báo `!important` cho nó. */
 .quote-picker-cat-toggle {
   background: var(--ios-blue-soft) !important;
   border: 1px solid transparent !important;
@@ -524,7 +524,7 @@
 .quote-item-card-locked {
   gap: 0;
   padding: 12px 14px;
-  /* Đè gradient trắng-xám cũ còn `!important` trong owinTheme.css (~dòng 3377). */
+  /* Đè gradient trắng-xám cũ còn `!important` trong lớp chung. */
   background: var(--ios-card) !important;
 }
 
@@ -532,7 +532,7 @@
   gap: 12px;
   padding: 14px;
 }
-/* Đè viền xanh navy cũ còn `!important` trong owinTheme.css (~dòng 3373). */
+/* Đè viền xanh navy cũ còn `!important` trong lớp chung. */
 .quote-item-card:focus-within,
 .quote-item-card-editing {
   border-color: var(--ios-blue) !important;
@@ -1179,7 +1179,7 @@
   }
 
   /* Màn quá thấp để cuộn: bảng kích thước quay lại dạng bảng, ô thật nhỏ.
-     `!important` để thắng lưới 2 ô của breakpoint 720 (owinTheme cũng khai
+     `!important` để thắng lưới 2 ô của breakpoint 720 (lớp chung cũng khai
      `!important` ở đó) và `.input` của lớp chung. */
   .quote-lines-head {
     display: grid;

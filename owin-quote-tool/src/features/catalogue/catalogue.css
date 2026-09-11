@@ -1,6 +1,6 @@
 /*
  * TÍNH NĂNG: BẢNG GIÁ — stylesheet riêng của tab "Bảng giá".
- * Import bởi features/catalogue/CatalogueView.tsx, nạp SAU styles/owinTheme.css
+ * Import bởi features/catalogue/CatalogueView.tsx, nạp SAU styles/patterns.css.
  * (nên thắng cascade mà không cần !important).
  *
  * Chỉ chứa selector `.catalogue-*` / `.bang-gia-*`, và các class ô của bảng A4
@@ -277,12 +277,12 @@
 
 /* ─── Điện thoại dọc: thanh công cụ xếp dọc, 3 nút xuất thành lưới 3 cột ─── */
 @media (max-width: 720px) {
-  /* LƯU Ý sai khác có chủ đích so với bản đang chạy: trong owinTheme.css rule
+  /* LƯU Ý sai khác có chủ đích so với bản đang chạy: trong lớp chung rule
      `.catalogue-toolbar { align-items: flex-end; gap: 12px }` nằm ở CUỐI file (sau
      block 720px) nên nó đè ngược lại `stretch`/`8px` của chính block này — hệ quả là
      trên điện thoại khối tiêu đề bị co lại và dạt sang phải. Ở đây rule top-level
      đứng TRƯỚC media query nên block này thắng đúng như khai báo. Cần người xác nhận
-     ảnh chụp trước khi dọn owinTheme. */
+     ảnh chụp trước khi dọn lớp chung. */
   .catalogue-toolbar {
     flex-direction: column;
     align-items: stretch;

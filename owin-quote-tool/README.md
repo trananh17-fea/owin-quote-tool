@@ -35,7 +35,8 @@ Build kiểm tra TypeScript và tạo `dist/`; preview phục vụ bản build l
 | Shell/điều hướng | `src/App.tsx`, `src/styles/shell.css` |
 | Design token (iOS) | `src/styles/tokens.css` |
 | Control dùng chung | `src/styles/ios.css` |
-| CSS chung + 3 tab chưa tách | `src/styles/owinTheme.css` |
+| Component dùng chung | `src/styles/components.css` |
+| Pattern nhiều tab dùng | `src/styles/patterns.css` |
 | Màn hình/store | `src/features/` |
 | Công thức báo giá | `src/lib/quoteEngine/`, `src/lib/quote/quoteCalculator.ts` |
 | Bảng giá/thứ tự | `src/lib/catalogue/`, `src/lib/products/`, `src/features/quote/quoteItemOrder.ts` |
@@ -75,9 +76,9 @@ Quy ước này đã được áp: mọi module còn lại trong `src/lib/` đ�
 trở lên dùng tới. Trước khi thêm file vào `src/lib/`, kiểm tra xem nó có thật sự
 dùng chung không.
 CSS xếp lớp theo thứ tự import trong `main.tsx`: `tokens.css` → `ios.css` →
-`shell.css` → `owinTheme.css` → stylesheet của từng feature (nạp sau nên thắng).
-Sau khi cả bốn tab đã tách, `owinTheme.css` chỉ còn primitive dùng chung —
-đừng thêm rule của một tab vào đó nữa.
+`components.css` → `patterns.css` → `shell.css` → stylesheet của từng feature
+(nạp sau nên thắng). Không còn file theme legacy: rule của một tab luôn nằm
+trong stylesheet của tab đó.
 
 Chuẩn giao diện nằm ở [IOS_STYLE_GUIDE.md](../IOS_STYLE_GUIDE.md); đọc mục 4–6
 trước khi sửa UI và dùng checklist mục 15 trước khi hoàn tất.

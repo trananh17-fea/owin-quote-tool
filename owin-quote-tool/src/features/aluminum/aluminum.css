@@ -1,6 +1,6 @@
 /*
  * TÍNH NĂNG: TÍNH NHÔM — stylesheet riêng của tab "Tính nhôm".
- * Import bởi features/aluminum/AluminumEstimatorView.tsx, nạp SAU styles/owinTheme.css.
+ * Import bởi features/aluminum/AluminumEstimatorView.tsx, nạp SAU styles/patterns.css.
  *
  * Chỉ chứa selector `.aluminum-*`. Các tên dùng chung (.card, .field, .input,
  * .btn, .icon-btn, .admin-page*, .app-title, .app-subtitle, .active, .num,
@@ -12,13 +12,13 @@
  * Word; khối `@media print` nằm trong thẻ <style> nội tuyến của vùng in, vì nó
  * nhắm theo #aluminum-estimator-print-root. Đừng kéo hai thứ đó vào đây.
  *
- * File nạp sau owinTheme.css nên thắng cascade mà không cần `!important`. 11 khai
+ * File nạp sau lớp chung nên thắng cascade mà không cần `!important`. 11 khai
  * báo còn giữ `!important` đều vì phải đè một rule `!important` khác đang sống ở
- * lớp chung (owinTheme:144 bo góc, :3396 nền hero, :3407 nền + viền dải tổng,
+ * lớp chung (lớp chung bo góc, :3396 nền hero, :3407 nền + viền dải tổng,
  * :3412 chữ đầu bảng) — mỗi chỗ ghi rõ số dòng nguồn ngay tại chỗ.
  *
  * Riêng việc đổi thẻ ↔ bảng KHÔNG cần `!important`: các rule `!important` còn lại
- * trong owinTheme (khối landscape) trùng giá trị với file này, nên chỉ cần thứ tự
+ * trong lớp chung (khối landscape) trùng giá trị với file này, nên chỉ cần thứ tự
  * khối media đúng (landscape đặt cuối) là ra đúng kết quả.
  */
 
@@ -36,9 +36,9 @@
   gap: 16px;
   padding: 14px 16px;
   border: 1px solid var(--ios-separator);
-  /* đè owinTheme:144 (--r-md !important) để bo lớn kiểu thẻ iOS */
+  /* đè lớp chung (--r-md !important) để bo lớn kiểu thẻ iOS */
   border-radius: var(--r-lg) !important;
-  /* đè owinTheme:3396 (gradient navy !important) — thẻ trắng phẳng */
+  /* đè lớp chung (gradient navy !important) — thẻ trắng phẳng */
   background: var(--ios-card) !important;
   box-shadow: var(--shadow-md);
 }
@@ -130,7 +130,7 @@
   min-width: 0;
   padding: 12px;
   border: 1px solid var(--ios-separator);
-  /* đè owinTheme:144 (--r-md !important) */
+  /* đè lớp chung (--r-md !important) */
   border-radius: var(--r-lg) !important;
   background: var(--ios-card);
   box-shadow: var(--shadow-md);
@@ -266,10 +266,10 @@
   align-items: center;
   gap: 10px 14px;
   padding: 10px 14px;
-  /* đè owinTheme:3407 (viền xanh + gradient xanh/vàng đồng, cả hai !important) */
+  /* đè lớp chung (viền xanh + gradient xanh/vàng đồng, cả hai !important) */
   border: 1px solid var(--ios-separator) !important;
   background: var(--ios-card) !important;
-  /* đè owinTheme:144 (--r-md !important) */
+  /* đè lớp chung (--r-md !important) */
   border-radius: var(--r-lg) !important;
   box-shadow: var(--shadow-md);
   font-variant-numeric: tabular-nums;
@@ -322,7 +322,7 @@
 .aluminum-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--ios-separator);
-  /* đè owinTheme:144 (--r-md !important) */
+  /* đè lớp chung (--r-md !important) */
   border-radius: var(--r-lg) !important;
   background: var(--ios-card);
   box-shadow: var(--shadow-md);
@@ -355,7 +355,7 @@
   font-size: var(--fs-xs);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  /* đè owinTheme:3412 (--owin-ink-muted + 800, cả hai !important) */
+  /* đè lớp chung (--owin-ink-muted + 800, cả hai !important) */
   color: var(--ios-label3) !important;
   font-weight: 600 !important;
 }
@@ -550,7 +550,7 @@
     gap: 6px;
     padding: 8px;
     /* !important để thắng chính khai báo nền ở block gốc phía trên (nó buộc
-       phải !important vì owinTheme:3407 khoá bằng !important) */
+       phải !important vì lớp chung khoá bằng !important) */
     background: var(--ios-card) !important;
     box-shadow: 0 8px 24px rgba(28, 28, 40, 0.12);
   }
@@ -581,7 +581,7 @@
     gap: 8px;
     padding: 10px;
     border: 1px solid var(--ios-separator);
-    /* trùng đúng giá trị owinTheme:144 khoá sẵn nên không cần !important */
+    /* trùng đúng giá trị lớp chung khoá sẵn nên không cần !important */
     border-radius: var(--r-md);
     background: var(--ios-card);
     box-shadow: var(--shadow-sm);
