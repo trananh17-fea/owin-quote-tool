@@ -33,7 +33,9 @@ export function AluminumTotalsStrip({
   return (
     <div className="aluminum-totals-strip">
       <div className="aluminum-total-chip">
-        <span>Hệ {systemName}</span>
+        {/* Tên hệ đã tự mang tiền tố ("Hệ chấn song"), và có mục không phải hệ
+            ("Nội thất") — nên không ghép thêm chữ "Hệ" ở đây. */}
+        <span>{systemName}</span>
         <strong>{formatEstimatorMoney(systemTotalAmount)} đ</strong>
       </div>
       <div className="aluminum-total-chip aluminum-total-chip-all">

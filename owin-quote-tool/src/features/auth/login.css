@@ -21,7 +21,7 @@
 .login-form h2 { font-size:30px; font-weight:600; letter-spacing:var(--login-track-tight); line-height:1.25; margin:0 0 10px; color:var(--login-text); }
 .login-description { color:var(--login-muted); margin:0 0 36px; }
 .login-field { display:block; font-size:var(--login-fs-sm); font-weight:500; margin:22px 0 9px; }
-.login-form input { width:100%; min-width:0; height:52px; border:1px solid transparent; border-radius:14px; background:var(--login-fill); padding:0 16px; color:var(--login-text); font-size:var(--login-fs); transition:background-color .2s var(--login-ease), box-shadow .2s var(--login-ease); }
+.login-form input { width:100%; min-width:0; height:52px; border:1px solid var(--login-line); border-radius:14px; background:var(--login-fill); padding:0 16px; color:var(--login-text); font-size:var(--login-fs); transition:background-color .2s var(--login-ease), box-shadow .2s var(--login-ease), border-color .2s var(--login-ease); }
 .login-form input::placeholder { color:var(--login-muted); opacity:.9; }
 .login-form input:hover:not(:disabled) { background:color-mix(in srgb, var(--login-fill) 94%, var(--login-text)); }
 .login-premium :is(button,a,input):focus-visible { outline:2px solid var(--login-blue); outline-offset:2px; box-shadow:0 0 0 5px color-mix(in srgb, var(--login-blue) 16%, transparent); }

@@ -60,7 +60,7 @@ input[type='number']::-webkit-inner-spin-button {
 
 .app-title {
   font-size: var(--fs-title) !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   letter-spacing: var(--track-tight);
   line-height: 1.2;
   margin: 0 0 4px !important;
@@ -95,7 +95,7 @@ select.input,
 textarea.input {
   padding: 10px 14px !important;
   background: var(--ios-fill) !important;
-  border: 1px solid transparent !important;
+  border: 1px solid var(--ios-separator) !important;
   color: var(--ios-label);
   width: 100%;
 }
@@ -126,8 +126,8 @@ textarea.input:focus {
   min-height: var(--icon-btn);
   padding: 0 !important;
   border-radius: var(--r-sm) !important;
-  background: var(--ios-fill);
-  border: 0;
+  background: var(--ios-card);
+  border: 1px solid var(--ios-separator);
   color: var(--ios-label2);
   display: inline-flex;
   align-items: center;
@@ -154,7 +154,7 @@ textarea.input:focus {
   border: 1px solid var(--ios-separator);
   border-radius: var(--r-lg) !important;
   background: var(--ios-card);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 
 /* Nút iOS: filled (chính) / tinted (phụ) / destructive — phẳng, không viền */
@@ -173,11 +173,11 @@ textarea.input:focus {
   transform: none;
 }
 .btn-ghost {
-  background: var(--ios-fill);
+  background: var(--ios-blue-soft);
   color: var(--ios-blue-ink);
   border: 0;
 }
-.btn-ghost:hover { background: var(--ios-fill-strong); }
+.btn-ghost:hover { background: var(--ios-blue-soft-strong); }
 .btn-ghost:active { transform: scale(0.985); }
 .btn-danger {
   background: var(--ios-red-soft);
@@ -199,7 +199,6 @@ textarea.input:focus {
   inset: 0;
   z-index: 100;
   background: rgba(8, 16, 28, 0.72);
-  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -298,8 +297,8 @@ textarea.input:focus {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
-  padding: 4px 2px 2px;
+  margin-bottom: 22px;
+  padding: 6px 2px 2px;
 }
 .admin-page {
   min-width: 0;
@@ -1121,8 +1120,8 @@ Chỉ khi màn ngang VÀ chiều cao thấp (phone), tránh đụng iPad ngang. 
 /* ── Cards / panels elevation ── */
 .card,
 .editor-panel {
-  border-color: var(--owin-border) !important;
-  box-shadow: var(--shadow-sm) !important;
+  border-color: var(--ios-separator) !important;
+  box-shadow: var(--shadow-md) !important;
   background: var(--owin-surface);
 }
 
@@ -1131,7 +1130,7 @@ Chỉ khi màn ngang VÀ chiều cao thấp (phone), tránh đụng iPad ngang. 
 select.input,
 textarea.input {
   background: var(--owin-soft) !important;
-  border: 1px solid transparent !important;
+  border: 1px solid var(--ios-separator) !important;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
 }
 .input:hover,

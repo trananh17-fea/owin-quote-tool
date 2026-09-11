@@ -34,8 +34,8 @@
   /* flex-end: nhãn "Xuất theo" + select canh đáy với khối tiêu đề bên trái. */
   align-items: flex-end;
   gap: 12px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--ios-separator);
+  padding: 6px 2px 18px;
+  border-bottom: 1px solid var(--ios-separator-opaque);
 }
 
 .catalogue-toolbar-text {
@@ -88,10 +88,10 @@
 .bang-gia-doc {
   overflow-x: auto;
   padding: 10px;
-  border: 1px solid var(--ios-separator);
+  border: 1px solid var(--ios-separator-opaque);
   border-radius: var(--r-md);
   background: var(--ios-card);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
 }
 
 /* ═══════════════ Bảng A4 — chỉ đổi màu, giữ nguyên kích thước ═══════════════ */
@@ -287,6 +287,12 @@
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
+  }
+  /* Đổi sang cột thì flex-basis tính theo CHIỀU CAO: để nguyên `flex: 1 1 200px`
+     của bản desktop là khối tiêu đề cao đúng 200px, chừa một mảng trống giữa
+     tiêu đề và nút xuất (lỗi có sẵn từ bản cũ, không phải do tách file). */
+  .catalogue-toolbar-text {
+    flex: 0 0 auto;
   }
   .catalogue-toolbar-actions {
     margin-left: 0;

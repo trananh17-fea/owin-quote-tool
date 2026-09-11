@@ -30,7 +30,7 @@
   border: 1px solid var(--ios-separator);
   border-radius: var(--r-lg);
   background: var(--ios-card);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 
 .quote-history-table {
@@ -47,8 +47,11 @@
   vertical-align: middle;
 }
 .quote-history-table th {
-  background: var(--ios-bg);
-  color: var(--ios-label3);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--ios-surface-muted);
+  color: var(--ios-label2);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -67,7 +70,7 @@
 }
 
 .quote-history-row { transition: background 0.16s var(--ease-ios); }
-.quote-history-row:hover { background: var(--ios-bg); }
+.quote-history-row:hover { background: var(--ios-row-hover); }
 
 .quote-code-button {
   padding: 0;
@@ -255,8 +258,6 @@
     max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   /* Đè nền navy cũ còn `!important` trong owinTheme.css (~dòng 3437). */
   background: rgba(28, 28, 40, 0.4) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .quote-picker-modal {
@@ -364,7 +365,7 @@
 }
 .quote-picker-categories button.active {
   border-color: var(--ios-blue);
-  background: var(--ios-blue);
+  background: var(--ios-blue-ink);
   color: var(--ios-card);
 }
 /* Nút thu gọn danh mục: kém đặc hiệu hơn `.quote-picker-categories button`
@@ -480,7 +481,7 @@
   font-weight: 600;
 }
 .quote-picker-card:hover .quote-picker-choose {
-  background: var(--ios-blue);
+  background: var(--ios-blue-ink);
   color: var(--ios-card);
 }
 

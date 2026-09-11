@@ -48,8 +48,8 @@ Build kiểm tra TypeScript và tạo `dist/`; preview phục vụ bản build l
 
 ## Cấu trúc một tính năng
 
-Mỗi tab trên thanh điều hướng là một module trong `src/features/`. `products` là
-bản mẫu đã tách xong:
+Mỗi tab trên thanh điều hướng là một module tự chứa trong `src/features/`. Cả bốn
+tab đều đã tách; `products` là bản mẫu tham chiếu:
 
 ```
 src/features/products/
@@ -62,12 +62,22 @@ src/features/products/
   productStore.ts / useProducts.ts / productEvents.ts   # dữ liệu
 ```
 
+| Tab | Thư mục | Stylesheet | Logic thuần đã tách |
+| --- | --- | --- | --- |
+| Sản phẩm | `features/products/` | `products.css` | `productDraft.ts`, `productSuggestions.ts` |
+| Báo giá | `features/quote/` | `quote.css` | `quoteDraft.ts`, `quotePrintModel.ts`, `quoteFormat.ts` |
+| Bảng giá | `features/catalogue/` | `catalogue.css` | `catalogueBlocks.ts`, `useCatalogueExport.ts` |
+| Tính nhôm | `features/aluminum/` | `aluminum.css` | `aluminumRowModel.ts`, `aluminumPageActions.ts` |
+
 Quy ước: cái gì CHỈ một feature dùng thì nằm trong feature đó; logic domain dùng
 chung từ hai feature trở lên ở lại `src/lib/`; UI dùng chung ở `src/components/`.
 CSS xếp lớp theo thứ tự import trong `main.tsx`: `tokens.css` → `ios.css` →
 `shell.css` → `owinTheme.css` → stylesheet của từng feature (nạp sau nên thắng).
-`owinTheme.css` là phần chưa tách của Báo giá / Bảng giá / Tính nhôm — mỗi lần
-tách một tab thì rules của tab đó rời khỏi file này.
+Sau khi cả bốn tab đã tách, `owinTheme.css` chỉ còn primitive dùng chung —
+đừng thêm rule của một tab vào đó nữa.
+
+Chuẩn giao diện nằm ở [IOS_STYLE_GUIDE.md](../IOS_STYLE_GUIDE.md); đọc mục 4–6
+trước khi sửa UI và dùng checklist mục 15 trước khi hoàn tất.
 
 Sửa công thức chạy `npx vitest run src/lib/quoteEngine src/lib/quote`; sửa template chạy `npx vitest run src/features/export` và kiểm tra trực quan file xuất. Giữ marker đúng hợp đồng DOCX, import bằng `@/`, component PascalCase và file logic camelCase.
 

@@ -4,7 +4,7 @@ import { BookOpen, Calculator, FileText, Package } from 'lucide-react';
 import { AuthGate } from '@/features/auth/AuthGate';
 import { AccountMenu } from '@/features/auth/AccountMenu';
 import { ProductsView } from '@/features/products';
-import { QuoteView } from '@/features/quote/QuoteView';
+import { QuoteView } from '@/features/quote';
 import { CatalogueView } from '@/features/catalogue';
 import { AluminumEstimatorView } from '@/features/aluminum';
 import { GlobalImageLightbox } from '@/components/ImageLightbox';

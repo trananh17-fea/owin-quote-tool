@@ -1,7 +1,7 @@
 import { openImageLightbox } from '@/components/imageLightboxStore';
 import { SmartNumberInput } from '@/components/SmartNumberInput';
 import { parseSmartNumber } from '@/lib/format/smartNumber';
-import { formatEstimatorMoney, parseEstimatorNumber } from '@/lib/aluminumEstimator/estimator';
+import { formatEstimatorMoney } from '@/lib/aluminumEstimator/estimator';
 import { getAluminumProfileImageDisplay } from '@/lib/aluminumEstimator/profileImage';
 import type { AluminumEstimatorRowPatch } from '@/features/aluminum/aluminumEstimatorStorage';
 import type { AluminumEstimatorRowViewModel } from '@/features/aluminum/aluminumRowModel';
@@ -76,7 +76,9 @@ export function AluminumTable({
           </thead>
           <tbody>
             {rows.map(({ source, input, calculated }) => {
-              const isActive = calculated.quantity > 0 || parseEstimatorNumber(input.unitPrice) > 0;
+              // Chỉ nhấn hàng đang được tính. Đơn giá có sẵn không có nghĩa là
+              // người dùng đã chọn cây nhôm này cho báo giá hiện tại.
+              const isActive = calculated.quantity > 0;
               const lineTotalText = calculated.lineTotal > 0
                 ? `${formatEstimatorMoney(calculated.lineTotal)} đ`
                 : '—';
@@ -103,7 +105,7 @@ export function AluminumTable({
       {/* Điện thoại: thẻ gọn, không cuộn ngang */}
       <div className="aluminum-card-list" aria-label="Danh sách cây nhôm">
         {rows.map(({ source, input, calculated }) => {
-          const isActive = calculated.quantity > 0 || parseEstimatorNumber(input.unitPrice) > 0;
+          const isActive = calculated.quantity > 0;
           const lineTotalText = calculated.lineTotal > 0
             ? `${formatEstimatorMoney(calculated.lineTotal)} đ`
             : '—';

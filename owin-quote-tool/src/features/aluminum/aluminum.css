@@ -40,7 +40,7 @@
   border-radius: var(--r-lg) !important;
   /* đè owinTheme:3396 (gradient navy !important) — thẻ trắng phẳng */
   background: var(--ios-card) !important;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 .aluminum-hero-text { min-width: 0; }
 .aluminum-hero-compact .app-title { margin-bottom: 2px; }
@@ -133,7 +133,7 @@
   /* đè owinTheme:144 (--r-md !important) */
   border-radius: var(--r-lg) !important;
   background: var(--ios-card);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 /* Thẻ chứa dải chip hệ: min-width 0 để chip cuộn ngang bên trong, không đẩy grid */
 .aluminum-systems-card { min-width: 0; }
@@ -179,7 +179,7 @@
 }
 .aluminum-tabs button:active { transform: scale(0.985); }
 .aluminum-tabs button.active {
-  background: var(--ios-blue);
+  background: var(--ios-blue-ink);
   color: var(--ios-card);
   font-weight: 600;
 }
@@ -245,7 +245,7 @@
 .aluminum-color-chip:hover { background: var(--ios-fill-strong); }
 .aluminum-color-chip:active { transform: scale(0.985); }
 .aluminum-color-chip.active {
-  background: var(--ios-blue);
+  background: var(--ios-blue-ink);
   color: var(--ios-card);
   font-weight: 600;
 }
@@ -271,7 +271,7 @@
   background: var(--ios-card) !important;
   /* đè owinTheme:144 (--r-md !important) */
   border-radius: var(--r-lg) !important;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   font-variant-numeric: tabular-nums;
 }
 .aluminum-total-chip {
@@ -325,7 +325,7 @@
   /* đè owinTheme:144 (--r-md !important) */
   border-radius: var(--r-lg) !important;
   background: var(--ios-card);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
   -webkit-overflow-scrolling: touch;
 }
 .aluminum-table {
@@ -341,7 +341,7 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--ios-fill);
+  background: var(--ios-surface-muted);
 }
 .aluminum-table th,
 .aluminum-table td {
@@ -350,7 +350,7 @@
   vertical-align: middle;
 }
 .aluminum-table th {
-  background: var(--ios-fill);
+  background: var(--ios-surface-muted);
   text-align: left;
   font-size: var(--fs-xs);
   letter-spacing: 0.04em;
@@ -369,10 +369,13 @@
 
 /* Trạng thái hàng — .active / .num / .code… là tên dùng chung nên luôn scope
    dưới .aluminum-table, không bao giờ khai báo trần */
-.aluminum-table tbody tr.active { background: var(--ios-blue-soft); }
-.aluminum-table tbody tr:hover { background: var(--ios-bg); }
+.aluminum-table tbody tr.active {
+  background: var(--ios-card);
+  box-shadow: inset 3px 0 0 var(--ios-blue);
+}
+.aluminum-table tbody tr:hover { background: var(--ios-row-hover); }
 /* Hover nhắm vào td để thắng nền của .input-cell (specificity cao hơn) */
-.aluminum-table tbody tr:hover td { background: var(--ios-fill); }
+.aluminum-table tbody tr:hover td { background: var(--ios-row-hover); }
 
 .aluminum-table .center { text-align: center; }
 .aluminum-table .num {
@@ -386,8 +389,8 @@
   white-space: nowrap;
 }
 .aluminum-table .description { color: var(--ios-label2); }
-/* Hai cột gõ được: nền xanh rất nhạt (mờ nên chồng được lên nền hàng .active) */
-.aluminum-table .input-cell { background: var(--ios-blue-soft); }
+/* Cột gõ được giữ nền trắng; chính control chỉ ra vùng tương tác. */
+.aluminum-table .input-cell { background: var(--ios-card); }
 .aluminum-table .total {
   color: var(--ios-label);
   font-weight: 600;
@@ -430,7 +433,7 @@
 .aluminum-qty-input,
 .aluminum-price-input {
   height: 34px;
-  border: 0;
+  border: 1px solid var(--ios-separator);
   border-radius: var(--r-sm);
   background: var(--ios-fill);
   color: var(--ios-label);
@@ -548,9 +551,8 @@
     padding: 8px;
     /* !important để thắng chính khai báo nền ở block gốc phía trên (nó buộc
        phải !important vì owinTheme:3407 khoá bằng !important) */
-    background: rgba(255, 255, 255, 0.92) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--ios-card) !important;
+    box-shadow: 0 8px 24px rgba(28, 28, 40, 0.12);
   }
   .aluminum-total-chip {
     padding: 8px;
@@ -586,7 +588,8 @@
   }
   .aluminum-card.active {
     border-color: var(--ios-blue);
-    background: var(--ios-blue-soft);
+    background: var(--ios-card);
+    box-shadow: inset 3px 0 0 var(--ios-blue), var(--shadow-md);
   }
 
   .aluminum-card-top {

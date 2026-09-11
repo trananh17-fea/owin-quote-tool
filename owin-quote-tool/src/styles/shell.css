@@ -1,6 +1,6 @@
 /*
  * APP SHELL — thanh điều hướng cố định + vùng nội dung cuộn.
- * Phong cách iOS: nền mờ, hairline mảnh, tab là segmented control.
+ * Phong cách iOS: bề mặt đặc, hairline rõ, tab là segmented control.
  *
  * Cấu trúc: .tool-shell (khung đúng chiều cao viewport)
  *           ├── .tool-topnav   — không cuộn
@@ -29,10 +29,9 @@
   min-height: 60px;
   padding: 9px clamp(12px, 2vw, 20px);
   padding-top: max(9px, env(safe-area-inset-top));
-  background: rgba(242, 242, 247, 0.88);
-  backdrop-filter: saturate(1.6) blur(20px);
-  -webkit-backdrop-filter: saturate(1.6) blur(20px);
+  background: var(--ios-card);
   border-bottom: 1px solid var(--ios-separator);
+  box-shadow: var(--shadow-nav);
 }
 
 .tool-brand {
@@ -55,8 +54,9 @@
   object-fit: contain;
   border-radius: var(--r-sm);
   background: var(--ios-card);
-  border: 1px solid var(--ios-separator);
+  border: 1px solid var(--ios-separator-opaque);
   padding: 2px;
+  box-shadow: 0 2px 8px rgba(28, 28, 40, 0.08);
 }
 .tool-brand-text {
   display: grid;
@@ -86,6 +86,7 @@
   margin-inline: auto;
   padding: 2px;
   background: var(--ios-fill-strong);
+  border: 1px solid rgba(60, 60, 67, 0.08);
   border-radius: var(--r-md);
   overflow-x: auto;
   scrollbar-width: none;
@@ -109,12 +110,15 @@
   transition: background 0.22s var(--ease-ios), color 0.22s var(--ease-ios),
     box-shadow 0.22s var(--ease-ios);
 }
-.tool-nav-item:hover { color: var(--ios-label); }
-.tool-nav-item.active {
-  background: var(--ios-card);
+.tool-nav-item:hover {
+  background: rgba(255, 255, 255, 0.58);
   color: var(--ios-label);
+}
+.tool-nav-item.active {
+  background: var(--ios-blue-ink);
+  color: #fff;
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(28, 28, 40, 0.12);
+  box-shadow: 0 3px 10px rgba(0, 122, 255, 0.24);
 }
 .tool-nav-item:focus-visible {
   outline: 2px solid var(--ios-blue);
@@ -171,7 +175,7 @@
     gap: 6px 8px;
     min-height: 0;
     padding: max(6px, env(safe-area-inset-top)) 10px 8px;
-    background: rgba(242, 242, 247, 0.94);
+    background: var(--ios-card);
   }
   .tool-brand { grid-area: brand; padding: 2px; }
   .tool-brand-logo { width: 30px; height: 30px; }

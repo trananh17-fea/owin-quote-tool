@@ -13,11 +13,13 @@
   /* ─── iOS system palette ─── */
   --ios-bg: #f2f2f7; /* secondarySystemBackground — nền app */
   --ios-card: #ffffff; /* systemBackground — mặt thẻ */
-  --ios-fill: #f2f2f7; /* systemGray6 — nền input/ghost control */
-  --ios-fill-strong: #e5e5ea; /* tertiarySystemFill — track segmented */
-  --ios-separator: rgba(60, 60, 67, 0.18); /* separator — hairline */
-  --ios-separator-opaque: #d1d1d6; /* systemGray4 — viền cần độ rõ ổn định */
-  --ios-control-border: #85858f; /* viền control cần đạt độ rõ trên nền sáng */
+  --ios-fill: #ededf2; /* nền control: tách rõ khỏi thẻ trắng */
+  --ios-fill-strong: #dedee5; /* track segmented / control được nhấn */
+  --ios-surface-muted: #f7f7fa; /* đầu bảng và nhóm nội dung cấp hai */
+  --ios-row-hover: #f2f7ff; /* phản hồi hover nhẹ theo systemBlue */
+  --ios-separator: rgba(60, 60, 67, 0.24); /* hairline rõ trên màn hình sáng */
+  --ios-separator-opaque: #c7c7cc; /* systemGray4 — viền cần độ rõ ổn định */
+  --ios-control-border: #8e8e93; /* systemGray — viền control */
   --ios-label: #1c1c1e; /* label */
   --ios-label2: #55555e; /* secondaryLabel */
   --ios-label3: #6e6e73; /* tertiaryLabel đã tăng tương phản cho chữ nhỏ */
@@ -25,6 +27,7 @@
   --ios-blue-ink: #006edc; /* systemBlue đậm hơn cho chữ trên nền sáng */
   --ios-blue-hover: #0055aa; /* hover/pressed của nút nền xanh */
   --ios-blue-soft: rgba(0, 122, 255, 0.12);
+  --ios-blue-soft-strong: rgba(0, 122, 255, 0.18);
   --ios-green: #248a3d; /* systemGreen cho chữ */
   --ios-green-fill: #34c759; /* systemGreen cho control */
   --ios-green-soft: rgba(52, 199, 89, 0.12);
@@ -68,10 +71,11 @@
   --icon-btn: 44px;
   --touch: 44px;
 
-  /* ─── Shadow — iOS mềm, gần như phẳng ─── */
-  --shadow-sm: 0 1px 2px rgba(28, 28, 40, 0.04);
-  --shadow-md: 0 1px 2px rgba(28, 28, 40, 0.04), 0 8px 24px rgba(28, 28, 40, 0.05);
-  --shadow-lg: 0 1px 2px rgba(28, 28, 40, 0.04), 0 22px 48px rgba(28, 28, 40, 0.07);
+  /* ─── Shadow — phân tầng rõ, vẫn giữ cạnh mềm kiểu iOS ─── */
+  --shadow-sm: 0 1px 2px rgba(28, 28, 40, 0.08), 0 4px 12px rgba(28, 28, 40, 0.04);
+  --shadow-md: 0 2px 4px rgba(28, 28, 40, 0.07), 0 12px 30px rgba(28, 28, 40, 0.09);
+  --shadow-lg: 0 4px 10px rgba(28, 28, 40, 0.08), 0 24px 64px rgba(28, 28, 40, 0.16);
+  --shadow-nav: 0 1px 0 rgba(28, 28, 40, 0.08), 0 5px 18px rgba(28, 28, 40, 0.07);
   --shadow-glow: 0 0 0 4px var(--ios-blue-soft);
   --ios-shadow: var(--shadow-md);
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);

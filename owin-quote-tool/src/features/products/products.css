@@ -31,7 +31,7 @@
   border: 1px solid var(--ios-separator);
   border-radius: var(--r-lg);
   background: var(--ios-card);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 .product-filter-card .field { margin-bottom: 0; }
 .product-filter-search label {
@@ -74,7 +74,7 @@
   border: 1px solid var(--ios-separator);
   border-radius: var(--r-lg);
   background: var(--ios-card);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
 }
 .product-table-wrap { overflow-x: auto; }
 .product-table {
@@ -91,8 +91,11 @@
   vertical-align: middle;
 }
 .product-table th {
-  background: var(--ios-bg);
-  color: var(--ios-label3);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--ios-surface-muted);
+  color: var(--ios-label2);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -107,7 +110,7 @@
   font-variant-numeric: tabular-nums;
 }
 .product-row { transition: background 0.16s var(--ease-ios); }
-.product-row:hover { background: var(--ios-bg); }
+.product-row:hover { background: var(--ios-row-hover); }
 .product-table tbody tr[data-drag-over] td {
   box-shadow: inset 0 2px 0 0 var(--ios-blue);
 }
@@ -191,8 +194,6 @@
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
     max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   background: rgba(28, 28, 40, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .product-preview-modal,
@@ -663,9 +664,8 @@
     gap: 6px;
     padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--ios-separator);
-    background: rgba(255, 255, 255, 0.94);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--ios-card);
+    box-shadow: 0 -8px 24px rgba(28, 28, 40, 0.1);
   }
   .product-autosave-status {
     justify-content: center;
