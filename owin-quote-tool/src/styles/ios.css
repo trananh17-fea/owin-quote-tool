@@ -51,8 +51,8 @@ button,
   padding: 24px 20px 80px;
 }
 
-.app-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px; }
-.app-subtitle { color: var(--ios-label3); font-size: 14px; margin: 0 0 24px; }
+.app-title { font-size: var(--fs-title); font-weight: 700; letter-spacing: var(--track-tight); margin: 0 0 4px; }
+.app-subtitle { color: var(--ios-label3); font-size: var(--fs-sm); margin: 0 0 24px; }
 
 .card {
   background: var(--ios-card);
@@ -410,21 +410,21 @@ input[type='number']::-webkit-outer-spin-button, input[type='number']::-webkit-i
 
 @media (max-width: 720px) {
   :root {
-      --control-h: 36px;
-      --control-h-sm: 34px;
-      --icon-btn: 34px;
-      --fs-xs: 11px;
-      --fs-sm: 12px;
-      --fs-md: 13px;
-      --fs-title: 18px;
-    }
+    /* Chỉ thu control cho vừa ngón tay; KHÔNG thu thang chữ theo breakpoint
+       (IOS_STYLE_GUIDE §4.2) — chữ nhỏ hơn 16px làm Safari iOS tự zoom khi
+       chạm vào ô nhập, và phá luôn việc người dùng chỉnh cỡ chữ trình duyệt. */
+    --control-h: 36px;
+    --control-h-sm: 34px;
+    --icon-btn: 34px;
+  }
   html { -webkit-tap-highlight-color: color-mix(in srgb, var(--ios-blue) 12%, transparent); }
   .field { margin-bottom: 8px; }
   .field > label {
-      font-size: 11px;
-      margin-bottom: 3px;
-      font-weight: 700;
-    }
+    /* font-size bo di: thua rule `!important` cua thang chu o tren, va thang chu
+       khong thu nho theo breakpoint (IOS_STYLE_GUIDE §4.2). */
+    margin-bottom: 3px;
+    font-weight: 500;
+  }
   .input, select.input, textarea.input {
       min-height: var(--control-h);
       padding: 6px 10px;
@@ -454,7 +454,7 @@ input[type='number']::-webkit-outer-spin-button, input[type='number']::-webkit-i
       --icon-btn: 28px;
     }
   .field { margin-bottom: 5px; }
-  .field > label { font-size: 10px; margin-bottom: 2px; }
+  .field > label { margin-bottom: 2px; }
   .input, select.input, textarea.input {
       min-height: 30px;
       padding: 4px 8px;

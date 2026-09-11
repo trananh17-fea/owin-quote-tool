@@ -244,8 +244,6 @@
       align-items: flex-start;
       gap: 8px;
     }
-  .app-title { font-size: 1.15rem !important; }
-  .app-subtitle { font-size: 12px !important; }
   .card {
       padding: 12px;
       border-radius: 12px;
@@ -291,8 +289,10 @@
 
 @media (orientation: landscape) and (max-height: 500px) and (max-width: 960px) {
   .admin-page { gap: 8px; }
-  .app-title { font-size: 15px !important; }
-  .app-subtitle { font-size: 11px !important; }
+  /* Ngoai le duy nhat cua thang chu: man ngang cao <=500px, tieu de an het
+     chieu cao con lai. Van dung nac trong thang, khong dat px roi. */
+  .app-title { font-size: var(--fs-lg) !important; }
+  .app-subtitle { font-size: var(--fs-xs) !important; }
   .card { padding: 8px 10px; }
   .readonly-money {
       min-height: 30px;

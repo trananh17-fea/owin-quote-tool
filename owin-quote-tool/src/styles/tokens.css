@@ -47,14 +47,19 @@
   --ios-radius: var(--r-lg);
   --ios-radius-sm: var(--r-md);
 
-  /* ─── Type scale — dễ đọc, đồng nhất trên desktop và mobile ─── */
-  --fs-xs: 12px;
-  --fs-sm: 14px;
-  --fs-md: 16px;
-  --fs-lg: 17px;
-  --fs-xl: 20px;
-  --fs-2xl: 24px;
-  --fs-title: clamp(24px, 2vw, 28px);
+  /* ─── Type scale (IOS_STYLE_GUIDE §4.2) ───
+   * Đơn vị rem, gốc là font-size mặc định của trình duyệt (100% ≈ 16px) — nhờ
+   * vậy người dùng chỉnh cỡ chữ trong trình duyệt thì cả app giãn theo. Số px
+   * ghi kèm là giá trị khi gốc = 16px.
+   */
+  --fs-xs: 0.75rem; /* 12px — metadata, badge */
+  --fs-sm: 0.875rem; /* 14px — nhãn field, dữ liệu bảng desktop */
+  --fs-md: 1rem; /* 16px — nội dung, input, nút chính */
+  --fs-lg: 1.0625rem; /* 17px — tiêu đề card */
+  --fs-xl: 1.25rem; /* 20px — tiêu đề nhóm lớn / dialog */
+  --fs-2xl: 1.5rem; /* 24px — tổng tiền nổi bật */
+  --fs-title: clamp(1.5rem, 1.25rem + 0.6vw, 1.75rem); /* 24–28px — tiêu đề màn */
+  --fs-display: 2rem; /* 32px — chỉ dùng ở màn đăng nhập */
   /* Một family duy nhất cho toàn bộ UI, đủ glyph tiếng Việt. */
   --font-sans: 'Roboto', sans-serif;
   --track-tight: -0.02em;
@@ -112,7 +117,8 @@
   --text-muted: var(--ios-label2);
 
   font-family: var(--font-sans);
-  font-size: var(--fs-md);
+  /* 100% = cỡ chữ người dùng đặt trong trình duyệt; KHÔNG đặt lại theo breakpoint. */
+  font-size: 100%;
   line-height: 1.45;
   color: var(--ios-label);
   color-scheme: light;
