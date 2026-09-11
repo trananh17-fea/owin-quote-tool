@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import type { ProductSpecRecord } from '@/types/models';
 import { AutoSuggestInput } from '@/components/AutoSuggestInput';
 import { DragHandle, reorderList, useDragReorder } from '@/components/DragReorder';
@@ -45,17 +45,16 @@ export function ProductSpecEditor({
     onChange(specs.map((row, i) => (i === index ? { ...row, ...patch } : row)));
 
   return (
-    <div className="editor-panel">
-      <div className="toolbar product-panel-head">
+    <div className="editor-panel product-spec-panel">
+      <div className="toolbar editor-toolbar product-panel-head">
         <div className="section-label">Thông số kỹ thuật</div>
         <div className="spacer" />
         <button
-          className="icon-btn"
+          className="btn-link"
           type="button"
           onClick={() => onChange([...specs, { id: newRowId(), key: '', value: '', sortOrder: specs.length }])}
-          aria-label="Thêm thông số kỹ thuật"
         >
-          <Plus size={16} />
+          <span aria-hidden="true">＋</span> Thêm thông số
         </button>
       </div>
 
@@ -66,6 +65,12 @@ export function ProductSpecEditor({
         <span />
       </div>
       <div className="spec-row-list">
+        {specs.length === 0 && (
+          <div className="empty-line product-spec-empty">
+            <span>Chưa có thông số</span>
+            <small>Thêm thông số để bắt đầu</small>
+          </div>
+        )}
         {specs.map((spec, index) => (
           <div key={spec.id} className="spec-editor-row" data-row-id={spec.id} {...drag.rowProps(index)}>
             <DragHandle {...drag.handleProps(index)} label="Kéo để đổi thứ tự thông số" />

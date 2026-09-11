@@ -23,12 +23,13 @@ import {
   type SavedProduct,
   type SpecDraft,
 } from '@/features/products/productDraft';
+import { normalizeCategoryName } from '@/lib/products/categoryOrder';
 import { unitLabel } from '@/features/products/productUnits';
 import type { ProductSuggestions } from '@/features/products/productSuggestions';
 import { ProductBasicsPanel, type ProductBasics } from '@/features/products/ProductBasicsPanel';
 import { ProductSpecEditor } from '@/features/products/ProductSpecEditor';
 import { ProductSummaryStrip } from '@/features/products/ProductSummaryStrip';
-import { ProductSaveBar, type SaveStatus } from '@/features/products/ProductSaveBar';
+import { ProductFormHeader, type SaveStatus } from '@/features/products/ProductFormHeader';
 
 export interface ProductFormSaveOptions {
   learnSuggestions?: boolean;
@@ -40,7 +41,6 @@ interface Props {
   suggestions: ProductSuggestions;
   onSave: (p: SaveProductInput, options?: ProductFormSaveOptions) => Promise<SavedProduct>;
   onCancel: () => void;
-  registerCloseHandler?: (handler: (() => Promise<void>) | null) => void;
 }
 
 function initialBasics(editing: ProductRecord | null): ProductBasics {
@@ -61,7 +61,7 @@ function initialBasics(editing: ProductRecord | null): ProductBasics {
  * Component này giữ state + gọi Supabase; phần hiển thị nằm ở các panel con,
  * công thức nằm ở productDraft.ts.
  */
-export function ProductForm({ editing, suggestions, onSave, onCancel, registerCloseHandler }: Props) {
+export function ProductForm({ editing, suggestions, onSave, onCancel }: Props) {
   const [draftIdentity] = useState(() => ({
     id: editing?.id ?? newDraftId(),
     code: (editing?.code ?? generateProductCode(true)).toUpperCase(),
@@ -221,11 +221,6 @@ export function ProductForm({ editing, suggestions, onSave, onCancel, registerCl
   }, []);
 
   useEffect(() => {
-    registerCloseHandler?.(requestClose);
-    return () => registerCloseHandler?.(null);
-  }, [registerCloseHandler, requestClose]);
-
-  useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
@@ -255,49 +250,57 @@ export function ProductForm({ editing, suggestions, onSave, onCancel, registerCl
           : 'dirty';
 
   return (
-    <div className="card product-editor-card">
-      <ProductBasicsPanel value={basics} onChange={updateBasics} suggestions={suggestions} />
-
-      <div className="product-editor-section-grid">
-        <ProductSpecEditor specs={specs} onChange={setSpecs} suggestions={suggestions} />
-
-        <FixedAccessoryPackageEditor
-          value={fixedPackage}
-          onChange={setFixedPackage}
-          suggestions={{
-            accessoryName: suggestions.accessoryName,
-            packageName: suggestions.accessoryPackageName,
-            packageCatalog: suggestions.packageCatalog,
-            orphanAccessoryNames: suggestions.orphanAccessoryNames,
-          }}
-        />
-      </div>
-
-      <div className="product-editor-extra">
-        <ExtraAccessoriesEditor
-          value={extraAccessories}
-          onChange={setExtraAccessories}
-          suggestions={{ accessoryName: suggestions.extraAccessoryName ?? [] }}
-          title="Phụ kiện phát sinh thêm"
-        />
-      </div>
-
-      <ProductSummaryStrip
-        sampleProductTotal={sampleProductTotal}
-        fixedPackageTotal={fixedPackageTotal}
-        extraAccessoriesTotal={extraAccessoriesTotal}
-        estimatedTotal={estimatedTotal}
-        sampleQuantityLabel={`${formatSampleQuantity(sampleQuantity)} ${unitLabel(basics.unit).toLowerCase()}`}
-      />
-
-      <ProductSaveBar
+    <>
+      <ProductFormHeader
+        editing={Boolean(editing)}
+        code={draftIdentity.code}
+        categoryLabel={normalizeCategoryName(basics.category)}
         status={displayedSaveStatus}
         error={saveError}
         saving={saving}
         canSave={canSave}
-        onSave={() => void save()}
         onBack={() => void requestClose()}
+        onSave={() => void save()}
       />
-    </div>
+
+      <div className="card product-editor-card">
+        <section className="product-section-block">
+          <div className="product-section-label">Thông tin cơ bản</div>
+          <ProductBasicsPanel value={basics} onChange={updateBasics} suggestions={suggestions} />
+        </section>
+
+        <div className="product-editor-section-grid">
+          <ProductSpecEditor specs={specs} onChange={setSpecs} suggestions={suggestions} />
+
+          <FixedAccessoryPackageEditor
+            value={fixedPackage}
+            onChange={setFixedPackage}
+            suggestions={{
+              accessoryName: suggestions.accessoryName,
+              packageName: suggestions.accessoryPackageName,
+              packageCatalog: suggestions.packageCatalog,
+              orphanAccessoryNames: suggestions.orphanAccessoryNames,
+            }}
+          />
+        </div>
+
+        <div className="product-editor-extra">
+          <ExtraAccessoriesEditor
+            value={extraAccessories}
+            onChange={setExtraAccessories}
+            suggestions={{ accessoryName: suggestions.extraAccessoryName ?? [] }}
+            title="Phụ kiện phát sinh thêm"
+          />
+        </div>
+
+        <ProductSummaryStrip
+          sampleProductTotal={sampleProductTotal}
+          fixedPackageTotal={fixedPackageTotal}
+          extraAccessoriesTotal={extraAccessoriesTotal}
+          estimatedTotal={estimatedTotal}
+          sampleQuantityLabel={`${formatSampleQuantity(sampleQuantity)} ${unitLabel(basics.unit).toLowerCase()}`}
+        />
+      </div>
+    </>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { Percent, X } from 'lucide-react';
 import type { ProductRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { bulkAdjustProductPrices } from '@/features/products/productStore';
@@ -52,18 +52,24 @@ export function BulkPriceDialog({
   return (
     <div className="modal-backdrop" role="presentation" onClick={() => !saving && onClose()}>
       <div
-        className="bulk-price-modal"
+        className="product-modal bulk-price-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="bulk-price-title"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="product-preview-header">
-          <div>
-            <div className="product-name" id="bulk-price-title">Cập nhật giá hàng loạt</div>
-            <div className="product-sub">Chỉ áp dụng cho sản phẩm đang hoạt động · không chạm sản phẩm đã xoá</div>
+        <div className="product-modal-header">
+          <div className="product-modal-title">
+            <span className="product-modal-icon" aria-hidden="true">
+              <Percent size={22} />
+            </span>
+            <div className="product-modal-title-copy">
+              <div className="product-modal-kicker">Danh mục sản phẩm</div>
+              <h2 id="bulk-price-title">Cập nhật giá hàng loạt</h2>
+              <div className="product-sub">Chỉ áp dụng cho sản phẩm đang hoạt động · không chạm sản phẩm đã xoá</div>
+            </div>
           </div>
-          <button className="icon-btn" onClick={onClose} aria-label="Đóng"><X size={17} /></button>
+          <button className="icon-btn" onClick={onClose} aria-label="Đóng"><X size={18} /></button>
         </div>
 
         <div className="bulk-price-body">
@@ -98,8 +104,7 @@ export function BulkPriceDialog({
             </div>
           )}
 
-          <div className="toolbar">
-            <div className="spacer" />
+          <div className="bulk-price-actions">
             <button className="btn btn-ghost" onClick={onClose} disabled={saving}>Huỷ</button>
             <button className="btn btn-primary" onClick={() => void apply()} disabled={saving || !hasPercent}>
               {saving ? 'Đang cập nhật…' : 'Xác nhận áp dụng'}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { paginateItems } from '@/features/quote/quotePagination';
+import { paginateItems } from '@/lib/list/paginateItems';
 
 describe('paginateItems', () => {
   const items = Array.from({ length: 61 }, (_, index) => index + 1);

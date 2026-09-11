@@ -12,7 +12,8 @@ function SummaryMetric({ label, value, note, strong }: { label: string; value: s
 
 /**
  * Dải tổng ước tính của sản phẩm mẫu. Chỉ hiển thị — các con số do ProductForm
- * tính, công thức nằm ở productDraft.ts.
+ * tính, công thức nằm ở productDraft.ts. Bố cục theo khối "Tổng quan giá trị"
+ * của báo giá: nhãn nhóm + badge, rồi lưới ô tổng với ô cuối được nhấn.
  */
 export function ProductSummaryStrip({
   sampleProductTotal,
@@ -28,15 +29,21 @@ export function ProductSummaryStrip({
   sampleQuantityLabel: string;
 }) {
   return (
-    <div className="product-summary-strip">
-      <SummaryMetric
-        label="Giá sản phẩm mẫu"
-        value={formatVND(sampleProductTotal)}
-        note={sampleQuantityLabel}
-      />
-      <SummaryMetric label="Giá phụ kiện mẫu" value={formatVND(fixedPackageTotal)} />
-      <SummaryMetric label="Phụ kiện phát sinh" value={formatVND(extraAccessoriesTotal)} />
-      <SummaryMetric label="Tổng cộng ước tính" value={formatVND(estimatedTotal)} strong />
-    </div>
+    <section className="product-summary-block">
+      <div className="product-summary-heading">
+        <div className="product-section-label">Tổng ước tính sản phẩm mẫu</div>
+        <span className="product-summary-badge">{formatVND(estimatedTotal)}</span>
+      </div>
+      <div className="product-summary-strip">
+        <SummaryMetric
+          label="Giá sản phẩm mẫu"
+          value={formatVND(sampleProductTotal)}
+          note={sampleQuantityLabel}
+        />
+        <SummaryMetric label="Giá phụ kiện mẫu" value={formatVND(fixedPackageTotal)} />
+        <SummaryMetric label="Phụ kiện phát sinh" value={formatVND(extraAccessoriesTotal)} />
+        <SummaryMetric label="Tổng cộng ước tính" value={formatVND(estimatedTotal)} strong />
+      </div>
+    </section>
   );
 }

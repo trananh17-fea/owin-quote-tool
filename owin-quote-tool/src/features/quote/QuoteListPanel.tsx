@@ -3,9 +3,8 @@ import { Check, ChevronDown, ChevronLeft, ChevronRight, Copy, FileDown, ListFilt
 import type { QuoteRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { formatShortDate, statusLabel } from '@/features/quote/quoteFormat';
-import { paginateItems, type QuotePageSize } from '@/features/quote/quotePagination';
+import { PAGE_SIZES, paginateItems, type PageSize } from '@/lib/list/paginateItems';
 
-const QUOTE_PAGE_SIZES: QuotePageSize[] = [25, 50, 100];
 const QUOTE_STATUS_OPTIONS: Array<{ value: QuoteRecord['status'] | ''; label: string }> = [
   { value: '', label: 'Tất cả trạng thái' },
   { value: 'DRAFT', label: 'Nháp' },
@@ -48,7 +47,7 @@ export function QuoteListPanel({
   onRetry: () => void;
 }) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState<QuotePageSize>(25);
+  const [pageSize, setPageSize] = useState<PageSize>(25);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const statusMenuRef = useRef<HTMLDivElement>(null);
   const pagination = useMemo(
@@ -279,12 +278,12 @@ export function QuoteListPanel({
                     className="input quote-page-size-select"
                     value={pageSize}
                     onChange={(event) => {
-                      setPageSize(Number(event.target.value) as QuotePageSize);
+                      setPageSize(Number(event.target.value) as PageSize);
                       setCurrentPage(1);
                     }}
                     aria-label="Số báo giá mỗi trang"
                   >
-                    {QUOTE_PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
+                    {PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
                   </select>
                 </label>
               </div>

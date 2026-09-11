@@ -1,4 +1,4 @@
-import { Pencil, X } from 'lucide-react';
+import { Package, Pencil, X } from 'lucide-react';
 import type { ProductRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
@@ -70,17 +70,22 @@ export function ProductPreviewCard({
       onClick={onClose}
     >
       <div
-        className="product-preview-modal"
+        className="product-modal product-preview-modal"
         role="dialog"
         aria-modal="true"
         aria-label={`Xem ${product.name}`}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="product-preview-header">
-          <div className="product-preview-header-text">
-            <div className="product-preview-kicker">{normalizeCategoryName(product.category) || 'Sản Phẩm'}</div>
-            <div className="product-name product-preview-title">{titleCaseVi(product.name) || product.name}</div>
-            <div className="product-sub">{product.code}{product.rawSizeText ? ` · KT mẫu ${product.rawSizeText}` : ''}</div>
+        <div className="product-modal-header">
+          <div className="product-modal-title">
+            <span className="product-modal-icon" aria-hidden="true">
+              <Package size={22} />
+            </span>
+            <div className="product-modal-title-copy">
+              <div className="product-modal-kicker">{normalizeCategoryName(product.category) || 'Sản phẩm'}</div>
+              <h2>{titleCaseVi(product.name) || product.name}</h2>
+              <div className="product-sub">{product.code}{product.rawSizeText ? ` · KT mẫu ${product.rawSizeText}` : ''}</div>
+            </div>
           </div>
           <button className="icon-btn" type="button" onClick={onClose} aria-label="Đóng">
             <X size={18} />
@@ -169,7 +174,8 @@ export function ProductPreviewCard({
               )}
               {onEdit && (
                 <button type="button" className="btn btn-ghost" onClick={() => onEdit(product)}>
-                  <Pencil size={16} style={{ verticalAlign: '-3px' }} /> Chỉnh sửa
+                  <Pencil size={16} aria-hidden="true" />
+                  Chỉnh sửa
                 </button>
               )}
             </div>
