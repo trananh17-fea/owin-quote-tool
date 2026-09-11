@@ -1,11 +1,17 @@
-import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Copy, FileDown, ListFilter, LoaderCircle, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Copy, FileDown, ListFilter, LoaderCircle, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import type { QuoteRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { formatShortDate, statusLabel } from '@/features/quote/quoteFormat';
 import { paginateItems, type QuotePageSize } from '@/features/quote/quotePagination';
 
 const QUOTE_PAGE_SIZES: QuotePageSize[] = [25, 50, 100];
+const QUOTE_STATUS_OPTIONS: Array<{ value: QuoteRecord['status'] | ''; label: string }> = [
+  { value: '', label: 'Tất cả trạng thái' },
+  { value: 'DRAFT', label: 'Nháp' },
+  { value: 'SAVED', label: 'Đã lưu' },
+  { value: 'EXPORTED', label: 'Đã xuất' },
+];
 
 /** Màn danh sách báo giá: ô lọc, bảng lịch sử và các trạng thái rỗng / đang tải. */
 export function QuoteListPanel({
@@ -43,10 +49,27 @@ export function QuoteListPanel({
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<QuotePageSize>(25);
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
   const pagination = useMemo(
     () => paginateItems(filteredHistory, currentPage, pageSize),
     [currentPage, filteredHistory, pageSize],
   );
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!statusMenuRef.current?.contains(event.target as Node)) setStatusMenuOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setStatusMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const handleSearch = (value: string) => {
     setCurrentPage(1);
@@ -56,7 +79,11 @@ export function QuoteListPanel({
   const handleStatusFilter = (value: QuoteRecord['status'] | '') => {
     setCurrentPage(1);
     onStatusFilter(value);
+    setStatusMenuOpen(false);
   };
+
+  const selectedStatusLabel = QUOTE_STATUS_OPTIONS.find((option) => option.value === quoteStatusFilter)?.label
+    ?? 'Tất cả trạng thái';
 
   return (
     <section className="admin-page quote-list-page">
@@ -90,20 +117,41 @@ export function QuoteListPanel({
             placeholder="Tìm theo mã báo giá, tên khách, sđt..."
           />
         </div>
-        <div className="quote-toolbar-control quote-toolbar-status">
+        <div className="quote-toolbar-control quote-toolbar-status" ref={statusMenuRef}>
           <ListFilter size={18} aria-hidden="true" />
-          <label className="quote-toolbar-label" htmlFor="quote-status">Lọc theo trạng thái</label>
-          <select
+          <label className="quote-toolbar-label" id="quote-status-label">Lọc theo trạng thái</label>
+          <button
+            type="button"
             id="quote-status"
-            className="input"
-            value={quoteStatusFilter}
-            onChange={(event) => handleStatusFilter(event.target.value as QuoteRecord['status'] | '')}
+            className="quote-status-trigger"
+            aria-labelledby="quote-status-label"
+            aria-haspopup="listbox"
+            aria-expanded={statusMenuOpen}
+            onClick={() => setStatusMenuOpen((open) => !open)}
           >
-            <option value="">Tất cả trạng thái</option>
-            <option value="DRAFT">Nháp</option>
-            <option value="SAVED">Đã lưu</option>
-            <option value="EXPORTED">Đã xuất</option>
-          </select>
+            <span>{selectedStatusLabel}</span>
+            <ChevronDown size={16} aria-hidden="true" />
+          </button>
+          {statusMenuOpen && (
+            <div className="quote-status-menu" role="listbox" aria-labelledby="quote-status-label">
+              {QUOTE_STATUS_OPTIONS.map((option) => {
+                const selected = option.value === quoteStatusFilter;
+                return (
+                  <button
+                    key={option.value || 'all'}
+                    type="button"
+                    className={`quote-status-option${selected ? ' is-selected' : ''}`}
+                    role="option"
+                    aria-selected={selected}
+                    onClick={() => handleStatusFilter(option.value)}
+                  >
+                    <span>{option.label}</span>
+                    {selected && <Check size={16} aria-hidden="true" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
         <button type="button" className="btn btn-primary quote-create-button" onClick={onCreate}>
           <Plus size={18} aria-hidden="true" />

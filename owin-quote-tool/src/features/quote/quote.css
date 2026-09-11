@@ -96,6 +96,79 @@
   padding-right: 36px !important;
   cursor: pointer;
 }
+.quote-status-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px 10px 42px;
+  border: 1px solid rgba(60, 60, 67, 0.16);
+  border-radius: 12px;
+  background: var(--ios-card);
+  color: var(--ios-label);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s var(--ease-ios), box-shadow 0.16s var(--ease-ios), background 0.16s var(--ease-ios);
+}
+.quote-status-trigger:hover,
+.quote-status-trigger[aria-expanded='true'] {
+  border-color: rgba(0, 122, 255, 0.28);
+  background: #fbfdff;
+}
+.quote-status-trigger[aria-expanded='true'] {
+  border-color: var(--ios-blue);
+  background: var(--ios-card);
+  box-shadow: var(--shadow-glow);
+}
+.quote-status-trigger > svg { flex: 0 0 auto; color: var(--ios-label3); }
+.quote-status-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  z-index: 20;
+  display: grid;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid rgba(60, 60, 67, 0.14);
+  border-radius: 14px;
+  background: var(--ios-card);
+  box-shadow: 0 8px 18px rgba(28, 28, 40, 0.1), 0 20px 44px rgba(28, 28, 40, 0.12);
+  animation: quote-status-menu-in 0.16s var(--ease-ios) both;
+}
+@keyframes quote-status-menu-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.quote-status-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ios-label);
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.quote-status-option:hover { background: var(--ios-blue-soft); }
+.quote-status-option.is-selected {
+  background: var(--ios-blue-soft);
+  color: var(--ios-blue-ink);
+  font-weight: 600;
+}
+.quote-status-option.is-selected > svg { color: var(--ios-blue); }
 .quote-toolbar-label {
   position: absolute;
   width: 1px;
