@@ -115,6 +115,47 @@ body:has(.login-premium) { overflow:hidden; }
 .login-story-copy,
 .login-story-footer { display:none; }
 
+/* Desktop: phần minh hoạ là ảnh độc lập, không còn thẻ trắng bao ngoài.
+   Hai cột dùng chung chiều cao của layout để ảnh và form luôn thẳng hàng. */
+@media (min-width:701px) {
+  .login-layout { align-items:center; }
+  .login-story {
+    min-height:0;
+    width:min(100%, 658px);
+    height:500px;
+    justify-self:center;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+    overflow:visible;
+  }
+  .login-story::before { display:none; }
+  .login-architecture {
+    height:100%;
+    max-height:none;
+    flex:1 1 auto;
+  }
+  .login-form-region {
+    min-height:0;
+    height:500px;
+    padding:0;
+    align-items:stretch;
+  }
+  .login-form {
+    box-sizing:border-box;
+    height:100%;
+    min-height:0;
+    margin:0;
+    padding:28px 40px 24px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    box-shadow:none;
+  }
+  .login-form > * { flex-shrink:0; }
+}
+
 /* Banner lỗi đăng nhập (trước nằm ở lớp chung). */
 .login-error {
   margin: 4px 0 8px;

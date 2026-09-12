@@ -1,21 +1,14 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Eye, EyeOff, LoaderCircle, Monitor, Moon, Sun, ShieldCheck } from 'lucide-react';
 import { signInWithPassword } from '@/features/auth/authSession';
+import { useAppearance } from '@/features/settings/appearance';
 import './login.css';
 
-type Appearance = 'light' | 'dark' | 'system';
 const appearances = [
   { value: 'light', label: 'Sáng', Icon: Sun },
   { value: 'dark', label: 'Tối', Icon: Moon },
   { value: 'system', label: 'Theo máy', Icon: Monitor },
 ] as const;
-function readAppearance(): Appearance {
-  try {
-    const value = localStorage.getItem('owin-appearance');
-    if (value === 'light' || value === 'dark') return value;
-  } catch { /* Use system preference if storage is unavailable. */ }
-  return 'system';
-}
 
 export function LoginScreen() {
   const [identifier, setIdentifier] = useState('');
@@ -24,7 +17,7 @@ export function LoginScreen() {
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [appearance, setAppearance] = useState<Appearance>(readAppearance);
+  const [appearance, setAppearance] = useAppearance();
   const [systemDark, setSystemDark] = useState(() => matchMedia('(prefers-color-scheme: dark)').matches);
   useEffect(() => {
     const media = matchMedia('(prefers-color-scheme: dark)');
@@ -49,10 +42,7 @@ export function LoginScreen() {
           <span>OWIN</span>
         </a>
         <div className="login-appearance" role="group" aria-label="Chế độ giao diện">
-          {appearances.map(({ value, label, Icon }) => <button key={value} type="button" title={label} aria-label={`Giao diện ${label.toLowerCase()}`} aria-pressed={appearance === value} onClick={() => {
-            setAppearance(value);
-            try { localStorage.setItem('owin-appearance', value); } catch { /* Preference remains available for this session. */ }
-          }}><Icon size={16} /><span>{label}</span></button>)}
+          {appearances.map(({ value, label, Icon }) => <button key={value} type="button" title={label} aria-label={`Giao diện ${label.toLowerCase()}`} aria-pressed={appearance === value} onClick={() => setAppearance(value)}><Icon size={16} /><span>{label}</span></button>)}
         </div>
       </header>
       <main className="login-scroll">
@@ -61,12 +51,12 @@ export function LoginScreen() {
             <div className="login-story-copy">
               <span className="login-eyebrow">Báo giá nhôm kính</span>
             </div>
-            <svg className="login-architecture" viewBox="0 0 680 370" role="img" aria-label="Hình vẽ một căn nhà có cửa nhôm kính lớn">
-              <defs><clipPath id="arch-clip"><rect width="680" height="370" rx="26" /></clipPath></defs>
+            <svg className="login-architecture" viewBox="0 0 680 516" role="img" aria-label="Hình vẽ một căn nhà có cửa nhôm kính lớn">
+              <defs><clipPath id="arch-clip"><rect width="680" height="516" rx="26" /></clipPath></defs>
               <g clipPath="url(#arch-clip)">
-              <rect className="arch-bg" width="680" height="370" />
+              <rect className="arch-bg" width="680" height="516" />
               <g className="arch-scene">
-              <path d="M0 290H680V370H0Z" fill="#dfe2ea" />
+              <path d="M0 290H680V516H0Z" fill="#dfe2ea" />
               <path d="M85 90 470 30 614 99 230 154Z" fill="#fbfbfd" />
               <path d="M85 90 230 154V337L85 272Z" fill="#dde0e8" />
               <path d="M230 154 614 99V283L230 337Z" fill="#f5f6fa" />
