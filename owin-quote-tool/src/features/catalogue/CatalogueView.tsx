@@ -58,6 +58,7 @@ export function CatalogueView() {
     exportWord,
     exportExcel,
     exportPdf,
+    prewarmExports,
   } = useCatalogueExport(shownRecords);
 
   const handleCategoryChange = (value: string) => {
@@ -89,6 +90,7 @@ export function CatalogueView() {
         onExportWord={() => void exportWord()}
         onExportExcel={() => void exportExcel()}
         onExportPdf={() => void exportPdf()}
+        onPrefetchExports={prewarmExports}
       />
 
       {(productsError || exportError) && (

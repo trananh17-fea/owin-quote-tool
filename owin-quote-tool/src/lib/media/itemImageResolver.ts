@@ -24,7 +24,14 @@ export type ResolvedItemImage = {
 };
 
 export type ResolveItemImageOptions = {
-  /** Exporters need image bytes; normal UI thumbnails can keep the CDN URL. */
+  /**
+   * `false` = chỉ cần đường dẫn, đừng tải bytes.
+   *
+   * Trình xuất file luôn dùng `false`: chúng chỉ lấy `path` rồi giao cho
+   * `loadExportImage` (bản 480px, nhẹ hơn cả trăm lần). Tải ảnh master ở đây
+   * chỉ để chọn đường dẫn là nguyên nhân chính khiến bảng giá vài trăm dòng
+   * mất cả chục giây — mỗi sản phẩm tải hai lần, lần đầu là bản nặng nhất.
+   */
   loadBlob?: boolean;
 };
 
@@ -88,6 +95,9 @@ export async function resolveItemImage(
         }
       }
       return { url: normalized, blob, path: normalized, source: candidate.source, revoke: false };
+    }
+    if (options.loadBlob === false) {
+      return { url: null, blob: null, path: normalized, source: candidate.source, revoke: false };
     }
     const blob = await blobForPath(normalized);
     if (blob) return { url: URL.createObjectURL(blob), blob, path: normalized, source: candidate.source, revoke: true };

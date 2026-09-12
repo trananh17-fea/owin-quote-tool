@@ -2,8 +2,18 @@ import ExcelJS from 'exceljs';
 import type { CalculatedQuote, CalculatedQuoteItem, ProductRecord, ProductUnit } from '@/types/models';
 import { resolveItemImage } from '@/lib/media/itemImageResolver';
 import { toExcelImage } from '@/features/export/excelImage';
+import { EXCEL_IMAGE_MAX_EDGE, loadExportImage } from '@/features/export/exportImage';
 import { downloadBlob } from '@/lib/browser/download';
 import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWithConcurrency';
+import { trackExport } from '@/features/export/exportTiming';
+
+/** Bytes ảnh cho ExcelJS: đã hạ kích thước, WebP mới phải chuyển thêm một bước. */
+async function excelImageFor(path: string | null | undefined) {
+  const image = await loadExportImage(path, { maxEdge: EXCEL_IMAGE_MAX_EDGE, quality: 0.8 });
+  if (!image) return null;
+  if (image.extension === 'webp') return toExcelImage(image.blob);
+  return { buffer: await image.blob.arrayBuffer(), extension: image.extension };
+}
 
 type QuoteExcelRowKind = 'dimension' | 'accessory';
 
@@ -230,7 +240,11 @@ function sanitizeFileName(value: string): string {
 }
 
 
-export async function exportQuoteExcel(quote: CalculatedQuote, quoteCode: string, products: ProductRecord[] = []): Promise<string> {
+export function exportQuoteExcel(quote: CalculatedQuote, quoteCode: string, products: ProductRecord[] = []): Promise<string> {
+  return trackExport('Báo giá Excel', () => buildQuoteExcel(quote, quoteCode, products));
+}
+
+async function buildQuoteExcel(quote: CalculatedQuote, quoteCode: string, products: ProductRecord[] = []): Promise<string> {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'OWIN Quote Tool';
   const sheet = workbook.addWorksheet('Báo Giá OWIN', {
@@ -327,12 +341,10 @@ export async function exportQuoteExcel(quote: CalculatedQuote, quoteCode: string
   const imageRowCodes = [...itemsWithImage.keys()];
   const imageIdByCode = new Map<string, number>();
   const loadedImages = await mapWithConcurrency(imageRowCodes, DEFAULT_IMAGE_CONCURRENCY, async (code) => {
-    const resolved = await resolveItemImage(itemsWithImage.get(code)!, products, { loadBlob: true });
-    try {
-      return resolved.blob ? await toExcelImage(resolved.blob) : null;
-    } finally {
-      if (resolved.revoke && resolved.url) URL.revokeObjectURL(resolved.url);
-    }
+    // Chỉ cần đường dẫn: bytes để `loadExportImage` lo, ở bản 480px thay vì
+    // tải ảnh master vài MB rồi bỏ đi.
+    const resolved = await resolveItemImage(itemsWithImage.get(code)!, products, { loadBlob: false });
+    return excelImageFor(resolved.path);
   });
   imageRowCodes.forEach((code, index) => {
     const image = loadedImages[index];
@@ -444,7 +456,11 @@ export async function exportQuoteExcel(quote: CalculatedQuote, quoteCode: string
   signNoteRow.getCell(2).alignment = { horizontal: 'center' };
   signNoteRow.getCell(8).alignment = { horizontal: 'center' };
 
-  const buffer = await workbook.xlsx.writeBuffer();
+  // Nén nhanh (level 1): ảnh JPEG trong file vốn đã nén sẵn nên ép zip cố nén
+  // tiếp chỉ tốn thêm CPU mà gần như không giảm được dung lượng.
+  const buffer = await workbook.xlsx.writeBuffer({
+    zip: { compression: 'DEFLATE', compressionOptions: { level: 1 } },
+  });
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });

@@ -114,23 +114,22 @@ export async function resolveImageUrl(path: string | null | undefined): Promise<
  * Ảnh tĩnh dùng chung (logo dự phòng) chỉ đọc một lần cho cả phiên: mỗi dòng
  * thiếu ảnh trước đây lại tải và mã hoá lại đúng file logo đó.
  */
-const publicDataUrlCache = new Map<string, Promise<string | null>>();
+const publicBlobCache = new Map<string, Promise<Blob | null>>();
 
-async function fetchPublicDataUrl(publicPath: string): Promise<string | null> {
-  const cached = publicDataUrlCache.get(publicPath);
+function fetchPublicBlob(publicPath: string): Promise<Blob | null> {
+  const cached = publicBlobCache.get(publicPath);
   if (cached) return cached;
   const request = (async () => {
     try {
       const response = await fetch(withBasePath(publicPath.replace(/^\/+/, '')));
-      if (!response.ok) return null;
-      return blobToDataUrl(await response.blob());
+      return response.ok ? await response.blob() : null;
     } catch {
       return null;
     }
   })();
-  publicDataUrlCache.set(publicPath, request);
-  request.then((value) => {
-    if (value === null) publicDataUrlCache.delete(publicPath);
+  publicBlobCache.set(publicPath, request);
+  void request.then((value) => {
+    if (value === null) publicBlobCache.delete(publicPath);
   });
   return request;
 }
@@ -139,14 +138,68 @@ async function fetchPublicDataUrl(publicPath: string): Promise<string | null> {
  * Đi qua bộ nhớ đệm blob của `imageStorage` trước, để lần xuất file thứ hai (và
  * các dòng trùng ảnh trong cùng một lần xuất) không phải tải lại từ Storage.
  */
-async function fetchDataUrl(source: string): Promise<string | null> {
-  if (imageBlobCacheActive()) {
+async function fetchBlob(source: string, remember = true): Promise<Blob | null> {
+  if (remember && imageBlobCacheActive()) {
     const isQuotePrivate = source.startsWith('quotes/') || Boolean(privateQuoteImagePath(source));
-    const cached = await (isQuotePrivate ? getQuoteImage(source) : getImage(source));
-    return cached ? blobToDataUrl(cached) : null;
+    return isQuotePrivate ? getQuoteImage(source) : getImage(source);
   }
-  const blob = await downloadImageBlob(source);
-  return blob ? blobToDataUrl(blob) : null;
+  return downloadImageBlob(source);
+}
+
+function dataUrlToBlob(dataUrl: string): Blob | null {
+  const match = /^data:([^;,]*)(;base64)?,(.*)$/is.exec(dataUrl);
+  if (!match) return null;
+  const [, type = 'application/octet-stream', base64, payload = ''] = match;
+  try {
+    if (!base64) return new Blob([decodeURIComponent(payload)], { type });
+    const binary = atob(payload);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    return new Blob([bytes], { type });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Bytes của một ảnh, theo bất kỳ dạng đường dẫn nào app đang dùng.
+ *
+ * Trình xuất file cần blob chứ không cần data URL: từ blob mới giải mã
+ * (`createImageBitmap`) và hạ kích thước được, mà không phải dựng chuỗi base64
+ * dài vài MB cho mỗi tấm ảnh.
+ */
+export async function getImageBlobByPath(
+  path: string | null | undefined,
+  options?: { fallbackLogo?: boolean; remember?: boolean },
+): Promise<Blob | null> {
+  const useFallback = options?.fallbackLogo !== false;
+  // `remember: false` cho trình xuất file: ảnh master vài MB không đáng nằm lại
+  // trong bộ nhớ đệm dùng chung suốt phiên, vì nó chỉ là bước trung gian để
+  // dựng bản 480px.
+  const remember = options?.remember !== false;
+  const normalized = normalizeImagePath(path);
+
+  const load = async (): Promise<Blob | null> => {
+    if (!normalized) return null;
+    if (normalized.startsWith('data:')) return dataUrlToBlob(normalized);
+    if (/^(https?:|blob:)/i.test(normalized)) return fetchBlob(normalized, remember);
+    if (normalized.startsWith(appBase())) {
+      try {
+        const response = await fetch(normalized);
+        return response.ok ? await response.blob() : null;
+      } catch {
+        return null;
+      }
+    }
+    const key = imageStoreKeyFromPath(normalized);
+    if (!key) return null;
+    return fetchBlob(key, remember);
+  };
+
+  const blob = await load();
+  if (blob) return blob;
+  if (!useFallback) return null;
+  return fetchPublicBlob(DEFAULT_LOGO_PATH);
 }
 
 /**
@@ -157,31 +210,11 @@ export async function getImageDataUrlByPath(
   path: string | null | undefined,
   options?: { fallbackLogo?: boolean },
 ): Promise<string | null> {
-  const useFallback = options?.fallbackLogo !== false;
+  // Ảnh đã là data URL thì trả thẳng — khỏi vòng Blob → FileReader.
   const normalized = normalizeImagePath(path);
-
-  const load = async (): Promise<string | null> => {
-    if (!normalized) return null;
-    if (normalized.startsWith('data:')) return normalized;
-    if (/^(https?:|blob:)/i.test(normalized)) return fetchDataUrl(normalized);
-    if (normalized.startsWith(appBase())) {
-      try {
-        const response = await fetch(normalized);
-        if (!response.ok) return null;
-        return blobToDataUrl(await response.blob());
-      } catch {
-        return null;
-      }
-    }
-    const key = imageStoreKeyFromPath(normalized);
-    if (!key) return null;
-    return fetchDataUrl(key);
-  };
-
-  const dataUrl = await load();
-  if (dataUrl) return dataUrl;
-  if (!useFallback) return null;
-  return fetchPublicDataUrl(DEFAULT_LOGO_PATH);
+  if (normalized?.startsWith('data:')) return normalized;
+  const blob = await getImageBlobByPath(path, options);
+  return blob ? blobToDataUrl(blob) : null;
 }
 
 function blobToDataUrl(blob: Blob): Promise<string> {

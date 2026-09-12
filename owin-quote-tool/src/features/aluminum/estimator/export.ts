@@ -9,6 +9,7 @@ import {
 import { downloadBlob } from '@/lib/browser/download';
 import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWithConcurrency';
 import { withBasePath } from '@/lib/media/imagePaths';
+import { trackExport } from '@/features/export/exportTiming';
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -501,7 +502,11 @@ async function buildDocumentXml(
 </w:document>`;
 }
 
-export async function downloadAluminumDocx(model: AluminumPrintModel): Promise<void> {
+export function downloadAluminumDocx(model: AluminumPrintModel): Promise<void> {
+  return trackExport('Tính nhôm Word', () => buildAluminumDocx(model));
+}
+
+async function buildAluminumDocx(model: AluminumPrintModel): Promise<void> {
   const pack = await buildImagePack(model);
   const defaultExt = Array.from(pack.contentTypes.entries())
     .map(([ext, type]) => `<Default Extension="${ext}" ContentType="${type}"/>`)

@@ -1,5 +1,11 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { ProductRecord } from '@/types/models';
+import { prefetchCatalogueExportModules } from '@/features/export/prefetchExportModules';
+import {
+  EXPORT_IMAGE_MAX_EDGE,
+  EXPORT_IMAGE_QUALITY,
+  prewarmExportImages,
+} from '@/features/export/exportImage';
 
 /**
  * Ba nút xuất của tab Bảng giá. Tách khỏi view để view chỉ còn state hiển thị;
@@ -10,6 +16,22 @@ export function useCatalogueExport(shownRecords: ProductRecord[]) {
   const [exportingExcel, setExportingExcel] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [exportError, setExportError] = useState('');
+
+  /**
+   * Người dùng vừa chạm vào cụm nút xuất: nạp trước mã xuất VÀ toàn bộ ảnh.
+   *
+   * Với bảng giá vài trăm dòng, gần như toàn bộ thời gian xuất là chờ tải ảnh.
+   * Rê chuột tới nút đã sớm hơn lúc bấm cả giây, nên chuyển hẳn quãng đó sang
+   * đây thì lúc bấm chỉ còn phần dựng file. Ba nút Word/Excel/PDF dùng chung
+   * đúng một bản ảnh nên chỉ cần nạp một lần.
+   */
+  const prewarmExports = useCallback(() => {
+    prefetchCatalogueExportModules();
+    prewarmExportImages(
+      shownRecords.map((product) => product.coverImagePath),
+      { maxEdge: EXPORT_IMAGE_MAX_EDGE, quality: EXPORT_IMAGE_QUALITY },
+    );
+  }, [shownRecords]);
 
   const exportWord = async () => {
     setExporting(true);
@@ -61,5 +83,6 @@ export function useCatalogueExport(shownRecords: ProductRecord[]) {
     exportWord,
     exportExcel,
     exportPdf,
+    prewarmExports,
   };
 }

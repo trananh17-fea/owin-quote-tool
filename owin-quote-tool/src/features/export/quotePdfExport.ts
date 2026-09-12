@@ -10,6 +10,7 @@ import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWi
 import { formatVndNumber } from '@/lib/format/currency';
 import { ensureVietnamesePdfFonts, PDF_FONT_FAMILY } from '@/features/export/pdfFonts';
 import { lightPdfImageDataUrl } from '@/features/export/pdfImage';
+import { trackExport } from '@/features/export/exportTiming';
 
 const MARGIN = 8;
 const IMG_W = 18;
@@ -254,7 +255,11 @@ function sanitizeFileName(value: string): string {
  * Export quote as a PDF file download (no window.print).
  * Returns the downloaded file name.
  */
-export async function exportQuotePdf(
+export function exportQuotePdf(quote: CalculatedQuote, quoteCode: string, products: ProductRecord[] = []): Promise<string> {
+  return trackExport('Báo giá PDF', () => buildQuotePdf(quote, quoteCode, products));
+}
+
+async function buildQuotePdf(
   quote: CalculatedQuote,
   quoteCode: string,
   products: ProductRecord[] = [],

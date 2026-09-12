@@ -8,11 +8,13 @@ import { jsPDF } from 'jspdf';
 import type { ProductRecord } from '@/types/models';
 import { buildCatalogueBlockRows, type CatalogueBlockRow } from '@/lib/catalogue/catalogueRows';
 import { ensureVietnamesePdfFonts, PDF_FONT_FAMILY } from '@/features/export/pdfFonts';
-import { lightPdfImageDataUrl } from '@/features/export/pdfImage';
+import { loadPdfImage, type PdfImage } from '@/features/export/pdfImage';
+import { EXPORT_IMAGE_MAX_EDGE, EXPORT_IMAGE_QUALITY } from '@/features/export/exportImage';
 import { cellImageMaxBox, containFitSize } from '@/features/export/containFit';
 import { downloadBlob } from '@/lib/browser/download';
 import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWithConcurrency';
 import { formatVndNumber } from '@/lib/format/currency';
+import { trackExport } from '@/features/export/exportTiming';
 
 const TITLE = 'BẢNG GIÁ NHÔM OWIN LẮP ĐẶT HOÀN THIỆN';
 const MARGIN = 8;
@@ -129,7 +131,11 @@ function lineCells(row: CatalogueBlockRow): string[] {
   ];
 }
 
-export async function exportCataloguePdf(products: ProductRecord[]): Promise<string> {
+export function exportCataloguePdf(products: ProductRecord[]): Promise<string> {
+  return trackExport('Bảng giá PDF', () => buildCataloguePdf(products));
+}
+
+async function buildCataloguePdf(products: ProductRecord[]): Promise<string> {
   const rows = buildCatalogueBlockRows(products);
   const blocks = groupCatalogueBlocks(rows);
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
@@ -143,23 +149,11 @@ export async function exportCataloguePdf(products: ProductRecord[]): Promise<str
   const xs = colXs(widths, MARGIN);
   const descWidth = widths[2]!;
 
-  type CachedImage = { dataUrl: string; naturalW: number; naturalH: number };
-  const imageCache = new Map<string, CachedImage | null>();
+  const imageCache = new Map<string, PdfImage | null>();
 
-  const loadNaturalSize = (dataUrl: string): Promise<{ w: number; h: number }> =>
-    new Promise((resolve) => {
-      if (typeof Image === 'undefined') {
-        resolve({ w: 1, h: 1 });
-        return;
-      }
-      const image = new Image();
-      image.onload = () => resolve({ w: image.naturalWidth || 1, h: image.naturalHeight || 1 });
-      image.onerror = () => resolve({ w: 1, h: 1 });
-      image.src = dataUrl;
-    });
-
-  // Mỗi ảnh xử lý đúng một lần, và chạy song song có giới hạn: bảng giá vài trăm
-  // dòng trước đây phải chờ từng lượt tải nối đuôi nhau mới dựng được trang.
+  // Mỗi ảnh xử lý đúng một lần, chạy song song có giới hạn. Dùng đúng khung
+  // chuẩn của Word/Excel bảng giá (480px — ô ảnh rộng ~4cm, tức ~305 DPI khi
+  // in) để ba lần xuất liên tiếp xài chung một bản ảnh đã dựng sẵn.
   const imagePaths = [
     ...new Set(
       blocks.flatMap((block) =>
@@ -168,18 +162,10 @@ export async function exportCataloguePdf(products: ProductRecord[]): Promise<str
     ),
   ];
   await mapWithConcurrency(imagePaths, DEFAULT_IMAGE_CONCURRENCY, async (path) => {
-    // Master + higher maxEdge so 95% cell fill stays sharp (not 160px thumb).
-    const dataUrl = await lightPdfImageDataUrl(path, {
-      preferThumb: false,
-      maxEdge: 960,
-      quality: 0.82,
-    });
-    if (!dataUrl) {
-      imageCache.set(path, null);
-      return;
-    }
-    const natural = await loadNaturalSize(dataUrl);
-    imageCache.set(path, { dataUrl, naturalW: natural.w, naturalH: natural.h });
+    imageCache.set(
+      path,
+      await loadPdfImage(path, { maxEdge: EXPORT_IMAGE_MAX_EDGE, quality: EXPORT_IMAGE_QUALITY }),
+    );
   });
 
   let y = MARGIN;
@@ -326,7 +312,7 @@ export async function exportCataloguePdf(products: ProductRecord[]): Promise<str
           IMG_CELL_FILL,
           IMG_CELL_PAD_MM,
         );
-        const fitted = containFitSize(img.naturalW, img.naturalH, maxWidth, maxHeight);
+        const fitted = containFitSize(img.width, img.height, maxWidth, maxHeight);
         const format = img.dataUrl.startsWith('data:image/jpeg') || img.dataUrl.startsWith('data:image/jpg')
           ? 'JPEG'
           : 'PNG';

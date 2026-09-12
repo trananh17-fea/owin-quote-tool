@@ -1,10 +1,15 @@
 import ExcelJS from 'exceljs';
 import type { ProductRecord } from '@/types/models';
-import { resolveItemImage } from '@/lib/media/itemImageResolver';
 import { toExcelImage } from '@/features/export/excelImage';
+import {
+  EXPORT_IMAGE_MAX_EDGE,
+  EXPORT_IMAGE_QUALITY,
+  loadExportImage,
+} from '@/features/export/exportImage';
 import { buildCatalogueBlockRows } from '@/lib/catalogue/catalogueRows';
 import { downloadBlob } from '@/lib/browser/download';
 import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWithConcurrency';
+import { trackExport } from '@/features/export/exportTiming';
 
 const HEADERS = ['STT', 'Hình ảnh', 'Mô tả chi tiết', 'DV', 'Rộng', 'Cao', 'KL', 'Đơn giá', 'Thành tiền', 'Tổng tiền'];
 
@@ -13,12 +18,32 @@ function money(value: number | null): number | '' {
   return value ? value : '';
 }
 
+/**
+ * Bytes ảnh cho ExcelJS: đã hạ kích thước, WebP mới phải chuyển thêm một bước.
+ *
+ * Dùng đúng khung chuẩn của Word/PDF bảng giá để ba lần xuất liên tiếp xài
+ * chung một bản ảnh thay vì mỗi lần tải và mã hoá lại từ đầu.
+ */
+async function excelImageFor(path: string | null | undefined) {
+  const image = await loadExportImage(path, {
+    maxEdge: EXPORT_IMAGE_MAX_EDGE,
+    quality: EXPORT_IMAGE_QUALITY,
+  });
+  if (!image) return null;
+  if (image.extension === 'webp') return toExcelImage(image.blob);
+  return { buffer: await image.blob.arrayBuffer(), extension: image.extension };
+}
+
 function styleBorder(): Partial<ExcelJS.Borders> {
   const line = { style: 'thin' as const, color: { argb: 'FF283846' } };
   return { top: line, left: line, bottom: line, right: line };
 }
 
-export async function exportCatalogueExcel(products: ProductRecord[]): Promise<void> {
+export function exportCatalogueExcel(products: ProductRecord[]): Promise<void> {
+  return trackExport('Bảng giá Excel', () => buildCatalogueExcel(products));
+}
+
+async function buildCatalogueExcel(products: ProductRecord[]): Promise<void> {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'OWIN Quote Tool';
   const sheet = workbook.addWorksheet('Bang gia', {
@@ -59,32 +84,23 @@ export async function exportCatalogueExcel(products: ProductRecord[]): Promise<v
   });
 
   const blockRows = buildCatalogueBlockRows(products);
-  const productByCode = new Map(products.map((product) => [product.code, product]));
 
-  // Tải + chuyển đổi toàn bộ ảnh trước, song song có giới hạn. Trước đây mỗi
-  // dòng phải chờ xong ảnh của mình rồi mới sang dòng kế, nên bảng giá dài mất
-  // hàng chục giây mới hiện hộp tải về. Mỗi mã sản phẩm chỉ nhúng một ảnh.
-  const imageCodes = [
+  // Tải + chuyển đổi toàn bộ ảnh trước, song song có giới hạn. Mỗi ảnh khác
+  // nhau chỉ nhúng một lần, dù nhiều sản phẩm cùng dùng chung tấm đó.
+  //
+  // Lấy thẳng `row.imagePath` như bản Word và PDF. Trước đây chỗ này đi qua
+  // `resolveItemImage`, mà hàm đó tải cả ảnh master (vài MB) chỉ để chọn ra
+  // đường dẫn — tức mỗi sản phẩm tải hai lần, lần đầu là bản nặng nhất.
+  const imagePaths = [
     ...new Set(
-      blockRows.flatMap((row) =>
-        row.rowType === 'product' && row.imagePath && productByCode.has(row.productCode)
-          ? [row.productCode]
-          : [],
-      ),
+      blockRows.flatMap((row) => (row.rowType === 'product' && row.imagePath ? [row.imagePath] : [])),
     ),
   ];
-  const imageIdByCode = new Map<string, number>();
-  const loadedImages = await mapWithConcurrency(imageCodes, DEFAULT_IMAGE_CONCURRENCY, async (code) => {
-    const resolved = await resolveItemImage(productByCode.get(code)!, products, { loadBlob: true });
-    try {
-      return resolved.blob ? await toExcelImage(resolved.blob) : null;
-    } finally {
-      if (resolved.revoke && resolved.url) URL.revokeObjectURL(resolved.url);
-    }
-  });
-  imageCodes.forEach((code, index) => {
+  const imageIdByPath = new Map<string, number>();
+  const loadedImages = await mapWithConcurrency(imagePaths, DEFAULT_IMAGE_CONCURRENCY, excelImageFor);
+  imagePaths.forEach((path, index) => {
     const image = loadedImages[index];
-    if (image) imageIdByCode.set(code, workbook.addImage(image));
+    if (image) imageIdByPath.set(path, workbook.addImage(image));
   });
 
   for (const row of blockRows) {
@@ -110,8 +126,8 @@ export async function exportCatalogueExcel(products: ProductRecord[]): Promise<v
       money(row.completedTotalVnd),
     ]);
     excelRow.height = Math.max(24, row.descriptionLines.length * 18);
-    const imageId = imageIdByCode.get(row.productCode);
-    if (imageId !== undefined && row.imagePath) {
+    const imageId = row.imagePath ? imageIdByPath.get(row.imagePath) : undefined;
+    if (imageId !== undefined) {
       sheet.addImage(imageId, { tl: { col: 1.1, row: excelRow.number - 1 + 0.1 }, ext: { width: 105, height: 58 } });
     }
     excelRow.eachCell((cell, columnNumber) => {
@@ -125,7 +141,11 @@ export async function exportCatalogueExcel(products: ProductRecord[]): Promise<v
     });
   }
 
-  const buffer = await workbook.xlsx.writeBuffer();
+  // Nén nhanh (level 1): ảnh JPEG trong file vốn đã nén sẵn nên ép zip cố nén
+  // tiếp chỉ tốn thêm vài giây CPU mà gần như không giảm được dung lượng.
+  const buffer = await workbook.xlsx.writeBuffer({
+    zip: { compression: 'DEFLATE', compressionOptions: { level: 1 } },
+  });
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });

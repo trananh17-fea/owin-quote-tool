@@ -13,13 +13,20 @@ import PizZip from 'pizzip';
 import type { CalculatedQuote, ProductRecord, ProductUnit } from '@/types/models';
 import { downloadBlob } from '@/lib/browser/download';
 import { formatVndNumber } from '@/lib/format/currency';
-import { getImageDataUrlByPath } from '@/lib/media/imagePaths';
+import { DEFAULT_LOGO_PATH } from '@/lib/media/imagePaths';
+import {
+  blobToDataUrl,
+  EXPORT_IMAGE_MAX_EDGE,
+  loadExportImage,
+  rescaleExportImage,
+} from '@/features/export/exportImage';
 import { resolveItemImage } from '@/lib/media/itemImageResolver';
 import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWithConcurrency';
 import { buildCatalogueBlockRows, type CatalogueBlockRow } from '@/lib/catalogue/catalogueRows';
 
 import quoteTemplateUrl from '@/assets/templates/Template_Bao_Gia.docx?url';
 import catalogueTemplateUrl from '@/assets/templates/Template_Bang_Gia.docx?url';
+import { trackExport } from '@/features/export/exportTiming';
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -77,10 +84,22 @@ type ImageEmbedder = {
   warm: (sources: ReadonlyArray<ImageSource | null | undefined>) => Promise<void>;
 };
 
+/** Bytes template đọc một lần cho cả phiên; mỗi lần xuất chỉ mở lại gói zip. */
+const templateBytes = new Map<string, Promise<ArrayBuffer>>();
+
 async function fetchTemplateZip(url: string): Promise<PizZip> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Không tải được template: ${url}`);
-  return new PizZip(await response.arrayBuffer());
+  let pending = templateBytes.get(url);
+  if (!pending) {
+    pending = (async () => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Không tải được template: ${url}`);
+      return response.arrayBuffer();
+    })();
+    templateBytes.set(url, pending);
+    void pending.catch(() => templateBytes.delete(url));
+  }
+  // PizZip ghi đè nội dung nên mỗi lần xuất cần một bản dựng riêng.
+  return new PizZip((await pending).slice(0));
 }
 
 function generateDocxBlob(zip: PizZip): Blob {
@@ -204,29 +223,11 @@ function rowMatches(documentXml: string): XmlRowMatch[] {
   }));
 }
 
-function dataUrlToUint8Array(dataUrl: string): Uint8Array {
-  const comma = dataUrl.indexOf(',');
-  const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return bytes;
-}
-
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}
-
-function imageInfoFromDataUrl(dataUrl: string): { ext: string; contentType: string } {
-  const contentType = dataUrl.match(/^data:([^;]+);base64,/i)?.[1]?.toLowerCase() || 'image/png';
-  if (contentType.includes('jpeg') || contentType.includes('jpg')) return { ext: 'jpg', contentType: 'image/jpeg' };
-  if (contentType.includes('webp')) return { ext: 'webp', contentType: 'image/webp' };
-  if (contentType.includes('gif')) return { ext: 'gif', contentType: 'image/gif' };
+function imageInfoFromType(type: string): { ext: string; contentType: string } {
+  const value = (type || '').toLowerCase();
+  if (value.includes('jpeg') || value.includes('jpg')) return { ext: 'jpg', contentType: 'image/jpeg' };
+  if (value.includes('webp')) return { ext: 'webp', contentType: 'image/webp' };
+  if (value.includes('gif')) return { ext: 'gif', contentType: 'image/gif' };
   return { ext: 'png', contentType: 'image/png' };
 }
 
@@ -296,38 +297,64 @@ function createImageEmbedder(zip: PizZip): ImageEmbedder {
   let nextImageId = 1;
 
   type MediaEntry = { relId: string; imageName: string; natural: { w: number; h: number } | null };
+  type LoadedImage = { bytes: Uint8Array; type: string; natural: { w: number; h: number } | null };
   /**
    * Ảnh đã nằm trong gói, theo đúng nguồn đã yêu cầu. Báo giá / bảng giá thường
    * lặp cùng một tấm ảnh ở nhiều dòng; trước đây mỗi dòng tải lại, giải mã lại
    * và ghi thêm một file vào .docx, khiến file phình to và nén rất chậm.
    */
   const media = new Map<ImageSource, MediaEntry | null>();
-  /** Data URL đang tải, để bước tải trước và bước nhúng dùng chung một lượt. */
-  const pendingDataUrls = new Map<string, Promise<string | null>>();
+  /** Ảnh đang tải, để bước tải trước và bước nhúng dùng chung một lượt. */
+  const pending = new Map<string, Promise<LoadedImage | null>>();
 
-  const dataUrlFor = (source: ImageSource, fallbackLogo: boolean): Promise<string | null> => {
-    if (source instanceof Blob) return blobToDataUrl(source);
-    const key = `${fallbackLogo}|${source}`;
-    const pending = pendingDataUrls.get(key);
-    if (pending) return pending;
-    const request = getImageDataUrlByPath(source, { fallbackLogo });
-    pendingDataUrls.set(key, request);
+  /**
+   * Bytes đi thẳng từ blob vào gói .docx.
+   *
+   * Vòng blob → base64 → bytes trước đây nhân đôi khối lượng chuỗi cho mỗi tấm
+   * ảnh; với bảng giá vài trăm dòng là vài MB base64 dựng rồi bỏ. Chỉ khi chưa
+   * biết kích thước thật mới phải dựng data URL để đo.
+   */
+  const measured = async (blob: Blob, width: number, height: number): Promise<LoadedImage> => {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const type = blob.type || 'image/png';
+    if (width && height) return { bytes, type, natural: { w: width, h: height } };
+    return { bytes, type, natural: await naturalSizeOfDataUrl(await blobToDataUrl(blob)) };
+  };
+
+  const loadFor = (source: ImageSource, fallbackLogo: boolean): Promise<LoadedImage | null> => {
+    if (source instanceof Blob) {
+      return (async () => {
+        const rescaled = await rescaleExportImage(source, EXPORT_IMAGE_MAX_EDGE);
+        return measured(rescaled?.blob ?? source, rescaled?.width ?? 0, rescaled?.height ?? 0);
+      })();
+    }
+    // Thiếu đường dẫn mà vẫn muốn có ảnh → logo OWIN, như hành vi cũ.
+    const path = source || (fallbackLogo ? DEFAULT_LOGO_PATH : null);
+    if (!path) return Promise.resolve(null);
+    const key = `${fallbackLogo}|${path}`;
+    const inflight = pending.get(key);
+    if (inflight) return inflight;
+    const request = (async () => {
+      const image = await loadExportImage(path, { maxEdge: EXPORT_IMAGE_MAX_EDGE, fallbackLogo });
+      return image ? measured(image.blob, image.width, image.height) : null;
+    })();
+    pending.set(key, request);
     return request;
   };
 
   const addMedia = async (source: ImageSource, fallbackLogo: boolean): Promise<MediaEntry | null> => {
     if (media.has(source)) return media.get(source) ?? null;
-    const dataUrl = await dataUrlFor(source, fallbackLogo);
-    if (!dataUrl) {
+    const loaded = await loadFor(source, fallbackLogo);
+    if (!loaded) {
       media.set(source, null);
       return null;
     }
-    const { ext, contentType } = imageInfoFromDataUrl(dataUrl);
+    const { bytes, type, natural } = loaded;
+    const { ext, contentType } = imageInfoFromType(type);
     const imageName = `owin-browser-${nextImageId++}.${ext}`;
     const relId = `rId${nextRelId++}`;
-    const natural = await naturalSizeOfDataUrl(dataUrl);
 
-    zip.file(`word/media/${imageName}`, dataUrlToUint8Array(dataUrl));
+    zip.file(`word/media/${imageName}`, bytes);
     ensureContentType(zip, ext, contentType);
     relsXml = relsXml.replace(
       '</Relationships>',
@@ -374,7 +401,7 @@ function createImageEmbedder(zip: PizZip): ImageEmbedder {
   // rId / media không đổi giữa các lần xuất.
   const warm: ImageEmbedder['warm'] = async (sources) => {
     const strings = [...new Set(sources.filter((source): source is string => typeof source === 'string'))];
-    await mapWithConcurrency(strings, DEFAULT_IMAGE_CONCURRENCY, (source) => dataUrlFor(source, true));
+    await mapWithConcurrency(strings, DEFAULT_IMAGE_CONCURRENCY, (source) => loadFor(source, true));
   };
 
   return { embed, warm };
@@ -975,8 +1002,10 @@ export async function renderQuoteDocumentXml(zip: PizZip, quote: CalculatedQuote
     quote.items,
     DEFAULT_IMAGE_CONCURRENCY,
     async (item) => {
-      const resolved = await resolveItemImage(item, products);
-      return resolved.blob || resolved.path || item.image || item.coverImagePath;
+      // Chỉ cần đường dẫn: từ đường dẫn mới lấy được bản rút gọn, còn tải ảnh
+      // master ở đây là tải thừa nguyên bản nặng nhất rồi bỏ đi.
+      const resolved = await resolveItemImage(item, products, { loadBlob: false });
+      return resolved.path || item.image || item.coverImagePath;
     },
   );
   await embedImage.warm(resolvedSources);
@@ -1051,7 +1080,11 @@ export function buildQuoteWordData(quote: CalculatedQuote): Record<string, strin
   };
 }
 
-export async function exportQuoteWord(quote: CalculatedQuote, quoteCode: string, products: ProductRecord[] = []): Promise<string> {
+export function exportQuoteWord(quote: CalculatedQuote, quoteCode: string, products: ProductRecord[] = []): Promise<string> {
+  return trackExport('Báo giá Word', () => buildQuoteWord(quote, quoteCode, products));
+}
+
+async function buildQuoteWord(quote: CalculatedQuote, quoteCode: string, products: ProductRecord[] = []): Promise<string> {
   const zip = await fetchTemplateZip(quoteTemplateUrl);
   const documentXml = await renderQuoteDocumentXml(zip, quote, products);
   zip.file('word/document.xml', documentXml);
@@ -1565,7 +1598,11 @@ export async function applyCatalogueReadOnlyProtection(
   zip.file(settingsPath, next);
 }
 
-export async function exportCatalogueWord(products: ProductRecord[]): Promise<string> {
+export function exportCatalogueWord(products: ProductRecord[]): Promise<string> {
+  return trackExport('Bảng giá Word', () => buildCatalogueWord(products));
+}
+
+async function buildCatalogueWord(products: ProductRecord[]): Promise<string> {
   const zip = await fetchTemplateZip(catalogueTemplateUrl);
   const documentXml = await renderCatalogueDocumentXml(zip, products);
   zip.file('word/document.xml', documentXml);
