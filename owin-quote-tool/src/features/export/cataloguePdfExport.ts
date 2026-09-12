@@ -11,6 +11,7 @@ import { ensureVietnamesePdfFonts, PDF_FONT_FAMILY } from '@/features/export/pdf
 import { lightPdfImageDataUrl } from '@/features/export/pdfImage';
 import { cellImageMaxBox, containFitSize } from '@/features/export/containFit';
 import { downloadBlob } from '@/lib/browser/download';
+import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWithConcurrency';
 import { formatVndNumber } from '@/lib/format/currency';
 
 const TITLE = 'BẢNG GIÁ NHÔM OWIN LẮP ĐẶT HOÀN THIỆN';
@@ -157,10 +158,16 @@ export async function exportCataloguePdf(products: ProductRecord[]): Promise<str
       image.src = dataUrl;
     });
 
-  for (const block of blocks) {
-    if (block.kind !== 'product') continue;
-    const path = block.product.imagePath;
-    if (!path || imageCache.has(path)) continue;
+  // Mỗi ảnh xử lý đúng một lần, và chạy song song có giới hạn: bảng giá vài trăm
+  // dòng trước đây phải chờ từng lượt tải nối đuôi nhau mới dựng được trang.
+  const imagePaths = [
+    ...new Set(
+      blocks.flatMap((block) =>
+        block.kind === 'product' && block.product.imagePath ? [block.product.imagePath] : [],
+      ),
+    ),
+  ];
+  await mapWithConcurrency(imagePaths, DEFAULT_IMAGE_CONCURRENCY, async (path) => {
     // Master + higher maxEdge so 95% cell fill stays sharp (not 160px thumb).
     const dataUrl = await lightPdfImageDataUrl(path, {
       preferThumb: false,
@@ -169,11 +176,11 @@ export async function exportCataloguePdf(products: ProductRecord[]): Promise<str
     });
     if (!dataUrl) {
       imageCache.set(path, null);
-      continue;
+      return;
     }
     const natural = await loadNaturalSize(dataUrl);
     imageCache.set(path, { dataUrl, naturalW: natural.w, naturalH: natural.h });
-  }
+  });
 
   let y = MARGIN;
   let headerDrawn = false;

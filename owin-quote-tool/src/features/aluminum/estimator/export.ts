@@ -7,6 +7,7 @@ import {
   type AluminumPrintSystemSection,
 } from '@/features/aluminum/estimator/print/index';
 import { downloadBlob } from '@/lib/browser/download';
+import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWithConcurrency';
 import { withBasePath } from '@/lib/media/imagePaths';
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -382,13 +383,21 @@ async function buildImagePack(model: AluminumPrintModel): Promise<DocxImagePack>
     ),
   );
 
-  // Sequential so rId / file names stay deterministic and unique.
-  for (const path of uniquePaths) {
+  // Tải + đo ảnh song song có giới hạn; trước đây mỗi cây nhôm phải chờ xong
+  // lượt của mình mới sang cây kế.
+  const loaded = await mapWithConcurrency(uniquePaths, DEFAULT_IMAGE_CONCURRENCY, async (path) => {
     const dataUrl = await loadProfileDataUrl(path);
-    if (!dataUrl) {
+    return dataUrl ? { dataUrl, size: await naturalSize(dataUrl) } : null;
+  });
+
+  // Ghép XML tuần tự để rId / tên file vẫn xác định và không trùng.
+  for (const [index, path] of uniquePaths.entries()) {
+    const image = loaded[index];
+    if (!image) {
       drawings.set(path, null);
       continue;
     }
+    const { dataUrl, size } = image;
     const { ext, contentType } = imageInfoFromDataUrl(dataUrl);
     contentTypes.set(ext, contentType);
     const fileName = `profile-${nextImg++}.${ext}`;
@@ -398,7 +407,6 @@ async function buildImagePack(model: AluminumPrintModel): Promise<DocxImagePack>
     rels.push(
       `<Relationship Id="${relId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${fileName}"/>`,
     );
-    const size = await naturalSize(dataUrl);
     const { cx, cy } = fitToBox(size.w, size.h, DOCX_IMG_MAX_CX, DOCX_IMG_MAX_CY);
     drawings.set(
       path,

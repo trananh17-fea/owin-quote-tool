@@ -15,6 +15,7 @@ import { ProductThumb } from '@/components/ProductThumb';
 import { formatShortDate, statusLabel } from '@/features/quote/quoteFormat';
 import { TotalLine } from '@/features/quote/QuoteFormPrimitives';
 import { QuotePrintDocument } from '@/features/quote/QuotePrintDocument';
+import { prefetchQuoteExportModules } from '@/features/export/prefetchExportModules';
 
 /** Màn chi tiết một báo giá đã lưu: thông tin, tổng quan, hạng mục snapshot và bảng in ẩn. */
 export function QuoteDetailPanel({
@@ -108,6 +109,8 @@ export function QuoteDetailPanel({
               disabled={saving}
               aria-haspopup="menu"
               aria-expanded={exportOpen}
+              onPointerEnter={prefetchQuoteExportModules}
+              onFocus={prefetchQuoteExportModules}
               onClick={() => setExportOpen((open) => !open)}
             >
               <FileDown size={16} aria-hidden="true" />

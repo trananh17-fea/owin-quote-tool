@@ -15,12 +15,36 @@ export type LightPdfImageOptions = {
   quality?: number;
 };
 
+/**
+ * Ảnh đã hạ kích thước, nhớ theo (đường dẫn + tuỳ chọn).
+ *
+ * Một lần xuất PDF có thể lặp lại cùng một ảnh ở nhiều dòng, và người dùng
+ * thường bấm xuất lại ngay sau đó; giải mã + vẽ lại canvas mỗi lần là phần chờ
+ * thấy rõ nhất sau khâu tải mạng.
+ */
+const processedCache = new Map<string, Promise<string | null>>();
+
 /** Load + optionally downscale for PDF. Aspect ratio preserved for contain-fit later. */
 export async function lightPdfImageDataUrl(
   source: string | null | undefined,
   options: LightPdfImageOptions = {},
 ): Promise<string | null> {
   if (!source) return null;
+  const cacheKey = `${source}|${options.preferThumb !== false}|${options.maxEdge ?? 160}|${options.quality ?? 0.72}`;
+  const cached = processedCache.get(cacheKey);
+  if (cached) return cached;
+  const request = loadLightPdfImageDataUrl(source, options);
+  processedCache.set(cacheKey, request);
+  request.then((value) => {
+    if (value === null) processedCache.delete(cacheKey);
+  }).catch(() => processedCache.delete(cacheKey));
+  return request;
+}
+
+async function loadLightPdfImageDataUrl(
+  source: string,
+  options: LightPdfImageOptions,
+): Promise<string | null> {
   const preferThumb = options.preferThumb !== false;
   const maxEdge = options.maxEdge ?? 160;
   const quality = options.quality ?? 0.72;

@@ -28,7 +28,7 @@
   gap: 16px;
   min-height: 72px;
   padding: 11px clamp(16px, 2.2vw, 28px);
-  padding-top: max(11px, env(safe-area-inset-top));
+  padding-top: max(11px, env(safe-area-inset-top, 0px));
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(249, 250, 253, 0.78));
   border-bottom: 1px solid rgba(80, 91, 112, 0.14);
@@ -235,7 +235,7 @@
       'nav nav nav';
     gap: 6px 8px;
     min-height: 0;
-    padding: max(6px, env(safe-area-inset-top)) 10px 8px;
+    padding: max(6px, env(safe-area-inset-top, 0px)) 10px 8px;
     background: rgba(250, 251, 253, 0.9);
   }
   .tool-brand { grid-area: brand; padding: 2px; }

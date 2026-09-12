@@ -3,6 +3,7 @@ import type { CalculatedQuote, CalculatedQuoteItem, ProductRecord, ProductUnit }
 import { resolveItemImage } from '@/lib/media/itemImageResolver';
 import { toExcelImage } from '@/features/export/excelImage';
 import { downloadBlob } from '@/lib/browser/download';
+import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWithConcurrency';
 
 type QuoteExcelRowKind = 'dimension' | 'accessory';
 
@@ -311,6 +312,33 @@ export async function exportQuoteExcel(quote: CalculatedQuote, quoteCode: string
   const mergeRanges: Array<{ startRow: number; endRow: number; column: number; vertical: 'middle' | 'top' }> = [];
   const tableRows = buildQuoteExcelRows(quote);
 
+  // Ảnh tải song song có giới hạn và nhúng một lần cho mỗi sản phẩm; trước đây
+  // mỗi dòng chờ xong ảnh của mình mới sang dòng kế nên báo giá nhiều dòng phải
+  // đợi rất lâu mới bật hộp tải về.
+  const itemsWithImage = new Map<string, CalculatedQuoteItem>();
+  for (const row of tableRows) {
+    if (row.rowType !== 'dimension' || !row.imageLabel || itemsWithImage.has(row.productCode)) continue;
+    const item = quote.items.find(
+      (candidate) =>
+        candidate.quoteItemCode === row.productCode || candidate.productCode === row.productCode,
+    );
+    if (item) itemsWithImage.set(row.productCode, item);
+  }
+  const imageRowCodes = [...itemsWithImage.keys()];
+  const imageIdByCode = new Map<string, number>();
+  const loadedImages = await mapWithConcurrency(imageRowCodes, DEFAULT_IMAGE_CONCURRENCY, async (code) => {
+    const resolved = await resolveItemImage(itemsWithImage.get(code)!, products, { loadBlob: true });
+    try {
+      return resolved.blob ? await toExcelImage(resolved.blob) : null;
+    } finally {
+      if (resolved.revoke && resolved.url) URL.revokeObjectURL(resolved.url);
+    }
+  });
+  imageRowCodes.forEach((code, index) => {
+    const image = loadedImages[index];
+    if (image) imageIdByCode.set(code, workbook.addImage(image));
+  });
+
   for (const row of tableRows) {
     const excelRow = sheet.addRow([
       row.stt,
@@ -326,17 +354,9 @@ export async function exportQuoteExcel(quote: CalculatedQuote, quoteCode: string
       row.lineTotalVnd,
     ]);
     excelRow.height = Math.max(row.imageLabel ? 64 : 24, estimateHeight(row.description) / (row.descriptionRowSpan || 1));
-    const item = row.rowType === 'dimension'
-      ? quote.items.find((candidate) => candidate.quoteItemCode === row.productCode || candidate.productCode === row.productCode)
-      : undefined;
-    if (item && row.imageLabel) {
-      const resolved = await resolveItemImage(item, products, { loadBlob: true });
-      if (resolved.blob) {
-        const image = await toExcelImage(resolved.blob);
-        const imageId = workbook.addImage(image);
-        sheet.addImage(imageId, { tl: { col: 2.1, row: excelRow.number - 1 + 0.1 }, ext: { width: 92, height: 58 } });
-      }
-      if (resolved.revoke && resolved.url) URL.revokeObjectURL(resolved.url);
+    const imageId = row.rowType === 'dimension' && row.imageLabel ? imageIdByCode.get(row.productCode) : undefined;
+    if (imageId !== undefined) {
+      sheet.addImage(imageId, { tl: { col: 2.1, row: excelRow.number - 1 + 0.1 }, ext: { width: 92, height: 58 } });
     }
 
     for (let colIndex = 1; colIndex <= 11; colIndex += 1) {

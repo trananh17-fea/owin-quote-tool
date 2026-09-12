@@ -60,8 +60,14 @@
   --fs-2xl: 1.5rem; /* 24px — tổng tiền nổi bật */
   --fs-title: clamp(1.5rem, 1.25rem + 0.6vw, 1.75rem); /* 24–28px — tiêu đề màn */
   --fs-display: 2rem; /* 32px — chỉ dùng ở màn đăng nhập */
-  /* Một family duy nhất cho toàn bộ UI, đủ glyph tiếng Việt. */
-  --font-sans: 'Roboto', sans-serif;
+  /* Một family duy nhất cho toàn bộ UI, đủ glyph tiếng Việt.
+   * Roboto tải từ Google Fonts nên có thể bị chặn (Firefox/Zen bật chống theo
+   * dõi hoặc chặn quảng cáo). Khi đó `sans-serif` mặc định trên Linux là DejaVu
+   * Sans — rộng hơn Roboto nhiều, làm vỡ các control cao cố định. Liệt kê sẵn
+   * font hệ thống có đủ dấu tiếng Việt và metric gần Roboto trước khi rơi về
+   * `sans-serif`. */
+  --font-sans: 'Roboto', 'Noto Sans', 'Segoe UI', system-ui, 'Liberation Sans',
+    Arial, sans-serif;
   --track-tight: -0.02em;
 
   /* ─── Spacing / chiều cao control ─── */

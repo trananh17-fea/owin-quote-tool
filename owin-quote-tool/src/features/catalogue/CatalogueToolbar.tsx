@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, FileDown, ListFilter } from "lucide-react";
+import { prefetchCatalogueExportModules } from "@/features/export/prefetchExportModules";
 
 /**
  * Header của tab Bảng giá. Dùng đúng bố cục heading của tab Sản phẩm và Báo giá
@@ -149,7 +150,11 @@ export function CatalogueToolbar({
         </div>
 
         {/* Nhóm nút xuất file */}
-        <div className="catalogue-toolbar-actions">
+        <div
+          className="catalogue-toolbar-actions"
+          onPointerEnter={prefetchCatalogueExportModules}
+          onFocus={prefetchCatalogueExportModules}
+        >
           <button
             className="btn btn-ghost"
             disabled={shownCount === 0 || exporting}

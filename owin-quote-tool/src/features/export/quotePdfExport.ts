@@ -6,6 +6,7 @@ import { jsPDF } from 'jspdf';
 import type { CalculatedQuote, CalculatedQuoteItem, ProductRecord, ProductUnit } from '@/types/models';
 import { resolveItemImage } from '@/lib/media/itemImageResolver';
 import { downloadBlob } from '@/lib/browser/download';
+import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWithConcurrency';
 import { formatVndNumber } from '@/lib/format/currency';
 import { ensureVietnamesePdfFonts, PDF_FONT_FAMILY } from '@/features/export/pdfFonts';
 import { lightPdfImageDataUrl } from '@/features/export/pdfImage';
@@ -272,15 +273,20 @@ export async function exportQuotePdf(
 
   // Resolve product images once (thumb → light JPEG). Key matches PdfRow.imageKey.
   const imageCache = new Map<string, string | null>();
+  // Một lượt cho mỗi ảnh khác nhau, chạy song song có giới hạn thay vì nối đuôi
+  // theo từng dòng báo giá.
+  const pendingImages = new Map<string, (typeof quote.items)[number]>();
   for (const [itemIndex, item] of quote.items.entries()) {
     const key = String(
       item.image || item.coverImagePath || item.imageReference || item.quoteItemCode || item.productCode || itemIndex,
     );
-    if (imageCache.has(key)) continue;
+    if (!pendingImages.has(key)) pendingImages.set(key, item);
+  }
+  await mapWithConcurrency([...pendingImages], DEFAULT_IMAGE_CONCURRENCY, async ([key, item]) => {
     const resolved = await resolveItemImage(item, products, { loadBlob: false });
     const path = resolved.path || item.image || item.coverImagePath || item.imageReference || null;
     imageCache.set(key, await lightPdfImageDataUrl(path));
-  }
+  });
 
   let y = MARGIN;
 

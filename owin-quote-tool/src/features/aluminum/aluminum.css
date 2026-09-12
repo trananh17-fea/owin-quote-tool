@@ -671,8 +671,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
-    max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  padding: max(20px, env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px))
+    max(20px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
   background: rgba(28, 28, 40, 0.48);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);

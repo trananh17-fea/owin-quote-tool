@@ -4,6 +4,7 @@ import { resolveItemImage } from '@/lib/media/itemImageResolver';
 import { toExcelImage } from '@/features/export/excelImage';
 import { buildCatalogueBlockRows } from '@/lib/catalogue/catalogueRows';
 import { downloadBlob } from '@/lib/browser/download';
+import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWithConcurrency';
 
 const HEADERS = ['STT', 'Hình ảnh', 'Mô tả chi tiết', 'DV', 'Rộng', 'Cao', 'KL', 'Đơn giá', 'Thành tiền', 'Tổng tiền'];
 
@@ -57,7 +58,36 @@ export async function exportCatalogueExcel(products: ProductRecord[]): Promise<v
     cell.border = styleBorder();
   });
 
-  for (const row of buildCatalogueBlockRows(products)) {
+  const blockRows = buildCatalogueBlockRows(products);
+  const productByCode = new Map(products.map((product) => [product.code, product]));
+
+  // Tải + chuyển đổi toàn bộ ảnh trước, song song có giới hạn. Trước đây mỗi
+  // dòng phải chờ xong ảnh của mình rồi mới sang dòng kế, nên bảng giá dài mất
+  // hàng chục giây mới hiện hộp tải về. Mỗi mã sản phẩm chỉ nhúng một ảnh.
+  const imageCodes = [
+    ...new Set(
+      blockRows.flatMap((row) =>
+        row.rowType === 'product' && row.imagePath && productByCode.has(row.productCode)
+          ? [row.productCode]
+          : [],
+      ),
+    ),
+  ];
+  const imageIdByCode = new Map<string, number>();
+  const loadedImages = await mapWithConcurrency(imageCodes, DEFAULT_IMAGE_CONCURRENCY, async (code) => {
+    const resolved = await resolveItemImage(productByCode.get(code)!, products, { loadBlob: true });
+    try {
+      return resolved.blob ? await toExcelImage(resolved.blob) : null;
+    } finally {
+      if (resolved.revoke && resolved.url) URL.revokeObjectURL(resolved.url);
+    }
+  });
+  imageCodes.forEach((code, index) => {
+    const image = loadedImages[index];
+    if (image) imageIdByCode.set(code, workbook.addImage(image));
+  });
+
+  for (const row of blockRows) {
     if (row.rowType === 'category') {
       const categoryRow = sheet.addRow([row.categoryName]);
       sheet.mergeCells(categoryRow.number, 1, categoryRow.number, 10);
@@ -80,15 +110,9 @@ export async function exportCatalogueExcel(products: ProductRecord[]): Promise<v
       money(row.completedTotalVnd),
     ]);
     excelRow.height = Math.max(24, row.descriptionLines.length * 18);
-    const product = products.find((candidate) => candidate.code === row.productCode);
-    if (product && row.imagePath) {
-      const resolved = await resolveItemImage(product, products, { loadBlob: true });
-      if (resolved.blob) {
-        const image = await toExcelImage(resolved.blob);
-        const imageId = workbook.addImage(image);
-        sheet.addImage(imageId, { tl: { col: 1.1, row: excelRow.number - 1 + 0.1 }, ext: { width: 105, height: 58 } });
-      }
-      if (resolved.revoke && resolved.url) URL.revokeObjectURL(resolved.url);
+    const imageId = imageIdByCode.get(row.productCode);
+    if (imageId !== undefined && row.imagePath) {
+      sheet.addImage(imageId, { tl: { col: 1.1, row: excelRow.number - 1 + 0.1 }, ext: { width: 105, height: 58 } });
     }
     excelRow.eachCell((cell, columnNumber) => {
       cell.border = styleBorder();

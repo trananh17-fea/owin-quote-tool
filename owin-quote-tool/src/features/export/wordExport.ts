@@ -15,6 +15,7 @@ import { downloadBlob } from '@/lib/browser/download';
 import { formatVndNumber } from '@/lib/format/currency';
 import { getImageDataUrlByPath } from '@/lib/media/imagePaths';
 import { resolveItemImage } from '@/lib/media/itemImageResolver';
+import { DEFAULT_IMAGE_CONCURRENCY, mapWithConcurrency } from '@/lib/async/mapWithConcurrency';
 import { buildCatalogueBlockRows, type CatalogueBlockRow } from '@/lib/catalogue/catalogueRows';
 
 import quoteTemplateUrl from '@/assets/templates/Template_Bao_Gia.docx?url';
@@ -69,7 +70,12 @@ type ImageEmbedOptions = {
   fallbackLogo?: boolean;
 };
 type ImageSource = string | Blob | null | undefined;
-type ImageEmbedder = (source: ImageSource, options?: ImageEmbedOptions) => Promise<string | null>;
+type ImageEmbedder = {
+  /** Dựng XML ảnh cho một ô. Cùng một ảnh chỉ nhúng một lần vào gói .docx. */
+  embed: (source: ImageSource, options?: ImageEmbedOptions) => Promise<string | null>;
+  /** Tải trước (song song) các ảnh sắp dùng để vòng dựng bảng không phải chờ mạng. */
+  warm: (sources: ReadonlyArray<ImageSource | null | undefined>) => Promise<void>;
+};
 
 async function fetchTemplateZip(url: string): Promise<PizZip> {
   const response = await fetch(url);
@@ -251,14 +257,14 @@ export function fitImageDimensionsToEmuBox(
   return { cx: Math.max(1, cx), cy: Math.max(1, cy) };
 }
 
-async function fitImageDataUrlToEmuBox(
-  dataUrl: string,
-  maxCx: number,
-  maxCy: number,
-): Promise<{ cx: number; cy: number }> {
-  const natural = await new Promise<{ w: number; h: number }>((resolve) => {
+/**
+ * Kích thước thật của ảnh, đo đúng một lần cho mỗi ảnh.
+ * `null` khi không có DOM (test Node) — nơi gọi sẽ dùng đúng khung tối đa như cũ.
+ */
+function naturalSizeOfDataUrl(dataUrl: string): Promise<{ w: number; h: number } | null> {
+  return new Promise((resolve) => {
     if (typeof Image === 'undefined') {
-      resolve({ w: maxCx, h: maxCy });
+      resolve(null);
       return;
     }
     const image = new Image();
@@ -266,7 +272,6 @@ async function fitImageDataUrlToEmuBox(
     image.onerror = () => resolve({ w: 1, h: 1 });
     image.src = dataUrl;
   });
-  return fitImageDimensionsToEmuBox(natural.w, natural.h, maxCx, maxCy);
 }
 
 function ensureContentType(zip: PizZip, ext: string, contentType: string): void {
@@ -290,24 +295,37 @@ function createImageEmbedder(zip: PizZip): ImageEmbedder {
   let nextDocPrId = 5000;
   let nextImageId = 1;
 
-  return async (source, options = {}) => {
-    const fallbackLogo = options.fallbackLogo !== false;
-    const dataUrl = source instanceof Blob
-      ? await blobToDataUrl(source)
-      : await getImageDataUrlByPath(source, { fallbackLogo });
-    if (!dataUrl) return null;
+  type MediaEntry = { relId: string; imageName: string; natural: { w: number; h: number } | null };
+  /**
+   * Ảnh đã nằm trong gói, theo đúng nguồn đã yêu cầu. Báo giá / bảng giá thường
+   * lặp cùng một tấm ảnh ở nhiều dòng; trước đây mỗi dòng tải lại, giải mã lại
+   * và ghi thêm một file vào .docx, khiến file phình to và nén rất chậm.
+   */
+  const media = new Map<ImageSource, MediaEntry | null>();
+  /** Data URL đang tải, để bước tải trước và bước nhúng dùng chung một lượt. */
+  const pendingDataUrls = new Map<string, Promise<string | null>>();
+
+  const dataUrlFor = (source: ImageSource, fallbackLogo: boolean): Promise<string | null> => {
+    if (source instanceof Blob) return blobToDataUrl(source);
+    const key = `${fallbackLogo}|${source}`;
+    const pending = pendingDataUrls.get(key);
+    if (pending) return pending;
+    const request = getImageDataUrlByPath(source, { fallbackLogo });
+    pendingDataUrls.set(key, request);
+    return request;
+  };
+
+  const addMedia = async (source: ImageSource, fallbackLogo: boolean): Promise<MediaEntry | null> => {
+    if (media.has(source)) return media.get(source) ?? null;
+    const dataUrl = await dataUrlFor(source, fallbackLogo);
+    if (!dataUrl) {
+      media.set(source, null);
+      return null;
+    }
     const { ext, contentType } = imageInfoFromDataUrl(dataUrl);
     const imageName = `owin-browser-${nextImageId++}.${ext}`;
     const relId = `rId${nextRelId++}`;
-    const docPrId = nextDocPrId++;
-    const maxCx = options.maxCx ?? CATALOGUE_IMG_MAX_CX;
-    const maxCy = options.maxCy ?? CATALOGUE_IMG_DEFAULT_MAX_CY;
-    const { cx, cy } = await fitImageDataUrlToEmuBox(dataUrl, maxCx, maxCy);
-    const geometry = options.geometry ?? 'rect';
-    const geomXml =
-      geometry === 'roundRect'
-        ? `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val ${IMG_CORNER_ADJ}"/></a:avLst></a:prstGeom>`
-        : `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`;
+    const natural = await naturalSizeOfDataUrl(dataUrl);
 
     zip.file(`word/media/${imageName}`, dataUrlToUint8Array(dataUrl));
     ensureContentType(zip, ext, contentType);
@@ -316,6 +334,25 @@ function createImageEmbedder(zip: PizZip): ImageEmbedder {
       `<Relationship Id="${relId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${imageName}"/></Relationships>`,
     );
     zip.file('word/_rels/document.xml.rels', relsXml);
+
+    const entry: MediaEntry = { relId, imageName, natural };
+    media.set(source, entry);
+    return entry;
+  };
+
+  const embed: ImageEmbedder['embed'] = async (source, options = {}) => {
+    const entry = await addMedia(source, options.fallbackLogo !== false);
+    if (!entry) return null;
+    const { relId, imageName, natural } = entry;
+    const docPrId = nextDocPrId++;
+    const maxCx = options.maxCx ?? CATALOGUE_IMG_MAX_CX;
+    const maxCy = options.maxCy ?? CATALOGUE_IMG_DEFAULT_MAX_CY;
+    const { cx, cy } = fitImageDimensionsToEmuBox(natural?.w ?? maxCx, natural?.h ?? maxCy, maxCx, maxCy);
+    const geometry = options.geometry ?? 'rect';
+    const geomXml =
+      geometry === 'roundRect'
+        ? `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val ${IMG_CORNER_ADJ}"/></a:avLst></a:prstGeom>`
+        : `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`;
 
     return (
       `<w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ` +
@@ -332,6 +369,15 @@ function createImageEmbedder(zip: PizZip): ImageEmbedder {
       `</pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>`
     );
   };
+
+  // Chỉ hâm nóng dữ liệu ảnh; việc ghi vào gói .docx vẫn tuần tự để thứ tự
+  // rId / media không đổi giữa các lần xuất.
+  const warm: ImageEmbedder['warm'] = async (sources) => {
+    const strings = [...new Set(sources.filter((source): source is string => typeof source === 'string'))];
+    await mapWithConcurrency(strings, DEFAULT_IMAGE_CONCURRENCY, (source) => dataUrlFor(source, true));
+  };
+
+  return { embed, warm };
 }
 
 function fillImageToken(rowXml: string, token: string, drawingXml: string | null): string {
@@ -922,6 +968,19 @@ export async function renderQuoteDocumentXml(zip: PizZip, quote: CalculatedQuote
   const rows: string[] = [];
   let previousGroup = '';
 
+  // Dò nguồn ảnh của mọi dòng rồi tải trước song song. Trước đây mỗi sản phẩm
+  // phải chờ xong lượt tải của mình mới dựng được dòng kế, nên báo giá dài mất
+  // rất lâu mới bật hộp tải về.
+  const resolvedSources = await mapWithConcurrency(
+    quote.items,
+    DEFAULT_IMAGE_CONCURRENCY,
+    async (item) => {
+      const resolved = await resolveItemImage(item, products);
+      return resolved.blob || resolved.path || item.image || item.coverImagePath;
+    },
+  );
+  await embedImage.warm(resolvedSources);
+
   for (const [itemIndex, item] of quote.items.entries()) {
     const groupName = item.groupName || item.category || '';
     if (templates.group && groupName && groupName !== previousGroup) {
@@ -940,8 +999,7 @@ export async function renderQuoteDocumentXml(zip: PizZip, quote: CalculatedQuote
       QUOTE_IMG_PAGE_SAFE_MAX_CY,
       Math.max(Math.round(QUOTE_IMG_MAX_CX * 0.9), Math.round(blockHeightEmu * 0.95)),
     );
-    const resolvedImage = await resolveItemImage(item, products);
-    const imageXml = await embedImage(resolvedImage.blob || resolvedImage.path || item.image || item.coverImagePath, {
+    const imageXml = await embedImage.embed(resolvedSources[itemIndex], {
       maxCx: QUOTE_IMG_MAX_CX,
       maxCy: imageMaxCy,
       geometry: 'roundRect',
@@ -1167,6 +1225,12 @@ export async function renderCatalogueDocumentXml(zip: PizZip, products: ProductR
   const contentLayout = buildCatalogueContentLayout(rows);
   const embedImage = createImageEmbedder(zip);
   const imageCache = new Map<string, string | null>();
+  // Tải trước song song; vòng dựng bảng bên dưới chỉ còn ghép XML.
+  await embedImage.warm(
+    rows.map((row) =>
+      row.rowType === 'product' ? row.imagePath || 'owin-user-assets/logo/logo.webp' : null,
+    ),
+  );
   // Block model matched to REAL REF export (exportCatalogueV8ToDocx):
   // - category = its own cantSplit block
   // - product + accessories = one keepNext block (image not orphaned from accessories)
@@ -1190,7 +1254,7 @@ export async function renderCatalogueDocumentXml(zip: PizZip, products: ProductR
       const imageKey = `${row.imagePath || `__logo__${row.productCode}`}::${imageMaxCy}`;
       let imageXml = imageCache.get(imageKey);
       if (!imageCache.has(imageKey)) {
-        imageXml = await embedImage(row.imagePath || 'owin-user-assets/logo/logo.webp', {
+        imageXml = await embedImage.embed(row.imagePath || 'owin-user-assets/logo/logo.webp', {
           maxCx: CATALOGUE_IMG_MAX_CX,
           maxCy: imageMaxCy,
           geometry: 'rect',
@@ -1350,9 +1414,81 @@ export function transformWordProtectionPassword(password: string): Uint8Array {
   return utf16LeBytes(reversedHex);
 }
 
-async function sha1Bytes(data: Uint8Array): Promise<Uint8Array> {
-  const digest = await crypto.subtle.digest('SHA-1', data as BufferSource);
-  return new Uint8Array(digest);
+/**
+ * SHA-1 đồng bộ.
+ *
+ * Khoá chỉ-đọc của Word cần 100.000 vòng băm nối tiếp nhau. Gọi
+ * `crypto.subtle.digest` 100.000 lần là 100.000 Promise chỉ để băm 24 byte —
+ * riêng phần chờ đó đã tốn vài giây trước khi hộp tải về kịp hiện. Băm thẳng
+ * trong JS nhanh hơn hàng chục lần và giữ nguyên kết quả.
+ */
+function sha1Bytes(data: Uint8Array): Uint8Array {
+  const bitLength = data.length * 8;
+  const padded = new Uint8Array((((data.length + 8) >> 6) + 1) * 64);
+  padded.set(data);
+  padded[data.length] = 0x80;
+  const view = new DataView(padded.buffer);
+  view.setUint32(padded.length - 8, Math.floor(bitLength / 2 ** 32), false);
+  view.setUint32(padded.length - 4, bitLength >>> 0, false);
+
+  let h0 = 0x67452301;
+  let h1 = 0xefcdab89;
+  let h2 = 0x98badcfe;
+  let h3 = 0x10325476;
+  let h4 = 0xc3d2e1f0;
+  const w = new Uint32Array(80);
+
+  for (let chunk = 0; chunk < padded.length; chunk += 64) {
+    for (let i = 0; i < 16; i += 1) w[i] = view.getUint32(chunk + i * 4, false);
+    for (let i = 16; i < 80; i += 1) {
+      const mixed = w[i - 3]! ^ w[i - 8]! ^ w[i - 14]! ^ w[i - 16]!;
+      w[i] = (mixed << 1) | (mixed >>> 31);
+    }
+
+    let a = h0;
+    let b = h1;
+    let c = h2;
+    let d = h3;
+    let e = h4;
+    for (let i = 0; i < 80; i += 1) {
+      let f: number;
+      let k: number;
+      if (i < 20) {
+        f = (b & c) | (~b & d);
+        k = 0x5a827999;
+      } else if (i < 40) {
+        f = b ^ c ^ d;
+        k = 0x6ed9eba1;
+      } else if (i < 60) {
+        f = (b & c) | (b & d) | (c & d);
+        k = 0x8f1bbcdc;
+      } else {
+        f = b ^ c ^ d;
+        k = 0xca62c1d6;
+      }
+      const next = (((a << 5) | (a >>> 27)) + f + e + k + w[i]!) >>> 0;
+      e = d;
+      d = c;
+      c = ((b << 30) | (b >>> 2)) >>> 0;
+      b = a;
+      a = next;
+    }
+
+    h0 = (h0 + a) >>> 0;
+    h1 = (h1 + b) >>> 0;
+    h2 = (h2 + c) >>> 0;
+    h3 = (h3 + d) >>> 0;
+    h4 = (h4 + e) >>> 0;
+  }
+
+  const digest = new Uint8Array(20);
+  const out = new DataView(digest.buffer);
+  out.setUint32(0, h0, false);
+  out.setUint32(4, h1, false);
+  out.setUint32(8, h2, false);
+  out.setUint32(12, h3, false);
+  out.setUint32(16, h4, false);
+  return digest;
 }
 
 /**
@@ -1371,15 +1507,16 @@ export async function computeWordProtectionHash(
   const initial = new Uint8Array(salt.length + key.length);
   initial.set(salt);
   initial.set(key, salt.length);
-  let hash = await sha1Bytes(initial);
+  let hash = sha1Bytes(initial);
+  // Một bộ đệm dùng lại cho cả 100.000 vòng thay vì cấp phát mới mỗi vòng.
+  const next = new Uint8Array(hash.length + 4);
   for (let iteration = 0; iteration < spinCount; iteration += 1) {
-    const next = new Uint8Array(hash.length + 4);
     next.set(hash);
     next[hash.length] = iteration & 0xff;
     next[hash.length + 1] = (iteration >> 8) & 0xff;
     next[hash.length + 2] = (iteration >> 16) & 0xff;
     next[hash.length + 3] = (iteration >> 24) & 0xff;
-    hash = await sha1Bytes(next);
+    hash = sha1Bytes(next);
   }
   return bytesToBase64(hash);
 }

@@ -22,8 +22,15 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-/** Attach Vietnamese font files to a jsPDF instance. */
-export async function ensureVietnamesePdfFonts(doc: jsPDF): Promise<void> {
+/**
+ * Tải sẵn hai file font (~vài trăm KB) mà không cần tài liệu jsPDF.
+ * Dùng khi người dùng vừa mở menu xuất: lúc bấm PDF thì font đã nằm sẵn.
+ */
+export function preloadVietnamesePdfFonts(): void {
+  void loadFonts().catch(() => {});
+}
+
+function loadFonts(): Promise<PdfFontCache> {
   if (!fontsReady) {
     fontsReady = (async () => {
       const [regular, bold] = await Promise.all([
@@ -47,7 +54,12 @@ export async function ensureVietnamesePdfFonts(doc: jsPDF): Promise<void> {
       throw error;
     });
   }
-  const cache = await fontsReady;
+  return fontsReady;
+}
+
+/** Attach Vietnamese font files to a jsPDF instance. */
+export async function ensureVietnamesePdfFonts(doc: jsPDF): Promise<void> {
+  const cache = await loadFonts();
   doc.addFileToVFS('NotoSans-VI.ttf', cache.regular);
   doc.addFileToVFS('NotoSans-VI-Bold.ttf', cache.bold);
   doc.addFont('NotoSans-VI.ttf', PDF_FONT_FAMILY, 'normal');

@@ -10,6 +10,7 @@ import {
   Plus,
   Save,
 } from 'lucide-react';
+import { prefetchQuoteExportModules } from '@/features/export/prefetchExportModules';
 
 /** Đầu form báo giá: nav bar phẳng kiểu iOS — back, tiêu đề + chip số liệu, nhóm thao tác pill. */
 export function QuoteFormHeader({
@@ -109,6 +110,8 @@ export function QuoteFormHeader({
             disabled={exportDisabled}
             aria-haspopup="menu"
             aria-expanded={exportOpen}
+            onPointerEnter={prefetchQuoteExportModules}
+            onFocus={prefetchQuoteExportModules}
             onClick={() => setExportOpen((open) => !open)}
           >
             <FileDown size={16} aria-hidden="true" />

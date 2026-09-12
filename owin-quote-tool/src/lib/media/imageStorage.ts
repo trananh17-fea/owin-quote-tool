@@ -120,9 +120,26 @@ export async function compressImage(
 const productCache = new Map<string, Blob>();
 const quoteCache = new Map<string, Blob>();
 
+/**
+ * Các lượt tải đang bay, gộp theo khoá ảnh.
+ *
+ * Khi xuất file, nhiều dòng cùng trỏ vào một ảnh và nay chạy song song; nếu
+ * không gộp thì mỗi dòng lại mở một request riêng cho cùng một file.
+ */
+const productInflight = new Map<string, Promise<Blob | null>>();
+const quoteInflight = new Map<string, Promise<Blob | null>>();
+
 function remotePersistenceEnabled(): boolean {
   // Unit tests exercise the compatibility API without mutating a real project.
   return isSupabaseConfigured && import.meta.env.MODE !== 'test';
+}
+
+/**
+ * `true` khi `getImage` / `getQuoteImage` thực sự tải và nhớ ảnh hộ.
+ * Nơi gọi dựa vào đây để khỏi tải lại lần hai khi ảnh không tồn tại.
+ */
+export function imageBlobCacheActive(): boolean {
+  return remotePersistenceEnabled();
 }
 
 function aliases(source: string): string[] {
@@ -133,6 +150,16 @@ function aliases(source: string): string[] {
 
 function remember(cache: Map<string, Blob>, source: string, blob: Blob): void {
   for (const key of aliases(source)) cache.set(key, blob);
+}
+
+/** Một lượt tải cho mỗi ảnh, dù có bao nhiêu dòng cùng hỏi. */
+function downloadOnce(inflight: Map<string, Promise<Blob | null>>, source: string, load: () => Promise<Blob | null>): Promise<Blob | null> {
+  const key = aliases(source)[0] || source;
+  const pending = inflight.get(key);
+  if (pending) return pending;
+  const request = load().finally(() => inflight.delete(key));
+  inflight.set(key, request);
+  return request;
 }
 
 function recalled(cache: Map<string, Blob>, source: string): Blob | null {
@@ -233,9 +260,11 @@ export async function getImage(id: string): Promise<Blob | null> {
   const cached = recalled(productCache, id);
   if (cached) return cached;
   if (!remotePersistenceEnabled() && !/^(https?:|blob:|data:)/i.test(id)) return null;
-  const blob = await downloadImageBlob(id);
-  if (blob) remember(productCache, id, blob);
-  return blob;
+  return downloadOnce(productInflight, id, async () => {
+    const blob = await downloadImageBlob(id);
+    if (blob) remember(productCache, id, blob);
+    return blob;
+  });
 }
 
 export async function getImageUrl(id: string): Promise<string | null> {
@@ -285,9 +314,11 @@ export async function getQuoteImage(path: string): Promise<Blob | null> {
   const cached = recalled(quoteCache, path);
   if (cached) return cached;
   if (!remotePersistenceEnabled() && !/^(https?:|blob:|data:)/i.test(path)) return null;
-  const blob = await downloadImageBlob(path);
-  if (blob) remember(quoteCache, path, blob);
-  return blob;
+  return downloadOnce(quoteInflight, path, async () => {
+    const blob = await downloadImageBlob(path);
+    if (blob) remember(quoteCache, path, blob);
+    return blob;
+  });
 }
 
 export async function deleteQuoteImage(path: string): Promise<void> {

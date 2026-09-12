@@ -5,6 +5,7 @@ import {
   publicUrl as storagePublicUrl,
   storagePathFromPublicUrl,
 } from '@/services/supabase/imagesRepo';
+import { getImage, getQuoteImage, imageBlobCacheActive } from '@/lib/media/imageStorage';
 
 export const DEFAULT_LOGO_PATH = 'owin-user-assets/logo/logo.webp';
 const STATIC_PUBLIC_PREFIXES = ['owin-user-assets/'];
@@ -109,17 +110,41 @@ export async function resolveImageUrl(path: string | null | undefined): Promise<
     : { url: withBasePath(DEFAULT_LOGO_PATH), revoke: false };
 }
 
+/**
+ * Ảnh tĩnh dùng chung (logo dự phòng) chỉ đọc một lần cho cả phiên: mỗi dòng
+ * thiếu ảnh trước đây lại tải và mã hoá lại đúng file logo đó.
+ */
+const publicDataUrlCache = new Map<string, Promise<string | null>>();
+
 async function fetchPublicDataUrl(publicPath: string): Promise<string | null> {
-  try {
-    const response = await fetch(withBasePath(publicPath.replace(/^\/+/, '')));
-    if (!response.ok) return null;
-    return blobToDataUrl(await response.blob());
-  } catch {
-    return null;
-  }
+  const cached = publicDataUrlCache.get(publicPath);
+  if (cached) return cached;
+  const request = (async () => {
+    try {
+      const response = await fetch(withBasePath(publicPath.replace(/^\/+/, '')));
+      if (!response.ok) return null;
+      return blobToDataUrl(await response.blob());
+    } catch {
+      return null;
+    }
+  })();
+  publicDataUrlCache.set(publicPath, request);
+  request.then((value) => {
+    if (value === null) publicDataUrlCache.delete(publicPath);
+  });
+  return request;
 }
 
+/**
+ * Đi qua bộ nhớ đệm blob của `imageStorage` trước, để lần xuất file thứ hai (và
+ * các dòng trùng ảnh trong cùng một lần xuất) không phải tải lại từ Storage.
+ */
 async function fetchDataUrl(source: string): Promise<string | null> {
+  if (imageBlobCacheActive()) {
+    const isQuotePrivate = source.startsWith('quotes/') || Boolean(privateQuoteImagePath(source));
+    const cached = await (isQuotePrivate ? getQuoteImage(source) : getImage(source));
+    return cached ? blobToDataUrl(cached) : null;
+  }
   const blob = await downloadImageBlob(source);
   return blob ? blobToDataUrl(blob) : null;
 }
