@@ -28,12 +28,16 @@ import {
 import {
   applyAluminumBaseRate,
   applyAluminumRowPatch,
+  addAluminumProfile,
+  removeAluminumRow,
   selectAluminumColor,
+  type AddAluminumProfileInput,
 } from '@/features/aluminum/aluminumPageActions';
 import { AluminumControls } from '@/features/aluminum/AluminumControls';
 import { AluminumExportBar } from '@/features/aluminum/AluminumExportBar';
 import { AluminumPrintRoot } from '@/features/aluminum/AluminumPrintRoot';
 import { AluminumTable } from '@/features/aluminum/AluminumTable';
+import { AluminumProfileDialog } from '@/features/aluminum/AluminumProfileDialog';
 import { AluminumTotalsStrip, type AutosavePhase } from '@/features/aluminum/AluminumTotalsStrip';
 import './aluminum.css';
 
@@ -50,6 +54,7 @@ export function AluminumEstimatorView() {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [initialLoadFailed, setInitialLoadFailed] = useState(false);
   const [serverBaseVersion, setServerBaseVersion] = useState(0);
+  const [addingProfile, setAddingProfile] = useState(false);
   const latestState = useRef(pageState);
   const serverBase = useRef<AluminumEstimatorPageState>(createDefaultAluminumEstimatorState());
   const serverSnapshot = useRef<AluminumEstimatorStorageSnapshot>({ state: null, revision: 0, createdAt: null });
@@ -269,6 +274,17 @@ export function AluminumEstimatorView() {
     updatePageState((current) => applyAluminumBaseRate(current, color, raw));
   };
 
+  const addProfile = (input: AddAluminumProfileInput) => {
+    if (!selectedSystem) return;
+    updatePageState((current) => addAluminumProfile(current, selectedSystem.id, input));
+    setAddingProfile(false);
+  };
+
+  const deleteProfile = (row: typeof rowViewModels[number]['source']) => {
+    if (!window.confirm(`Xoá cây nhôm "${row.code}"? Đơn giá và SL của cây này cũng sẽ bị xoá.`)) return;
+    updatePageState((current) => removeAluminumRow(current, row.systemId, row.rowId));
+  };
+
   const printPdf = () => {
     const model = exportScope === 'current-system' ? currentPrintModel : allPrintModel;
     if (model.rowCount === 0) {
@@ -341,7 +357,17 @@ export function AluminumEstimatorView() {
         key={selectedSystem?.id ?? ''}
         rows={rowViewModels}
         onRowChange={updateRow}
+        onAddProfile={() => setAddingProfile(true)}
+        onDeleteProfile={deleteProfile}
       />
+
+      {addingProfile && selectedSystem ? (
+        <AluminumProfileDialog
+          systemName={selectedSystem.name}
+          onClose={() => setAddingProfile(false)}
+          onSave={addProfile}
+        />
+      ) : null}
 
       <AluminumPrintRoot model={activePrintModel} />
     </section>

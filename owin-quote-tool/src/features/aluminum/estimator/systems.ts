@@ -1,3 +1,10 @@
+import { ALUMINUM_PROFILE_IMAGES } from '@/features/aluminum/estimator/profileImages.generated';
+import type {
+  AluminumCustomProfile,
+  AluminumCustomProfilesBySystem,
+  AluminumHiddenProfileRowIdsBySystem,
+} from '@/types/models';
+
 export type AluminumProfileRow = {
   stt: number;
   code: string;
@@ -20,6 +27,8 @@ export type AluminumEstimatorDefaultRow = AluminumProfileRow & {
   systemId: string;
   systemName: string;
   color: string;
+  /** Cây được thêm từ Bảng tính nhôm, có thể xoá khỏi danh sách. */
+  isCustom: boolean;
 };
 
 export function getAluminumProfileImageKey(systemId: string, row: Pick<AluminumProfileRow, "stt" | "code">): string {
@@ -230,16 +239,47 @@ export function getAluminumSystemById(id: string): AluminumSystem | null {
   return ALUMINUM_SYSTEMS.find((system) => system.id === id) ?? null;
 }
 
-export function getDefaultAluminumEstimatorRows(systemId: string): AluminumEstimatorDefaultRow[] {
+export function getDefaultAluminumEstimatorRows(
+  systemId: string,
+  customProfilesBySystem: AluminumCustomProfilesBySystem = {},
+  hiddenProfileRowIdsBySystem: AluminumHiddenProfileRowIdsBySystem = {},
+): AluminumEstimatorDefaultRow[] {
   const system = getAluminumSystemById(systemId);
   if (!system) return [];
 
-  return system.rows.map((row) => ({
+  const catalogueRows = system.rows.map((row) => ({
     ...row,
     rowId: `${system.id}-${row.stt}-${row.code.replaceAll(" ", "-")}`,
     systemId: system.id,
     systemName: system.name,
     color: system.color,
+    isCustom: false,
   }));
+  const customRows = (customProfilesBySystem[systemId] ?? []).map((profile, index) => customProfileToRow(
+    profile,
+    system,
+    catalogueRows.length + index + 1,
+  ));
+  const hiddenRowIds = new Set(hiddenProfileRowIdsBySystem[systemId] ?? []);
+  return [...catalogueRows, ...customRows].filter((row) => !hiddenRowIds.has(row.rowId));
 }
-import { ALUMINUM_PROFILE_IMAGES } from "@/features/aluminum/estimator/profileImages.generated";
+
+function customProfileToRow(
+  profile: AluminumCustomProfile,
+  system: AluminumSystem,
+  stt: number,
+): AluminumEstimatorDefaultRow {
+  return {
+    stt,
+    code: profile.code,
+    description: profile.description,
+    image: profile.image,
+    defaultWeightKg: null,
+    packageSize: null,
+    rowId: `custom-${profile.id}`,
+    systemId: system.id,
+    systemName: system.name,
+    color: system.color,
+    isCustom: true,
+  };
+}

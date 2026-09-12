@@ -343,6 +343,23 @@ export type AluminumEstimatorUnitPricesByColor = Record<
   Record<string, Record<string, AluminumEstimatorPriceState>>
 >;
 
+/** Một cây nhôm được thêm trực tiếp từ màn Bảng tính nhôm. */
+export interface AluminumCustomProfile {
+  /** ID ổn định, tách khỏi mã cây vì mã có thể trùng giữa các hệ. */
+  id: string;
+  code: string;
+  description: string;
+  /** URL ảnh đã tải lên Storage, hoặc null nếu chưa có ảnh. */
+  image: string | null;
+  createdAt: string;
+}
+
+/** Các cây nhôm do người dùng thêm, phân theo hệ nhôm. */
+export type AluminumCustomProfilesBySystem = Record<string, AluminumCustomProfile[]>;
+
+/** ID các cây catalogue được ẩn khỏi bảng tính theo từng hệ. */
+export type AluminumHiddenProfileRowIdsBySystem = Record<string, string[]>;
+
 export interface AluminumCalculationRecord extends SyncEntity {
   selectedSystemId: string;
   /**
@@ -352,6 +369,10 @@ export interface AluminumCalculationRecord extends SyncEntity {
   inputRows?: AluminumEstimatorRowsBySystem;
   /** Đơn giá theo màu (Ghi - Cafe | Vân Gỗ), tách biệt từng màu. */
   unitPricesByColor?: AluminumEstimatorUnitPricesByColor;
+  /** Cây nhôm thêm thủ công theo từng hệ. */
+  customProfilesBySystem?: AluminumCustomProfilesBySystem;
+  /** Cây catalogue người dùng đã xóa khỏi danh sách tính nhôm. */
+  hiddenProfileRowIdsBySystem?: AluminumHiddenProfileRowIdsBySystem;
   /** Màu đang chọn: Ghi - Cafe | Vân Gỗ. */
   color?: string;
   /**

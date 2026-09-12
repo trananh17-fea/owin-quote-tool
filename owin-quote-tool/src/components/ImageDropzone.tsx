@@ -127,7 +127,7 @@ export function ImageDropzone({
       const root = rootRef.current;
       if (!root) return;
 
-      const formHost = root.closest('.product-editor-card, .quote-item-card');
+      const formHost = root.closest('.product-editor-card, .quote-item-card, .aluminum-profile-dialog');
       const active = document.activeElement as HTMLElement | null;
       const inDropzone = root.contains(active) || focused || root.matches(':hover');
       const inForm = Boolean(formHost && (formHost.contains(active) || formHost.contains(root)));

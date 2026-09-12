@@ -45,7 +45,11 @@ export function normalizeInput(input: AluminumEstimatorInputState) {
 }
 
 export function buildRowsForSystem(systemId: string, pageState: AluminumEstimatorPageState): AluminumEstimatorRowViewModel[] {
-  const rows = getDefaultAluminumEstimatorRows(systemId).map((raw, order) => {
+  const rows = getDefaultAluminumEstimatorRows(
+    systemId,
+    pageState.customProfilesBySystem,
+    pageState.hiddenProfileRowIdsBySystem,
+  ).map((raw, order) => {
     // Màu áp cho tất cả thanh theo lựa chọn ở trên.
     const source = { ...raw, color: pageState.color };
     const input = getAluminumEstimatorInput(pageState, source.systemId, source.rowId);

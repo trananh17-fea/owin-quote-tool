@@ -12,12 +12,14 @@ export function isSafeAluminumProfileImagePath(value: string | null | undefined)
   if (value.startsWith("\\\\") || value.startsWith("//")) return false;
   if (value.includes("..")) return false;
 
-  return value.startsWith(PUBLIC_IMAGE_PREFIX);
+  // Catalogue mặc định dùng file public; cây thêm thủ công dùng URL public từ
+  // Supabase Storage (cùng đường tải ảnh với sản phẩm).
+  return value.startsWith(PUBLIC_IMAGE_PREFIX) || /^https:\/\//i.test(value);
 }
 
 export function getAluminumProfileImageDisplay(image: string | null | undefined): AluminumProfileImageDisplay {
   if (isSafeAluminumProfileImagePath(image)) {
-    return { kind: "image", src: withBasePath(image) };
+    return { kind: "image", src: image.startsWith(PUBLIC_IMAGE_PREFIX) ? withBasePath(image) : image };
   }
 
   return { kind: "placeholder", label: "Chưa có ảnh" };

@@ -31,6 +31,8 @@ function state(
   return {
     selectedSystemId,
     unitPricesByColor,
+    customProfilesBySystem: {},
+    hiddenProfileRowIdsBySystem: {},
     color,
     quantities,
     colorBaseRates: { 'Ghi - Cafe': 147_000, 'Vân Gỗ': 154_000 },
@@ -83,6 +85,39 @@ describe('normalizeAluminumEstimatorState', () => {
 
     expect(normalized?.unitPricesByColor['Ghi - Cafe']?.['thuy-luc']?.a?.unitPrice).toBe('147000');
     expect(normalized?.unitPricesByColor['Vân Gỗ']?.['thuy-luc']?.a?.unitPrice).toBe('154000');
+  });
+
+  it('keeps valid custom profiles and ignores malformed persisted rows', () => {
+    const normalized = normalizeAluminumEstimatorState({
+      selectedSystemId: 'thuy-luc',
+      color: 'Ghi - Cafe',
+      customProfilesBySystem: {
+        'thuy-luc': [
+          { id: 'new-1', code: 'owin-new1', description: 'Cây mới', image: 'https://example.com/a.webp' },
+          { id: '', code: 'OWIN-BAD', description: 'Thiếu id' },
+        ],
+      },
+    });
+
+    expect(normalized?.customProfilesBySystem).toEqual({
+      'thuy-luc': [expect.objectContaining({
+        id: 'new-1',
+        code: 'OWIN-NEW1',
+        description: 'Cây mới',
+        image: 'https://example.com/a.webp',
+      })],
+    });
+  });
+
+  it('loads hidden catalogue row ids without duplication', () => {
+    const normalized = normalizeAluminumEstimatorState({
+      selectedSystemId: 'thuy-luc',
+      hiddenProfileRowIdsBySystem: { 'thuy-luc': ['thuy-luc-1-OWIN-67', 'thuy-luc-1-OWIN-67', 123] },
+    });
+
+    expect(normalized?.hiddenProfileRowIdsBySystem).toEqual({
+      'thuy-luc': ['thuy-luc-1-OWIN-67'],
+    });
   });
 });
 

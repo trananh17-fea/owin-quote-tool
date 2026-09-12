@@ -24,7 +24,9 @@ function escapeXml(value: string | number): string {
 }
 
 function toImageSrc(image: string | null | undefined, assetOrigin?: string): string | null {
-  if (!image || !image.startsWith('/aluminum-profiles/')) return null;
+  if (!image) return null;
+  if (/^https:\/\//i.test(image)) return image;
+  if (!image.startsWith('/aluminum-profiles/')) return null;
   const path = withBasePath(image);
   return assetOrigin ? `${assetOrigin}${path}` : path;
 }
@@ -339,9 +341,10 @@ async function naturalSize(dataUrl: string): Promise<{ w: number; h: number }> {
 }
 
 async function loadProfileDataUrl(imagePath: string | null | undefined): Promise<string | null> {
-  if (!imagePath || !imagePath.startsWith('/aluminum-profiles/')) return null;
+  const src = toImageSrc(imagePath);
+  if (!src) return null;
   try {
-    const response = await fetch(withBasePath(imagePath));
+    const response = await fetch(src);
     if (!response.ok) return null;
     const blob = await response.blob();
     return await new Promise<string | null>((resolve) => {

@@ -6,6 +6,9 @@ import {
 import {
   applyAluminumBaseRate,
   applyAluminumRowPatch,
+  addAluminumProfile,
+  removeAluminumProfile,
+  removeAluminumRow,
   selectAluminumColor,
 } from '@/features/aluminum/aluminumPageActions';
 
@@ -112,5 +115,56 @@ describe('selectAluminumColor', () => {
     const next = selectAluminumColor(createDefaultAluminumEstimatorState(), 'Vân Gỗ');
     expect(next.color).toBe('Vân Gỗ');
     expect(next.updatedAt).not.toBeNull();
+  });
+});
+
+describe('addAluminumProfile / removeAluminumProfile', () => {
+  it('lưu cây thêm thủ công và ghi đơn giá theo cả hai màu', () => {
+    const next = addAluminumProfile(createDefaultAluminumEstimatorState(), SYSTEM_ID, {
+      id: 'profile-new',
+      code: 'owin-new01',
+      description: 'Cây nhôm mới',
+      image: 'https://example.com/profile.webp',
+      unitPrice: 147000,
+    });
+
+    expect(next.customProfilesBySystem[SYSTEM_ID]).toEqual([expect.objectContaining({
+      id: 'profile-new',
+      code: 'OWIN-NEW01',
+      description: 'Cây nhôm mới',
+      image: 'https://example.com/profile.webp',
+    })]);
+    expect(next.unitPricesByColor['Ghi - Cafe']?.[SYSTEM_ID]?.['custom-profile-new']?.unitPrice).toBe('147000');
+    expect(next.unitPricesByColor['Vân Gỗ']?.[SYSTEM_ID]?.['custom-profile-new']?.unitPrice).toBe('154000');
+  });
+
+  it('xoá cây thêm thủ công cùng SL và đơn giá của cây đó', () => {
+    const added = addAluminumProfile(createDefaultAluminumEstimatorState(), SYSTEM_ID, {
+      id: 'profile-delete',
+      code: 'OWIN-DELETE',
+      description: 'Cây xoá',
+      image: null,
+      unitPrice: 147000,
+    });
+    const withQuantity = applyAluminumRowPatch(added, SYSTEM_ID, 'custom-profile-delete', { quantity: '3' });
+    const removed = removeAluminumProfile(withQuantity, SYSTEM_ID, 'profile-delete');
+
+    expect(removed.customProfilesBySystem).toEqual({});
+    expect(removed.quantities).toEqual({});
+    expect(removed.unitPricesByColor).toEqual({});
+  });
+
+  it('ẩn cây catalogue và dọn SL/đơn giá khi thao tác xóa', () => {
+    const withPrice = applyAluminumRowPatch(
+      createDefaultAluminumEstimatorState(),
+      SYSTEM_ID,
+      ROW_ID,
+      { quantity: '3', unitPrice: '147000' },
+    );
+    const removed = removeAluminumRow(withPrice, SYSTEM_ID, ROW_ID);
+
+    expect(removed.hiddenProfileRowIdsBySystem).toEqual({ [SYSTEM_ID]: [ROW_ID] });
+    expect(removed.quantities).toEqual({});
+    expect(removed.unitPricesByColor).toEqual({});
   });
 });

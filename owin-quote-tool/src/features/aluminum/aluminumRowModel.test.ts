@@ -89,6 +89,41 @@ describe('buildRowsForSystem', () => {
   it('hệ không tồn tại thì không có dòng nào', () => {
     expect(buildRowsForSystem('khong-co', sampleState())).toEqual([]);
   });
+
+  it('nối cây nhôm thêm thủ công vào hệ và đánh dấu để UI cho phép xoá', () => {
+    const state = {
+      ...sampleState(),
+      customProfilesBySystem: {
+        [SYSTEM_ID]: [{
+          id: 'custom-01',
+          code: 'OWIN-CUSTOM01',
+          description: 'Cây thêm mới',
+          image: 'https://example.com/custom.webp',
+          createdAt: '2026-09-12T00:00:00.000Z',
+        }],
+      },
+    };
+    const custom = buildRowsForSystem(SYSTEM_ID, state).find((row) => row.source.rowId === 'custom-custom-01');
+
+    expect(custom?.source).toMatchObject({
+      code: 'OWIN-CUSTOM01',
+      description: 'Cây thêm mới',
+      image: 'https://example.com/custom.webp',
+      isCustom: true,
+    });
+  });
+
+  it('bỏ cây catalogue đã xóa khỏi danh sách và bản xuất', () => {
+    const state = {
+      ...sampleState(),
+      hiddenProfileRowIdsBySystem: { [SYSTEM_ID]: [rowIdAt(0)] },
+    };
+    const rows = buildRowsForSystem(SYSTEM_ID, state);
+    const printed = buildPrintInputSystems(state).find((system) => system.systemId === SYSTEM_ID);
+
+    expect(rows.some((row) => row.source.rowId === rowIdAt(0))).toBe(false);
+    expect(printed?.rows.some((row) => row.code === catalogue[0].code)).toBe(false);
+  });
 });
 
 describe('summarizeSystems', () => {

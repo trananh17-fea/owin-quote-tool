@@ -14,6 +14,9 @@ import type {
   AluminumEstimatorQuantitiesBySystem,
   AluminumEstimatorRowsBySystem,
   AluminumEstimatorUnitPricesByColor,
+  AluminumCustomProfile,
+  AluminumCustomProfilesBySystem,
+  AluminumHiddenProfileRowIdsBySystem,
 } from '@/types/models';
 
 export type {
@@ -22,6 +25,9 @@ export type {
   AluminumEstimatorQuantitiesBySystem,
   AluminumEstimatorRowsBySystem,
   AluminumEstimatorUnitPricesByColor,
+  AluminumCustomProfile,
+  AluminumCustomProfilesBySystem,
+  AluminumHiddenProfileRowIdsBySystem,
 };
 
 /** Hai màu chọn được; mỗi màu có bảng đơn giá riêng. */
@@ -52,6 +58,10 @@ export interface AluminumEstimatorPageState {
    * Đây là phần được lưu và đồng bộ.
    */
   unitPricesByColor: AluminumEstimatorUnitPricesByColor;
+  /** Cây thêm thủ công, được lưu cùng bảng giá để tất cả máy thấy như nhau. */
+  customProfilesBySystem: AluminumCustomProfilesBySystem;
+  /** Cây catalogue bị ẩn bằng thao tác xóa trong bảng. */
+  hiddenProfileRowIdsBySystem: AluminumHiddenProfileRowIdsBySystem;
   /** Luôn = DEFAULT (147k / 154k); giữ field cho compat save, không UI. */
   colorBaseRates: AluminumColorBaseRates;
   updatedAt: string | null;
@@ -105,6 +115,8 @@ export function createDefaultAluminumEstimatorState(): AluminumEstimatorPageStat
     selectedSystemId: ALUMINUM_SYSTEMS[0]?.id ?? '',
     quantities: {},
     unitPricesByColor: {},
+    customProfilesBySystem: {},
+    hiddenProfileRowIdsBySystem: {},
     color: DEFAULT_ALUMINUM_COLOR,
     colorBaseRates: { ...DEFAULT_COLOR_BASE_RATES },
     updatedAt: null,
@@ -383,6 +395,54 @@ function normalizeUnitPricesByColor(value: unknown): AluminumEstimatorUnitPrices
   return byColor;
 }
 
+function normalizeCustomProfile(value: unknown): AluminumCustomProfile | null {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as Partial<AluminumCustomProfile>;
+  const id = typeof raw.id === 'string' ? raw.id.trim() : '';
+  const code = typeof raw.code === 'string' ? raw.code.trim().toUpperCase() : '';
+  const description = typeof raw.description === 'string' ? raw.description.trim() : '';
+  if (!id || !code || !description) return null;
+  return {
+    id,
+    code,
+    description,
+    image: typeof raw.image === 'string' && raw.image.trim() ? raw.image.trim() : null,
+    createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : '',
+  };
+}
+
+function normalizeCustomProfilesBySystem(value: unknown): AluminumCustomProfilesBySystem {
+  if (!value || typeof value !== 'object') return {};
+  const next: AluminumCustomProfilesBySystem = {};
+  Object.entries(value as Record<string, unknown>).forEach(([systemId, profiles]) => {
+    if (!Array.isArray(profiles)) return;
+    const ids = new Set<string>();
+    const valid = profiles
+      .map(normalizeCustomProfile)
+      .filter((profile): profile is AluminumCustomProfile => Boolean(profile))
+      .filter((profile) => {
+        if (ids.has(profile.id)) return false;
+        ids.add(profile.id);
+        return true;
+      });
+    if (valid.length > 0) next[systemId] = valid;
+  });
+  return next;
+}
+
+function normalizeHiddenProfileRowIdsBySystem(value: unknown): AluminumHiddenProfileRowIdsBySystem {
+  if (!value || typeof value !== 'object') return {};
+  const next: AluminumHiddenProfileRowIdsBySystem = {};
+  Object.entries(value as Record<string, unknown>).forEach(([systemId, rowIds]) => {
+    if (!Array.isArray(rowIds)) return;
+    const valid = Array.from(new Set(rowIds.filter((rowId): rowId is string =>
+      typeof rowId === 'string' && rowId.trim() !== '',
+    )));
+    if (valid.length > 0) next[systemId] = valid;
+  });
+  return next;
+}
+
 /** Legacy: một bảng inputRows chung cho màu đang chọn → tách đơn giá (bỏ SL). */
 function migrateLegacyInputRows(
   inputRows: unknown,
@@ -512,6 +572,48 @@ function colorBaseRatesEquals(left: AluminumColorBaseRates, right: AluminumColor
   );
 }
 
+function customProfileEquals(
+  left: AluminumCustomProfile | undefined,
+  right: AluminumCustomProfile | undefined,
+): boolean {
+  if (left === right) return true;
+  if (!left || !right) return !left && !right;
+  return left.id === right.id
+    && left.code === right.code
+    && left.description === right.description
+    && left.image === right.image
+    && left.createdAt === right.createdAt;
+}
+
+function customProfilesBySystemEquals(
+  left: AluminumCustomProfilesBySystem,
+  right: AluminumCustomProfilesBySystem,
+): boolean {
+  const systemIds = new Set([...Object.keys(left), ...Object.keys(right)]);
+  for (const systemId of systemIds) {
+    const leftProfiles = left[systemId] ?? [];
+    const rightProfiles = right[systemId] ?? [];
+    if (leftProfiles.length !== rightProfiles.length) return false;
+    for (let index = 0; index < leftProfiles.length; index += 1) {
+      if (!customProfileEquals(leftProfiles[index], rightProfiles[index])) return false;
+    }
+  }
+  return true;
+}
+
+function hiddenProfileRowIdsBySystemEquals(
+  left: AluminumHiddenProfileRowIdsBySystem,
+  right: AluminumHiddenProfileRowIdsBySystem,
+): boolean {
+  const systemIds = new Set([...Object.keys(left), ...Object.keys(right)]);
+  for (const systemId of systemIds) {
+    const leftIds = new Set(left[systemId] ?? []);
+    const rightIds = new Set(right[systemId] ?? []);
+    if (leftIds.size !== rightIds.size || [...leftIds].some((id) => !rightIds.has(id))) return false;
+  }
+  return true;
+}
+
 export function aluminumEstimatorStateContentEquals(
   left: AluminumEstimatorPageState,
   right: AluminumEstimatorPageState,
@@ -519,7 +621,55 @@ export function aluminumEstimatorStateContentEquals(
   if (left.selectedSystemId !== right.selectedSystemId) return false;
   if (normalizeAluminumColor(left.color) !== normalizeAluminumColor(right.color)) return false;
   if (!colorBaseRatesEquals(left.colorBaseRates, right.colorBaseRates)) return false;
+  if (!customProfilesBySystemEquals(left.customProfilesBySystem, right.customProfilesBySystem)) return false;
+  if (!hiddenProfileRowIdsBySystemEquals(left.hiddenProfileRowIdsBySystem, right.hiddenProfileRowIdsBySystem)) return false;
   return unitPricesByColorEquals(left.unitPricesByColor, right.unitPricesByColor);
+}
+
+/** Xóa catalogue là thao tác chỉ thêm ID vào danh sách ẩn, nên ghép bằng hợp tập. */
+function mergeHiddenProfileRowIdsBySystem(
+  ...sources: AluminumHiddenProfileRowIdsBySystem[]
+): AluminumHiddenProfileRowIdsBySystem {
+  const merged: AluminumHiddenProfileRowIdsBySystem = {};
+  for (const source of sources) {
+    Object.entries(source).forEach(([systemId, rowIds]) => {
+      const combined = new Set([...(merged[systemId] ?? []), ...rowIds]);
+      if (combined.size > 0) merged[systemId] = [...combined];
+    });
+  }
+  return merged;
+}
+
+/** Ghép cây thêm thủ công theo ID; thay đổi/xóa local thắng khi cùng sửa một cây. */
+function mergeCustomProfilesBySystem(
+  base: AluminumCustomProfilesBySystem,
+  local: AluminumCustomProfilesBySystem,
+  remote: AluminumCustomProfilesBySystem,
+): AluminumCustomProfilesBySystem {
+  const merged: AluminumCustomProfilesBySystem = {};
+  const systemIds = new Set([...Object.keys(base), ...Object.keys(local), ...Object.keys(remote)]);
+  for (const systemId of systemIds) {
+    const baseRows = base[systemId] ?? [];
+    const localRows = local[systemId] ?? [];
+    const remoteRows = remote[systemId] ?? [];
+    const byId = (rows: AluminumCustomProfile[]) => new Map(rows.map((row) => [row.id, row]));
+    const baseById = byId(baseRows);
+    const localById = byId(localRows);
+    const remoteById = byId(remoteRows);
+    const ids = new Set([...baseById.keys(), ...localById.keys(), ...remoteById.keys()]);
+    const orderedIds = [...remoteRows.map((row) => row.id), ...localRows.map((row) => row.id)]
+      .filter((id, index, all) => all.indexOf(id) === index);
+    const rows: AluminumCustomProfile[] = [];
+    for (const id of orderedIds) {
+      if (!ids.has(id)) continue;
+      const chosen = !customProfileEquals(localById.get(id), baseById.get(id))
+        ? localById.get(id)
+        : remoteById.get(id);
+      if (chosen) rows.push({ ...chosen });
+    }
+    if (rows.length > 0) merged[systemId] = rows;
+  }
+  return merged;
 }
 
 /**
@@ -580,6 +730,16 @@ export function mergeAluminumEstimatorStates(
   const colorBaseRates = !colorBaseRatesEquals(local.colorBaseRates, base.colorBaseRates)
     ? local.colorBaseRates
     : remote.colorBaseRates;
+  const customProfilesBySystem = mergeCustomProfilesBySystem(
+    base.customProfilesBySystem,
+    local.customProfilesBySystem,
+    remote.customProfilesBySystem,
+  );
+  const hiddenProfileRowIdsBySystem = mergeHiddenProfileRowIdsBySystem(
+    base.hiddenProfileRowIdsBySystem,
+    local.hiddenProfileRowIdsBySystem,
+    remote.hiddenProfileRowIdsBySystem,
+  );
 
   // SL chỉ session: luôn giữ local; remote/base không có (hoặc rỗng).
   const mergedContent: AluminumEstimatorPageState = {
@@ -587,6 +747,8 @@ export function mergeAluminumEstimatorStates(
     color: normalizeAluminumColor(color),
     quantities: local.quantities,
     unitPricesByColor,
+    customProfilesBySystem,
+    hiddenProfileRowIdsBySystem,
     colorBaseRates: normalizeColorBaseRates(colorBaseRates),
     updatedAt: null,
   };
@@ -617,6 +779,8 @@ export function normalizeAluminumEstimatorState(value: unknown): AluminumEstimat
   );
   // Fill cặp màu còn thiếu theo mốc đang lưu (mặc định 147k / 154k).
   unitPricesByColor = recomputeLinkedPricesFromBases(unitPricesByColor, colorBaseRates);
+  const customProfilesBySystem = normalizeCustomProfilesBySystem(parsed.customProfilesBySystem);
+  const hiddenProfileRowIdsBySystem = normalizeHiddenProfileRowIdsBySystem(parsed.hiddenProfileRowIdsBySystem);
 
   return {
     selectedSystemId: parsed.selectedSystemId,
@@ -624,6 +788,8 @@ export function normalizeAluminumEstimatorState(value: unknown): AluminumEstimat
     // SL không bao giờ load từ server.
     quantities: {},
     unitPricesByColor,
+    customProfilesBySystem,
+    hiddenProfileRowIdsBySystem,
     colorBaseRates,
     updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : null,
   };
@@ -645,6 +811,8 @@ export function normalizeAluminumCalculationRecord(value: unknown): AluminumCalc
     id: typeof parsed.id === 'string' && parsed.id.trim() ? parsed.id : ALUMINUM_ESTIMATOR_STORAGE_KEY,
     selectedSystemId: state.selectedSystemId,
     unitPricesByColor: state.unitPricesByColor,
+    customProfilesBySystem: state.customProfilesBySystem,
+    hiddenProfileRowIdsBySystem: state.hiddenProfileRowIdsBySystem,
     color: state.color,
     colorBaseRates: state.colorBaseRates,
     createdAt,
@@ -661,6 +829,8 @@ function toPageState(record: AluminumCalculationRecord): AluminumEstimatorPageSt
     color: normalizeAluminumColor(record.color),
     quantities: {},
     unitPricesByColor: normalizeUnitPricesByColor(record.unitPricesByColor),
+    customProfilesBySystem: normalizeCustomProfilesBySystem(record.customProfilesBySystem),
+    hiddenProfileRowIdsBySystem: normalizeHiddenProfileRowIdsBySystem(record.hiddenProfileRowIdsBySystem),
     colorBaseRates: normalizeColorBaseRates(record.colorBaseRates),
     updatedAt: record.updatedAt,
   };
@@ -720,6 +890,8 @@ function recordFromPageState(
     selectedSystemId: state.selectedSystemId,
     // Chỉ lưu đơn giá theo màu — không lưu SL.
     unitPricesByColor: normalizeUnitPricesByColor(state.unitPricesByColor),
+    customProfilesBySystem: normalizeCustomProfilesBySystem(state.customProfilesBySystem),
+    hiddenProfileRowIdsBySystem: normalizeHiddenProfileRowIdsBySystem(state.hiddenProfileRowIdsBySystem),
     color: normalizeAluminumColor(state.color),
     colorBaseRates: normalizeColorBaseRates(state.colorBaseRates),
     createdAt: base.createdAt ?? updatedAt,

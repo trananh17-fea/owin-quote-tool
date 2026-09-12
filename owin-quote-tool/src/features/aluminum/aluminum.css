@@ -406,6 +406,23 @@
   background: var(--ios-card);
   box-shadow: 0 2px 5px rgba(28, 28, 40, 0.05), 0 12px 32px rgba(28, 28, 40, 0.07);
 }
+.aluminum-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ios-separator);
+  color: var(--ios-label);
+  font-size: var(--fs-sm);
+  font-weight: var(--aluminum-weight-semibold);
+}
+.aluminum-table-toolbar .btn {
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+}
 .aluminum-table-wrap {
   max-height: min(62vh, 640px);
   overflow: auto;
@@ -421,7 +438,17 @@
   border-collapse: collapse;
   font-size: var(--fs-sm);
 }
-.aluminum-table-compact { min-width: 720px; }
+.aluminum-table-compact {
+  min-width: 900px;
+  table-layout: fixed;
+}
+.aluminum-col-image { width: 140px; }
+.aluminum-col-code { width: 130px; }
+.aluminum-col-quantity { width: 110px; }
+/* Hai cột tiền bằng nhau để bảng cân và dễ so sánh. */
+.aluminum-col-price,
+.aluminum-col-total { width: 150px; }
+.aluminum-col-actions { width: 82px; }
 
 /* Đầu bảng dính khi cuộn dọc — nâng lên trên dải tổng/card phía trên khi khóa. */
 .aluminum-table thead {
@@ -464,6 +491,7 @@
 .aluminum-table-compact th:nth-child(4) { text-align: center; }
 .aluminum-table-compact th:nth-child(5),
 .aluminum-table-compact th:nth-child(6) { text-align: right; }
+.aluminum-actions-header { width: 82px; }
 
 /* Trạng thái hàng — .active / .num / .code… là tên dùng chung nên luôn scope
    dưới .aluminum-table, không bao giờ khai báo trần */
@@ -493,7 +521,11 @@
   font-weight: var(--aluminum-weight-semibold);
   white-space: nowrap;
 }
-.aluminum-table .description { color: var(--ios-label); }
+.aluminum-table .description {
+  overflow: hidden;
+  color: var(--ios-label);
+  text-overflow: ellipsis;
+}
 /* Cột gõ được giữ nền trắng; chính control chỉ ra vùng tương tác. */
 .aluminum-table .input-cell { background: var(--ios-card); }
 .aluminum-table .total {
@@ -501,6 +533,12 @@
   font-weight: var(--aluminum-weight-semibold);
 }
 .aluminum-table .muted { color: var(--ios-label3); }
+.aluminum-profile-actions { text-align: center; }
+.aluminum-profile-actions .icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-sm);
+}
 
 .aluminum-pagination {
   display: flex;
@@ -622,6 +660,107 @@
 
 /* Mặc định ẩn; bật ở ≤720px và bị ép ẩn lại ở điện thoại ngang */
 .aluminum-card-list { display: none; }
+.aluminum-card-add { display: none; }
+
+/* ═══════════════ Thêm / xoá cây nhôm ═══════════════ */
+
+.aluminum-profile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+    max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  background: rgba(28, 28, 40, 0.48);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.aluminum-profile-dialog {
+  width: min(680px, 100%);
+  overflow: hidden;
+  border: 1px solid rgba(60, 60, 67, 0.18);
+  border-radius: var(--r-lg);
+  background: var(--ios-bg);
+  box-shadow: var(--shadow-lg);
+}
+.aluminum-profile-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--ios-separator);
+}
+.aluminum-profile-dialog-header span {
+  display: block;
+  color: var(--ios-label3);
+  font-size: var(--fs-xs);
+  font-weight: var(--aluminum-weight-semibold);
+}
+.aluminum-profile-dialog-header h2 {
+  margin: 2px 0 0;
+  color: var(--ios-label);
+  font-size: var(--fs-xl);
+  font-weight: var(--aluminum-weight-bold);
+}
+.aluminum-profile-dialog-header .icon-btn {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--ios-red-soft);
+  color: var(--ios-red);
+}
+.aluminum-profile-dialog-body {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 18px;
+  padding: 18px;
+}
+.aluminum-profile-image-field,
+.aluminum-profile-form-fields {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+.aluminum-profile-image-field > label,
+.aluminum-profile-form-fields .field > span,
+.aluminum-profile-form-fields .field > label {
+  color: var(--ios-label2);
+  font-size: var(--fs-sm);
+  font-weight: var(--aluminum-weight-medium);
+}
+.aluminum-profile-image-field .dropzone {
+  min-height: 180px;
+}
+.aluminum-profile-error {
+  color: var(--ios-red);
+  font-size: var(--fs-xs);
+}
+.aluminum-profile-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--ios-separator);
+}
+.aluminum-card-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: fit-content;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ios-red);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: var(--aluminum-weight-semibold);
+  cursor: pointer;
+}
 
 /* Vùng in chỉ hiện khi in, do <style> nội tuyến mở lại bằng #id (thắng về
    specificity). Đừng đổi thành display khác hay thêm @media print ở đây. */
@@ -743,6 +882,13 @@
     display: grid;
     gap: 8px;
   }
+  .aluminum-card-add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px !important;
+    border-radius: var(--r-sm);
+  }
 
   .aluminum-card {
     display: grid;
@@ -829,11 +975,17 @@
     line-height: 36px;
     font-size: var(--fs-xs);
   }
+  .aluminum-profile-dialog-body { grid-template-columns: 1fr; }
+  .aluminum-profile-image-field .dropzone { min-height: 140px; }
 }
 
 /* ─── Máy rất hẹp: mỗi màu một dòng ─── */
 @media (max-width: 480px) {
   .aluminum-color-pair-grid { grid-template-columns: 1fr; }
+  .aluminum-profile-backdrop { padding: 12px; }
+  .aluminum-profile-dialog-body { padding: 14px; }
+  .aluminum-profile-dialog-header { padding: 12px 14px; }
+  .aluminum-profile-dialog-actions { padding: 10px 14px 14px; }
 }
 
 @media (max-width: 380px) {

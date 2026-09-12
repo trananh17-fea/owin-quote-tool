@@ -18,6 +18,12 @@ import {
   type AluminumEstimatorPageState,
   type AluminumEstimatorRowPatch,
 } from '@/features/aluminum/aluminumEstimatorStorage';
+import type { AluminumCustomProfile } from '@/types/models';
+
+export type AddAluminumProfileInput = Omit<AluminumCustomProfile, 'createdAt'> & {
+  /** Đơn giá nhập khi tạo, dùng làm giá của màu đang chọn. */
+  unitPrice: number;
+};
 
 /** Ghi SL / đơn giá / note cho một dòng của hệ đang chọn. */
 export function applyAluminumRowPatch(
@@ -64,6 +70,118 @@ export function applyAluminumRowPatch(
   }
 
   return next;
+}
+
+/** Thêm một cây nhôm vào hệ hiện tại và ghi sẵn đơn giá cho cả hai màu. */
+export function addAluminumProfile(
+  current: AluminumEstimatorPageState,
+  systemId: string,
+  input: AddAluminumProfileInput,
+): AluminumEstimatorPageState {
+  const profile: AluminumCustomProfile = {
+    id: input.id,
+    code: input.code.trim().toUpperCase(),
+    description: input.description.trim(),
+    image: input.image,
+    createdAt: new Date().toISOString(),
+  };
+  const profiles = current.customProfilesBySystem[systemId] ?? [];
+  const withProfile = touchAluminumEstimatorState({
+    ...current,
+    customProfilesBySystem: {
+      ...current.customProfilesBySystem,
+      [systemId]: [...profiles, profile],
+    },
+  });
+  return applyAluminumRowPatch(withProfile, systemId, `custom-${profile.id}`, {
+    unitPrice: input.unitPrice > 0 ? String(Math.round(input.unitPrice)) : '',
+  });
+}
+
+/** Xoá cây thêm thủ công cùng SL/đơn giá đang tham chiếu tới cây đó. */
+export function removeAluminumProfile(
+  current: AluminumEstimatorPageState,
+  systemId: string,
+  profileId: string,
+): AluminumEstimatorPageState {
+  const profiles = current.customProfilesBySystem[systemId] ?? [];
+  const remaining = profiles.filter((profile) => profile.id !== profileId);
+  if (remaining.length === profiles.length) return current;
+
+  const customProfilesBySystem = { ...current.customProfilesBySystem };
+  if (remaining.length === 0) delete customProfilesBySystem[systemId];
+  else customProfilesBySystem[systemId] = remaining;
+
+  const rowId = `custom-${profileId}`;
+  const quantities = { ...current.quantities };
+  const quantitiesForSystem = { ...(quantities[systemId] ?? {}) };
+  delete quantitiesForSystem[rowId];
+  if (Object.keys(quantitiesForSystem).length === 0) delete quantities[systemId];
+  else quantities[systemId] = quantitiesForSystem;
+
+  const unitPricesByColor = Object.fromEntries(
+    Object.entries(current.unitPricesByColor).flatMap(([color, systems]) => {
+      const nextSystems = { ...systems };
+      const rows = { ...(nextSystems[systemId] ?? {}) };
+      delete rows[rowId];
+      if (Object.keys(rows).length === 0) delete nextSystems[systemId];
+      else nextSystems[systemId] = rows;
+      return Object.keys(nextSystems).length > 0 ? [[color, nextSystems]] : [];
+    }),
+  );
+
+  return touchAluminumEstimatorState({
+    ...current,
+    quantities,
+    unitPricesByColor,
+    customProfilesBySystem,
+  });
+}
+
+/**
+ * Xóa một dòng đang hiển thị. Dòng catalogue chỉ bị ẩn khỏi bảng (và được
+ * đồng bộ), còn dòng thêm thủ công được xóa hoàn toàn khỏi danh sách tùy chỉnh.
+ */
+export function removeAluminumRow(
+  current: AluminumEstimatorPageState,
+  systemId: string,
+  rowId: string,
+): AluminumEstimatorPageState {
+  const profileId = rowId.startsWith('custom-') ? rowId.slice('custom-'.length) : '';
+  if (profileId && (current.customProfilesBySystem[systemId] ?? []).some((profile) => profile.id === profileId)) {
+    return removeAluminumProfile(current, systemId, profileId);
+  }
+
+  const hiddenForSystem = new Set(current.hiddenProfileRowIdsBySystem[systemId] ?? []);
+  if (hiddenForSystem.has(rowId)) return current;
+  hiddenForSystem.add(rowId);
+
+  const quantities = { ...current.quantities };
+  const quantitiesForSystem = { ...(quantities[systemId] ?? {}) };
+  delete quantitiesForSystem[rowId];
+  if (Object.keys(quantitiesForSystem).length === 0) delete quantities[systemId];
+  else quantities[systemId] = quantitiesForSystem;
+
+  const unitPricesByColor = Object.fromEntries(
+    Object.entries(current.unitPricesByColor).flatMap(([color, systems]) => {
+      const nextSystems = { ...systems };
+      const rows = { ...(nextSystems[systemId] ?? {}) };
+      delete rows[rowId];
+      if (Object.keys(rows).length === 0) delete nextSystems[systemId];
+      else nextSystems[systemId] = rows;
+      return Object.keys(nextSystems).length > 0 ? [[color, nextSystems]] : [];
+    }),
+  );
+
+  return touchAluminumEstimatorState({
+    ...current,
+    quantities,
+    unitPricesByColor,
+    hiddenProfileRowIdsBySystem: {
+      ...current.hiddenProfileRowIdsBySystem,
+      [systemId]: [...hiddenForSystem],
+    },
+  });
 }
 
 /** Đổi mốc quy đổi của một màu (2 ô số dưới chip màu). */
