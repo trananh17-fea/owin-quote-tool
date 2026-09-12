@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { openImageLightbox } from '@/components/imageLightboxStore';
-import { resolveImageUrl, thumbUrlFor } from '@/lib/media/imagePaths';
+import { resolveImageUrl, resolveImageUrlSync, thumbUrlFor } from '@/lib/media/imagePaths';
 import { resolveItemImage, type ImageItem } from '@/lib/media/itemImageResolver';
 import type { ProductRecord } from '@/types/models';
 
@@ -39,23 +39,30 @@ export function ProductThumb({
    */
   previewable?: boolean;
 }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  const [thumbFailed, setThumbFailed] = useState(false);
-  const [resolving, setResolving] = useState(true);
+  // Ảnh sản phẩm / bảng giá là URL công khai nên dựng được ngay trong lúc render:
+  // không effect, không commit thêm. Danh sách vài trăm dòng nhờ vậy chỉ còn một
+  // lần render thay vì một lần commit cho mỗi ảnh. Chỉ ảnh phải tải blob (báo giá
+  // riêng tư) hoặc phải dò theo `item` mới đi đường async bên dưới.
+  const directUrl = item ? null : resolveImageUrlSync(imagePath ?? imageId ?? null);
+  const [asyncUrl, setAsyncUrl] = useState<string | null>(null);
+  const [resolvingAsync, setResolvingAsync] = useState(true);
+  // Gộp cờ lỗi vào một state có kèm "nguồn ảnh": đổi ảnh là cờ tự hết hiệu lực,
+  // khỏi cần effect reset (effect reset sẽ lại sinh commit cho từng ảnh).
+  const sourceKey = `${imagePath ?? ''}|${imageId ?? ''}`;
+  const [errorFor, setErrorFor] = useState({ key: sourceKey, master: false, thumb: false });
+  const failed = errorFor.key === sourceKey && errorFor.master;
+  const thumbFailed = errorFor.key === sourceKey && errorFor.thumb;
+  const resolving = directUrl === null && resolvingAsync;
 
   useEffect(() => {
+    if (directUrl !== null) return;
     let revoked: string | null = null;
     let active = true;
-    // Reset loading/fallback UI when the image inputs change, before re-resolving.
-    /* eslint-disable react-hooks/set-state-in-effect */
-    setResolving(true);
-    setFailed(false);
-    setThumbFailed(false);
-    /* eslint-enable react-hooks/set-state-in-effect */
+    // Reset trạng thái "đang tải" trước khi dò lại nguồn ảnh mới.
+    /* eslint-disable-next-line react-hooks/set-state-in-effect */
+    setResolvingAsync(true);
 
     const resolve = async () => {
-      setFailed(false);
       const path = imagePath || imageId || null;
       if (!path) {
         if (item) {
@@ -79,21 +86,22 @@ export function ProductThumb({
           revoked = null;
           return;
         }
-        setUrl(resolvedUrl);
+        setAsyncUrl(resolvedUrl);
       })
       .catch(() => {
-        if (active) setUrl(null);
+        if (active) setAsyncUrl(null);
       })
       .finally(() => {
-        if (active) setResolving(false);
+        if (active) setResolvingAsync(false);
       });
 
     return () => {
       active = false;
       if (revoked) URL.revokeObjectURL(revoked);
     };
-  }, [imageId, imagePath, item, products]);
+  }, [directUrl, imageId, imagePath, item, products]);
 
+  const url = directUrl ?? asyncUrl;
   const masterUrl = !failed && url ? url : null;
   const thumbUrl = thumb && !thumbFailed && masterUrl ? thumbUrlFor(masterUrl) : null;
   const showingThumb = Boolean(thumbUrl);
@@ -126,10 +134,10 @@ export function ProductThumb({
           : undefined
       }
       onError={() => {
-        setResolving(false);
+        setResolvingAsync(false);
         // thumb thiếu → thử master; master lỗi → logo.
-        if (showingThumb) setThumbFailed(true);
-        else if (!failed) setFailed(true);
+        if (showingThumb) setErrorFor({ key: sourceKey, master: failed, thumb: true });
+        else if (!failed) setErrorFor({ key: sourceKey, master: true, thumb: false });
       }}
     />
   );

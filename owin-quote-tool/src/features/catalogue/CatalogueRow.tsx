@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ProductThumb } from '@/components/ProductThumb';
 import type { CatalogueBlockRow } from '@/lib/catalogue/catalogueRows';
 import { formatVND } from '@/lib/format/currency';
@@ -17,8 +18,13 @@ function Money({ value }: { value: number | null }) {
   return value ? <>{formatVND(value)}</> : null;
 }
 
-/** Một hàng của bảng giá A4: tiêu đề danh mục, sản phẩm, hoặc phụ kiện. */
-export function CatalogueRow({ row }: { row: CatalogueBlockRow }) {
+/**
+ * Một hàng của bảng giá A4: tiêu đề danh mục, sản phẩm, hoặc phụ kiện.
+ *
+ * `memo` theo object hàng — hàng do `buildCatalogueBlockRows` dựng và giữ nguyên
+ * tham chiếu khi dữ liệu không đổi, nên render lại tài liệu gần như miễn phí.
+ */
+export const CatalogueRow = memo(function CatalogueRow({ row }: { row: CatalogueBlockRow }) {
   if (row.rowType === 'category') {
     return (
       <tr className="category-row">
@@ -53,4 +59,4 @@ export function CatalogueRow({ row }: { row: CatalogueBlockRow }) {
       )}
     </tr>
   );
-}
+});

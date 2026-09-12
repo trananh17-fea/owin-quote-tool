@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useMemo, useState } from 'react';
 import type { ProductRecord } from '@/types/models';
 import { reorderList } from '@/components/DragReorder';
 import { sortCategoryNames } from '@/lib/products/categoryOrder';
 import { sortProductsForCatalog } from '@/lib/products/productSort';
 import { paginateItems, type PageSize } from '@/lib/list/paginateItems';
+import { usePaginationEnabled } from '@/features/settings/paginationSettings';
 import { rememberProductSuggestions } from '@/features/suggestions/suggestionStore';
 import { useSuggestions } from '@/features/suggestions/useSuggestions';
 import { useProducts } from '@/features/products/useProducts';
@@ -21,8 +22,16 @@ import { BulkPriceDialog } from '@/features/products/BulkPriceDialog';
 import './products.css';
 
 /** Chuỗi để tìm kiếm của một sản phẩm — gộp mã, tên, nhóm, đơn vị, kích thước, thông số. */
+// Chuỗi tìm kiếm dựng một lần cho mỗi bản ghi rồi nhớ theo chính bản ghi đó:
+// gõ thêm một ký tự không phải ghép và hạ chữ thường lại cho cả danh mục.
+// WeakMap nên bản ghi bị thay (sửa / realtime) là mục nhớ tự được thu hồi.
+const searchHaystackCache = new WeakMap<ProductRecord, string>();
+
 function searchHaystack(product: ProductRecord): string {
-  return [
+  const cached = searchHaystackCache.get(product);
+  if (cached !== undefined) return cached;
+
+  const haystack = [
     product.code,
     product.name,
     product.category,
@@ -33,6 +42,8 @@ function searchHaystack(product: ProductRecord): string {
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
+  searchHaystackCache.set(product, haystack);
+  return haystack;
 }
 
 /** Màn quản lý sản phẩm gốc (catalog). */
@@ -74,19 +85,28 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     [productRecords],
   );
 
+  // Lọc lại vài trăm sản phẩm là việc nặng: để React hạ ưu tiên cho nó thì ô tìm
+  // kiếm vẫn gõ mượt, danh sách bắt kịp ngay sau đó.
+  const deferredQuery = useDeferredValue(searchQuery);
+
   const filteredProducts = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
+    const query = deferredQuery.trim().toLowerCase();
     const filtered = productRecords.filter((product) => {
       const categoryOk = !selectedCategory || product.category === selectedCategory;
       return categoryOk && (!query || searchHaystack(product).includes(query));
     });
     // Nhóm → màu (Trắc → Lim → Ghi → Xanh) → giá cao → thấp.
     return sortProductsForCatalog(filtered);
-  }, [productRecords, searchQuery, selectedCategory]);
+  }, [productRecords, deferredQuery, selectedCategory]);
 
+  const paginationEnabled = usePaginationEnabled('products');
   const pagination = useMemo(
-    () => paginateItems(filteredProducts, currentPage, pageSize),
-    [currentPage, filteredProducts, pageSize],
+    () => paginateItems(
+      filteredProducts,
+      paginationEnabled ? currentPage : 1,
+      paginationEnabled ? pageSize : filteredProducts.length,
+    ),
+    [currentPage, filteredProducts, pageSize, paginationEnabled],
   );
 
   const handleSearchChange = (value: string) => {
@@ -104,18 +124,20 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     setOperationError('');
     setShowForm(true);
   };
-  const openEdit = (product: ProductRecord) => {
+  // Các handler của hàng phải giữ nguyên tham chiếu: `ProductRowCells` được memo
+  // theo chúng, hàm mới mỗi lần render sẽ làm memo mất tác dụng.
+  const openEdit = useCallback((product: ProductRecord) => {
     setEditing(product);
     setMessage('');
     setOperationError('');
     setShowForm(true);
-  };
+  }, []);
   const closeForm = useCallback(() => {
     setShowForm(false);
     setEditing(null);
   }, []);
 
-  const handleDelete = async (product: ProductRecord) => {
+  const handleDelete = useCallback(async (product: ProductRecord) => {
     if (!confirm(`Xoá sản phẩm "${product.name}" (${product.code})?`)) return;
     setOperationError('');
     try {
@@ -124,9 +146,9 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     } catch {
       setOperationError('Không thể xoá sản phẩm trên Supabase. Vui lòng thử lại.');
     }
-  };
+  }, [deleteProduct]);
 
-  const handleDuplicate = async (product: ProductRecord) => {
+  const handleDuplicate = useCallback(async (product: ProductRecord) => {
     setDuplicatingId(product.id);
     setMessage('');
     setOperationError('');
@@ -166,7 +188,12 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     } finally {
       setDuplicatingId(null);
     }
-  };
+  }, [refreshSuggestions, saveProduct]);
+
+  const duplicateProduct = useCallback(
+    (product: ProductRecord) => { void handleDuplicate(product); },
+    [handleDuplicate],
+  );
 
   // Drag reorder vẫn cho phép chỉnh tay; thứ tự hiển thị mặc định theo nhóm/màu/giá.
   const canReorder = !searchQuery.trim() && !selectedCategory;
@@ -263,6 +290,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
       <ProductList
         products={pagination.items}
         pagination={pagination}
+        paginationEnabled={paginationEnabled}
         pageSize={pageSize}
         onPageChange={setCurrentPage}
         onPageSizeChange={(size) => {
@@ -276,7 +304,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
         onReorder={(from, to) => void handleReorder(from, to)}
         onEdit={openEdit}
         onDelete={handleDelete}
-        onDuplicate={(product) => void handleDuplicate(product)}
+        onDuplicate={duplicateProduct}
         onPreview={setPreviewProduct}
       />
 

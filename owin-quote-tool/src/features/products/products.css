@@ -792,8 +792,11 @@
 /* Header ăn cùng padding ngang với dòng để nhãn DV / SL / KL thẳng hàng với ô
    nhập; cột DV nới 64 → 80px vì "md" bị mũi chevron của select che mất. */
 .product-editor-card .extra-accessory-head.is-row-drag { padding-inline: 10px; }
+/* SL 76px đủ nhập bốn chữ số. KL nhận phần không gian linh hoạt lớn hơn để số
+   thập phân không bị cắt; hai cột tiền vẫn đủ chỗ cho định dạng VND nhưng không
+   còn chiếm quá nhiều diện tích trong modal cập nhật sản phẩm. */
 .product-editor-card :is(.extra-acc-metrics, .extra-acc-metrics-head) {
-  grid-template-columns: 80px 56px 64px minmax(100px, 1fr) minmax(110px, 1fr);
+  grid-template-columns: 80px 76px minmax(80px, 1.15fr) minmax(96px, 1fr) minmax(110px, 1fr);
 }
 .product-editor-card :is(.spec-editor-row, .accessory-item-line, .extra-accessory-line).is-row-drag {
   padding: 8px 10px;
@@ -1493,6 +1496,11 @@
   }
   .product-table thead { display: none; }
   .product-table tbody tr.product-row {
+    /* Thẻ trên điện thoại là grid (không còn là table-row) nên dùng được
+       content-visibility: hàng ngoài màn hình bỏ qua layout/paint, cuộn danh
+       sách dài đỡ giật. Kích thước dự phòng ~ chiều cao một thẻ. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 116px;
     display: grid;
     grid-template-columns: 64px minmax(0, 1fr);
     grid-template-areas:

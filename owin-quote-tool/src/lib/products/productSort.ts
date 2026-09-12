@@ -53,24 +53,32 @@ export function sortProductsByColor<T extends ProductRecord>(products: T[]): T[]
  * 2. Màu (Trắc → Lim → Ghi → Xanh → khác)
  * 3. Tổng tiền SP (cửa + PK + extra) cao → thấp
  */
+const vietnameseCollator = new Intl.Collator('vi');
+
 export function sortProductsForCatalog<T extends ProductRecord>(products: T[]): T[] {
-  return [...products].sort((a, b) => {
-    const byCategory = categoryOrderIndex(a.category) - categoryOrderIndex(b.category);
-    if (byCategory !== 0) return byCategory;
+  // Tính sẵn khoá sắp xếp một lần cho mỗi sản phẩm rồi mới so sánh.
+  // Trước đây bộ so sánh gọi `productCatalogueTotalVnd` (có JSON.parse) và
+  // `productColorRank` (bỏ dấu + dò spec) ngay trong mỗi phép so sánh — hàng
+  // trăm sản phẩm là hàng nghìn lần tính lại đúng những giá trị đó.
+  const keyed = products.map((product) => ({
+    product,
+    category: categoryOrderIndex(product.category),
+    color: productColorRank(product),
+    total: productCatalogueTotalVnd(product),
+    price: Number(product.unitPriceVnd || 0),
+    numericId: product.numericId || 0,
+    name: String(product.name || ''),
+  }));
 
-    const byColor = productColorRank(a) - productColorRank(b);
-    if (byColor !== 0) return byColor;
-
-    const totalA = productCatalogueTotalVnd(a);
-    const totalB = productCatalogueTotalVnd(b);
-    if (totalA !== totalB) return totalB - totalA;
-
+  keyed.sort((a, b) => {
+    if (a.category !== b.category) return a.category - b.category;
+    if (a.color !== b.color) return a.color - b.color;
+    if (a.total !== b.total) return b.total - a.total;
     // Tie-break: đơn giá, rồi id/tên
-    const priceA = Number(a.unitPriceVnd || 0);
-    const priceB = Number(b.unitPriceVnd || 0);
-    if (priceA !== priceB) return priceB - priceA;
-
-    if ((a.numericId || 0) !== (b.numericId || 0)) return (a.numericId || 0) - (b.numericId || 0);
-    return String(a.name || '').localeCompare(String(b.name || ''), 'vi');
+    if (a.price !== b.price) return b.price - a.price;
+    if (a.numericId !== b.numericId) return a.numericId - b.numericId;
+    return vietnameseCollator.compare(a.name, b.name);
   });
+
+  return keyed.map((entry) => entry.product);
 }

@@ -83,12 +83,11 @@
   z-index: 70;
   width: min(290px, calc(100vw - 20px));
   padding: 12px;
-  border: 1px solid rgba(76, 88, 112, 0.16);
+  border: 1px solid #c7c7cc;
   border-radius: var(--r-lg);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 22px 60px rgba(24, 37, 64, 0.2), 0 1px 0 #fff inset;
-  -webkit-backdrop-filter: blur(28px) saturate(170%);
-  backdrop-filter: blur(28px) saturate(170%);
+  /* Nền đặc để menu không bị lẫn vào nội dung phía sau. */
+  background: #f2f2f7;
+  box-shadow: 0 22px 60px rgba(24, 37, 64, 0.2), 0 1px 0 #ffffff inset;
   text-align: left;
   animation: account-menu-in 0.18s var(--ease-ios) both;
 }
@@ -109,13 +108,18 @@
   color: var(--ios-red);
   font-size: 12px;
 }
-.account-menu-logout {
+.account-menu-action {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   width: 100%;
+  background: #e5e5ea !important;
 }
+.account-menu-action:hover:not(:disabled) {
+  background: #d1d1d6 !important;
+}
+.account-menu-action + .account-menu-action { margin-top: 6px; }
 
 @media (max-width: 760px) {
   .account-menu-identity { display: none; }

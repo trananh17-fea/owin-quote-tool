@@ -1,8 +1,15 @@
+import { memo } from 'react';
 import type { CatalogueBlockRow } from '@/lib/catalogue/catalogueRows';
 import { CatalogueRow } from '@/features/catalogue/CatalogueRow';
+import { useProgressiveReveal } from '@/lib/list/useProgressiveReveal';
 
-/** Mỗi block là một tbody để trình duyệt/PDF không ngắt trang giữa sản phẩm và phụ kiện. */
-function CatalogueBlock({ block }: { block: CatalogueBlockRow[] }) {
+/**
+ * Mỗi block là một tbody để trình duyệt/PDF không ngắt trang giữa sản phẩm và phụ kiện.
+ *
+ * `memo` theo mảng block: block đã dựng rồi thì mỗi đợt trải thêm không phải
+ * dựng lại — `buildCatalogueBlockRows` trả về cùng tham chiếu khi dữ liệu không đổi.
+ */
+const CatalogueBlock = memo(function CatalogueBlock({ block }: { block: CatalogueBlockRow[] }) {
   return (
     <tbody className="catalogue-item-block">
       {block.map((row, index) => (
@@ -10,7 +17,7 @@ function CatalogueBlock({ block }: { block: CatalogueBlockRow[] }) {
       ))}
     </tbody>
   );
-}
+});
 
 /**
  * Tài liệu bảng giá khổ A4 — cùng khung với bản xuất PDF/Excel nên kích thước cột,
@@ -23,6 +30,10 @@ export function CatalogueDocument({
   rows: CatalogueBlockRow[];
   blocks: CatalogueBlockRow[][];
 }) {
+  // Cả danh mục nằm trên một tài liệu: trải dần từng đợt block để lần dựng đầu
+  // không chiếm hết luồng chính (333 sản phẩm ≈ 1.300 hàng).
+  const visibleBlocks = useProgressiveReveal(blocks, 15);
+
   return (
     <div className="preview-doc bang-gia-doc">
       <table className="bang-gia-table">
@@ -68,7 +79,7 @@ export function CatalogueDocument({
             </tr>
           </tbody>
         ) : (
-          blocks.map((block, index) => <CatalogueBlock key={`${block[0].productCode}-${index}`} block={block} />)
+          visibleBlocks.map((block, index) => <CatalogueBlock key={`${block[0].productCode}-${index}`} block={block} />)
         )}
       </table>
     </div>

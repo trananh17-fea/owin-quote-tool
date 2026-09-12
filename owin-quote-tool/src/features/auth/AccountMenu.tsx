@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, LogOut, UserRound } from 'lucide-react';
+import { ChevronDown, LogOut, Settings, UserRound } from 'lucide-react';
 import { signOut, useAuthenticatedSession } from '@/features/auth/authSession';
 import { OWIN_LOGIN_EMAIL, OWIN_LOGIN_USERNAME } from '@/features/auth/authIdentifier';
 import { flushPendingWork } from '@/lib/browser/pendingWork';
+import { SettingsDialog } from '@/features/settings/SettingsDialog';
 import './accountMenu.css';
 
 export function AccountMenu() {
   const { session } = useAuthenticatedSession();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [error, setError] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +85,18 @@ export function AccountMenu() {
           {error && <p className="account-menu-error" role="alert">{error}</p>}
           <button
             type="button"
-            className="btn btn-ghost account-menu-logout"
+            className="btn btn-ghost account-menu-action"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              setSettingsOpen(true);
+            }}
+          >
+            <Settings size={15} /> Cài đặt
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost account-menu-action account-menu-logout"
             role="menuitem"
             disabled={busy}
             onClick={() => void logout()}
@@ -92,6 +105,8 @@ export function AccountMenu() {
           </button>
         </div>
       )}
+
+      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }

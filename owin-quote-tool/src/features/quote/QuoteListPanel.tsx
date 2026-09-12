@@ -4,6 +4,7 @@ import type { QuoteRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { formatShortDate, statusLabel } from '@/features/quote/quoteFormat';
 import { PAGE_SIZES, paginateItems, type PageSize } from '@/lib/list/paginateItems';
+import { usePaginationEnabled } from '@/features/settings/paginationSettings';
 
 const QUOTE_STATUS_OPTIONS: Array<{ value: QuoteRecord['status'] | ''; label: string }> = [
   { value: '', label: 'Tất cả trạng thái' },
@@ -50,9 +51,14 @@ export function QuoteListPanel({
   const [pageSize, setPageSize] = useState<PageSize>(25);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const statusMenuRef = useRef<HTMLDivElement>(null);
+  const paginationEnabled = usePaginationEnabled('quotes');
   const pagination = useMemo(
-    () => paginateItems(filteredHistory, currentPage, pageSize),
-    [currentPage, filteredHistory, pageSize],
+    () => paginateItems(
+      filteredHistory,
+      paginationEnabled ? currentPage : 1,
+      paginationEnabled ? pageSize : filteredHistory.length,
+    ),
+    [currentPage, filteredHistory, pageSize, paginationEnabled],
   );
 
   useEffect(() => {
@@ -271,48 +277,50 @@ export function QuoteListPanel({
               </tbody>
             </table>
 
-            <nav className="quote-list-pagination" aria-label="Phân trang danh sách báo giá">
-              <div className="quote-pagination-summary">
-                <span>
-                  Hiển thị {pagination.firstItemNumber}–{pagination.lastItemNumber} / {pagination.totalItems} báo giá
-                </span>
-                <label>
-                  Mỗi trang
-                  <select
-                    className="input quote-page-size-select"
-                    value={pageSize}
-                    onChange={(event) => {
-                      setPageSize(Number(event.target.value) as PageSize);
-                      setCurrentPage(1);
-                    }}
-                    aria-label="Số báo giá mỗi trang"
+            {paginationEnabled && (
+              <nav className="quote-list-pagination" aria-label="Phân trang danh sách báo giá">
+                <div className="quote-pagination-summary">
+                  <span>
+                    Hiển thị {pagination.firstItemNumber}–{pagination.lastItemNumber} / {pagination.totalItems} báo giá
+                  </span>
+                  <label>
+                    Mỗi trang
+                    <select
+                      className="input quote-page-size-select"
+                      value={pageSize}
+                      onChange={(event) => {
+                        setPageSize(Number(event.target.value) as PageSize);
+                        setCurrentPage(1);
+                      }}
+                      aria-label="Số báo giá mỗi trang"
+                    >
+                      {PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
+                    </select>
+                  </label>
+                </div>
+                <div className="quote-pagination-controls">
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => setCurrentPage(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                    aria-label="Trang trước"
                   >
-                    {PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
-                  </select>
-                </label>
-              </div>
-              <div className="quote-pagination-controls">
-                <button
-                  type="button"
-                  className="icon-btn"
-                  onClick={() => setCurrentPage(pagination.page - 1)}
-                  disabled={pagination.page === 1}
-                  aria-label="Trang trước"
-                >
-                  <ChevronLeft size={17} />
-                </button>
-                <span aria-live="polite">Trang <strong>{pagination.page}</strong> / {pagination.totalPages}</span>
-                <button
-                  type="button"
-                  className="icon-btn"
-                  onClick={() => setCurrentPage(pagination.page + 1)}
-                  disabled={pagination.page === pagination.totalPages}
-                  aria-label="Trang sau"
-                >
-                  <ChevronRight size={17} />
-                </button>
-              </div>
-            </nav>
+                    <ChevronLeft size={17} />
+                  </button>
+                  <span aria-live="polite">Trang <strong>{pagination.page}</strong> / {pagination.totalPages}</span>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => setCurrentPage(pagination.page + 1)}
+                    disabled={pagination.page === pagination.totalPages}
+                    aria-label="Trang sau"
+                  >
+                    <ChevronRight size={17} />
+                  </button>
+                </div>
+              </nav>
+            )}
           </>
         )}
       </div>

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useProducts } from '@/features/products';
 import { paginateItems, type PageSize } from "@/lib/list/paginateItems";
+import { usePaginationEnabled } from "@/features/settings/paginationSettings";
 import { buildCatalogueBlockRows } from '@/lib/catalogue/catalogueRows';
 import {
   filterRecordsByCategory,
@@ -35,9 +36,14 @@ export function CatalogueView() {
     () => filterRecordsByCategory(productRecords, exportCategory),
     [productRecords, exportCategory],
   );
+  const paginationEnabled = usePaginationEnabled("catalogue");
   const pagination = useMemo(
-    () => paginateItems(shownRecords, currentPage, pageSize),
-    [currentPage, pageSize, shownRecords],
+    () => paginateItems(
+      shownRecords,
+      paginationEnabled ? currentPage : 1,
+      paginationEnabled ? pageSize : shownRecords.length,
+    ),
+    [currentPage, pageSize, shownRecords, paginationEnabled],
   );
   const rows = useMemo(
     () => buildCatalogueBlockRows(pagination.items),
@@ -102,7 +108,7 @@ export function CatalogueView() {
 
       <CatalogueDocument rows={rows} blocks={blocks} />
 
-      {shownRecords.length > 0 && (
+      {paginationEnabled && shownRecords.length > 0 && (
         <nav
           className="catalogue-list-pagination no-print"
           aria-label="Phân trang bảng giá"

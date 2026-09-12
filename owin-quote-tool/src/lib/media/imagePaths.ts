@@ -74,25 +74,39 @@ export function quoteItemImagePath(quoteId: string, itemCode: string, extension 
   return privateQuoteImageReference(`quotes/${safeQuote}/items/${safeItem}/cover.${safeExt}`);
 }
 
+/**
+ * Bản đồng bộ của `resolveImageUrl`: ảnh công khai (sản phẩm, bảng giá, asset
+ * tĩnh) chỉ là phép ghép chuỗi nên dựng được ngay trong lúc render.
+ *
+ * Trả `null` khi buộc phải tải blob — chỉ ảnh báo giá riêng tư — để phía gọi
+ * biết là phải đi đường async. Nhờ đó danh sách vài trăm ảnh không còn tốn mỗi
+ * ảnh một effect + một lần commit riêng của React.
+ */
+export function resolveImageUrlSync(path: string | null | undefined): string | null {
+  const normalized = normalizeImagePath(path);
+  if (!normalized) return withBasePath(DEFAULT_LOGO_PATH);
+  if (/^(https?:|data:|blob:)/i.test(normalized) || normalized.startsWith(appBase())) {
+    return normalized;
+  }
+  if (privateQuoteImagePath(normalized)) return null;
+
+  const key = imageStoreKeyFromPath(normalized);
+  if (!key) return withBasePath(DEFAULT_LOGO_PATH);
+  return storagePublicUrl(key);
+}
+
 export async function resolveImageUrl(path: string | null | undefined): Promise<{
   url: string;
   revoke: boolean;
 }> {
-  const normalized = normalizeImagePath(path);
-  if (!normalized) return { url: withBasePath(DEFAULT_LOGO_PATH), revoke: false };
-  if (/^(https?:|data:|blob:)/i.test(normalized) || normalized.startsWith(appBase())) {
-    return { url: normalized, revoke: false };
-  }
-  if (privateQuoteImagePath(normalized)) {
-    const blob = await downloadImageBlob(normalized);
-    return blob
-      ? { url: URL.createObjectURL(blob), revoke: true }
-      : { url: withBasePath(DEFAULT_LOGO_PATH), revoke: false };
-  }
+  const direct = resolveImageUrlSync(path);
+  if (direct !== null) return { url: direct, revoke: false };
 
-  const key = imageStoreKeyFromPath(normalized);
-  if (!key) return { url: withBasePath(DEFAULT_LOGO_PATH), revoke: false };
-  return { url: storagePublicUrl(key), revoke: false };
+  // Chỉ còn đúng một nhánh cần async: ảnh báo giá riêng tư phải tải blob.
+  const blob = await downloadImageBlob(normalizeImagePath(path) as string);
+  return blob
+    ? { url: URL.createObjectURL(blob), revoke: true }
+    : { url: withBasePath(DEFAULT_LOGO_PATH), revoke: false };
 }
 
 async function fetchPublicDataUrl(publicPath: string): Promise<string | null> {

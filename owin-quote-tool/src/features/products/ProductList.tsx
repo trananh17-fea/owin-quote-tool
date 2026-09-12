@@ -1,9 +1,11 @@
+import { memo } from 'react';
 import { ChevronLeft, ChevronRight, Copy, Package, Pencil, Search, Trash2 } from 'lucide-react';
 import type { ProductRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
 import { titleCaseVi } from '@/lib/format/titleCase';
 import { PAGE_SIZES, type PageSize, type PaginationResult } from '@/lib/list/paginateItems';
+import { useProgressiveReveal } from '@/lib/list/useProgressiveReveal';
 import { mergeRowDragProps, useDragReorder } from '@/components/DragReorder';
 import { ProductThumb } from '@/components/ProductThumb';
 import { unitLabel } from '@/features/products/productUnits';
@@ -12,6 +14,7 @@ interface Props {
   /** Chỉ các sản phẩm của trang hiện tại. */
   products: ProductRecord[];
   pagination: PaginationResult<ProductRecord>;
+  paginationEnabled: boolean;
   pageSize: PageSize;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: PageSize) => void;
@@ -27,10 +30,102 @@ interface Props {
   onPreview: (p: ProductRecord) => void;
 }
 
+/**
+ * Các ô của một hàng, tách riêng và `memo` theo bản ghi sản phẩm.
+ *
+ * Hàng `<tr>` phải dựng lại mỗi lần render vì mang prop kéo-thả đổi theo trạng
+ * thái kéo, nhưng phần nặng (ảnh + 3 nút + text) thì không: nhờ `memo`, mỗi đợt
+ * trải thêm dòng chỉ dựng dòng mới chứ không dựng lại toàn bộ danh sách.
+ */
+const ProductRowCells = memo(function ProductRowCells({
+  product,
+  duplicating,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onPreview,
+}: {
+  product: ProductRecord;
+  duplicating: boolean;
+  onEdit: (p: ProductRecord) => void;
+  onDelete: (p: ProductRecord) => void;
+  onDuplicate: (p: ProductRecord) => void;
+  onPreview: (p: ProductRecord) => void;
+}) {
+  return (
+    <>
+      <td data-col="image">
+        <button
+          className="product-image-button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onPreview(product);
+          }}
+          aria-label={`Xem ảnh ${product.code}`}
+        >
+          <ProductThumb imagePath={product.coverImagePath} fill thumb />
+        </button>
+      </td>
+      <td data-col="name">
+        <div className="product-name">{titleCaseVi(product.name) || product.name}</div>
+        <div className="product-table-code">{product.code}</div>
+        <div className="product-row-mobile-meta">
+          <span>{normalizeCategoryName(product.category)}</span>
+          <span>{unitLabel(product.unit)}</span>
+          {product.rawSizeText ? <span>{product.rawSizeText}</span> : null}
+        </div>
+      </td>
+      <td data-col="category">{normalizeCategoryName(product.category)}</td>
+      <td data-col="unit">{unitLabel(product.unit)}</td>
+      <td data-col="size">{product.rawSizeText || '—'}</td>
+      <td className="num" data-col="price">{formatVND(product.unitPriceVnd)}</td>
+      <td data-col="actions">
+        <div className="product-table-actions">
+          <button
+            className="icon-btn product-edit-action"
+            onClick={(event) => {
+              event.stopPropagation();
+              onEdit(product);
+            }}
+            aria-label={`Sửa ${product.code}`}
+            title="Sửa sản phẩm"
+          >
+            <Pencil size={16} />
+          </button>
+          <button
+            className="icon-btn product-copy-action"
+            disabled={duplicating}
+            onClick={(event) => {
+              event.stopPropagation();
+              onDuplicate(product);
+            }}
+            aria-label={`Nhân bản ${product.code}`}
+            title="Nhân bản"
+          >
+            <Copy size={16} />
+          </button>
+          <button
+            className="icon-btn danger product-delete-action"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(product);
+            }}
+            aria-label={`Xoá ${product.code}`}
+            title="Xoá sản phẩm"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </td>
+    </>
+  );
+});
+
 /** Bảng danh mục sản phẩm: một card, đầu bảng sticky, footer phân trang. */
 export function ProductList({
   products,
   pagination,
+  paginationEnabled,
   pageSize,
   onPageChange,
   onPageSizeChange,
@@ -44,6 +139,9 @@ export function ProductList({
   onDuplicate,
   onPreview,
 }: Props) {
+  // Tắt phân trang thì cả danh mục nằm trong một trang: trải dần theo khung hình
+  // để lần dựng đầu không chiếm hết luồng chính.
+  const visibleProducts = useProgressiveReveal(products);
   // Hàng hiển thị theo trang, còn thứ tự lưu xuống Supabase tính trên toàn danh
   // sách — cộng offset của trang để index không lệch khi đang ở trang 2 trở đi.
   const pageOffset = (pagination.page - 1) * pageSize;
@@ -97,7 +195,7 @@ export function ProductList({
             </tr>
           </thead>
           <tbody>
-            {products.map((p, index) => (
+            {visibleProducts.map((p, index) => (
               <tr
                 key={p.id}
                 data-ma={p.code}
@@ -116,114 +214,61 @@ export function ProductList({
                 }}
                 {...dragRowProps(index)}
               >
-                <td data-col="image">
-                  <button
-                    className="product-image-button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onPreview(p);
-                    }}
-                    aria-label={`Xem ảnh ${p.code}`}
-                  >
-                    <ProductThumb imagePath={p.coverImagePath} fill thumb />
-                  </button>
-                </td>
-                <td data-col="name">
-                  <div className="product-name">{titleCaseVi(p.name) || p.name}</div>
-                  <div className="product-table-code">{p.code}</div>
-                  <div className="product-row-mobile-meta">
-                    <span>{normalizeCategoryName(p.category)}</span>
-                    <span>{unitLabel(p.unit)}</span>
-                    {p.rawSizeText ? <span>{p.rawSizeText}</span> : null}
-                  </div>
-                </td>
-                <td data-col="category">{normalizeCategoryName(p.category)}</td>
-                <td data-col="unit">{unitLabel(p.unit)}</td>
-                <td data-col="size">{p.rawSizeText || '—'}</td>
-                <td className="num" data-col="price">{formatVND(p.unitPriceVnd)}</td>
-                <td data-col="actions">
-                  <div className="product-table-actions">
-                    <button
-                      className="icon-btn product-edit-action"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onEdit(p);
-                      }}
-                      aria-label={`Sửa ${p.code}`}
-                      title="Sửa sản phẩm"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      className="icon-btn product-copy-action"
-                      disabled={duplicatingId === p.id}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onDuplicate(p);
-                      }}
-                      aria-label={`Nhân bản ${p.code}`}
-                      title="Nhân bản"
-                    >
-                      <Copy size={16} />
-                    </button>
-                    <button
-                      className="icon-btn danger product-delete-action"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onDelete(p);
-                      }}
-                      aria-label={`Xoá ${p.code}`}
-                      title="Xoá sản phẩm"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+                <ProductRowCells
+                  product={p}
+                  duplicating={duplicatingId === p.id}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onDuplicate={onDuplicate}
+                  onPreview={onPreview}
+                />
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <nav className="product-list-pagination" aria-label="Phân trang danh sách sản phẩm">
-        <div className="product-pagination-summary">
-          <span>
-            Hiển thị {pagination.firstItemNumber}–{pagination.lastItemNumber} / {pagination.totalItems} sản phẩm
-          </span>
-          <label>
-            Mỗi trang
-            <select
-              className="input product-page-size-select"
-              value={pageSize}
-              onChange={(event) => onPageSizeChange(Number(event.target.value) as PageSize)}
-              aria-label="Số sản phẩm mỗi trang"
+      {paginationEnabled && (
+        <nav className="product-list-pagination" aria-label="Phân trang danh sách sản phẩm">
+          <div className="product-pagination-summary">
+            <span>
+              Hiển thị {pagination.firstItemNumber}–{pagination.lastItemNumber} / {pagination.totalItems} sản phẩm
+            </span>
+            <label>
+              Mỗi trang
+              <select
+                className="input product-page-size-select"
+                value={pageSize}
+                onChange={(event) => onPageSizeChange(Number(event.target.value) as PageSize)}
+                aria-label="Số sản phẩm mỗi trang"
+              >
+                {PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="product-pagination-controls">
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => onPageChange(pagination.page - 1)}
+              disabled={pagination.page === 1}
+              aria-label="Trang trước"
             >
-              {PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
-            </select>
-          </label>
-        </div>
-        <div className="product-pagination-controls">
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={() => onPageChange(pagination.page - 1)}
-            disabled={pagination.page === 1}
-            aria-label="Trang trước"
-          >
-            <ChevronLeft size={17} />
-          </button>
-          <span aria-live="polite">Trang <strong>{pagination.page}</strong> / {pagination.totalPages}</span>
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={() => onPageChange(pagination.page + 1)}
-            disabled={pagination.page === pagination.totalPages}
-            aria-label="Trang sau"
-          >
-            <ChevronRight size={17} />
-          </button>
-        </div>
-      </nav>
+              <ChevronLeft size={17} />
+            </button>
+            <span aria-live="polite">Trang <strong>{pagination.page}</strong> / {pagination.totalPages}</span>
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => onPageChange(pagination.page + 1)}
+              disabled={pagination.page === pagination.totalPages}
+              aria-label="Trang sau"
+            >
+              <ChevronRight size={17} />
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

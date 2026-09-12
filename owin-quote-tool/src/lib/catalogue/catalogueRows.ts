@@ -41,7 +41,7 @@ const SPEC_ORDER = [
   { label: 'Ghi Chú', keys: ['ghi chu', 'ghi chú', 'note'] },
 ] as const;
 
-function normalizeText(value: string): string {
+function normalizeTextUncached(value: string): string {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -49,9 +49,28 @@ function normalizeText(value: string): string {
     .trim();
 }
 
+// Bỏ dấu + hạ chữ thường là việc đắt (NFD + regex). Tên spec lặp đi lặp lại giữa
+// hàng trăm sản phẩm nên nhớ lại kết quả: 333 sản phẩm × 7 spec × 9 luật trước
+// đây là hơn hai vạn lần chuẩn hoá, giờ chỉ còn vài chục.
+const normalizedTextCache = new Map<string, string>();
+
+function normalizeText(value: string): string {
+  const cached = normalizedTextCache.get(value);
+  if (cached !== undefined) return cached;
+
+  const normalized = normalizeTextUncached(value);
+  normalizedTextCache.set(value, normalized);
+  return normalized;
+}
+
+// Ứng viên của SPEC_ORDER là hằng số — chuẩn hoá một lần lúc nạp module.
+const SPEC_ORDER_NORMALIZED = SPEC_ORDER.map((rule) => ({
+  label: rule.label,
+  keys: rule.keys.map(normalizeText) as string[],
+}));
+
 function specMatches(key: string, candidates: readonly string[]): boolean {
-  const normalized = normalizeText(key);
-  return candidates.some((candidate) => normalized === normalizeText(candidate));
+  return candidates.includes(normalizeText(key));
 }
 
 function unitLabel(unit: string): string {
@@ -75,7 +94,7 @@ function productDescription(product: ProductRecord): string[] {
   const used = new Set<number>();
   const lines = [titleCase(product.name)];
 
-  SPEC_ORDER.forEach((rule) => {
+  SPEC_ORDER_NORMALIZED.forEach((rule) => {
     const match = specs.find((spec) => !used.has(spec.originalIndex) && specMatches(spec.key, rule.keys));
     if (!match) return;
     lines.push(formatSpecLine(rule.label, match.value));
@@ -125,10 +144,56 @@ function formatCategoryHeading(categoryName: string, index: number): string {
   return `${roman[index] || String(index + 1)}. ${categoryName.toUpperCase()}`;
 }
 
+interface ProductCatalogueParts {
+  money: ReturnType<typeof buildCatalogueMoneyBlocks>;
+  descriptionLines: string[];
+  description: string;
+  accessoryLines: string[];
+  accessoryDescription: string;
+  itemName: string;
+  unit: string;
+}
+
+/**
+ * Phần nặng của mỗi sản phẩm — mô tả spec, danh sách phụ kiện, khối tiền — chỉ
+ * phụ thuộc vào chính bản ghi chứ không phụ thuộc STT hay danh mục, nên nhớ lại
+ * theo bản ghi: đổi bộ lọc loại cửa hay dựng lại bảng giá không phải tính lại.
+ *
+ * WeakMap nên bản ghi bị thay (sửa / realtime) là mục nhớ tự được thu hồi.
+ */
+const productPartsCache = new WeakMap<ProductRecord, ProductCatalogueParts>();
+
+function catalogueParts(product: ProductRecord): ProductCatalogueParts {
+  const cached = productPartsCache.get(product);
+  if (cached) return cached;
+
+  const descriptionLines = productDescription(product);
+  const accessoryLines = fixedAccessoryDescription(product);
+  const parts: ProductCatalogueParts = {
+    money: buildCatalogueMoneyBlocks(product),
+    descriptionLines,
+    description: descriptionLines.join('\n'),
+    accessoryLines,
+    accessoryDescription: accessoryLines.join('\n'),
+    itemName: titleCase(product.name),
+    unit: unitLabel(product.unit),
+  };
+  productPartsCache.set(product, parts);
+  return parts;
+}
+
 export function buildCatalogueBlockRows(products: ProductRecord[]): CatalogueBlockRow[] {
   // Nhóm → màu (Trắc→Lim→Ghi→Xanh) → giá cao→thấp.
   const sortedProducts = sortProductsForCatalog(products);
-  const categories = Array.from(new Set(sortedProducts.map((product) => normalizeCategoryName(product.category)))).sort(sortCategoryNames);
+  // Gom theo danh mục một lượt, thay vì quét lại cả danh sách cho từng danh mục.
+  const byCategory = new Map<string, ProductRecord[]>();
+  sortedProducts.forEach((product) => {
+    const categoryName = normalizeCategoryName(product.category);
+    const group = byCategory.get(categoryName);
+    if (group) group.push(product);
+    else byCategory.set(categoryName, [product]);
+  });
+  const categories = Array.from(byCategory.keys()).sort(sortCategoryNames);
   const rows: CatalogueBlockRow[] = [];
   let displayIndex = 1;
 
@@ -152,11 +217,17 @@ export function buildCatalogueBlockRows(products: ProductRecord[]): CatalogueBlo
       completedTotalVnd: null,
     });
 
-    sortedProducts
-      .filter((product) => normalizeCategoryName(product.category) === categoryName)
+    (byCategory.get(categoryName) ?? [])
       .forEach((product) => {
-        const money = buildCatalogueMoneyBlocks(product);
-        const accessoryLines = fixedAccessoryDescription(product);
+        const {
+          money,
+          descriptionLines,
+          description,
+          accessoryLines,
+          accessoryDescription,
+          itemName,
+          unit,
+        } = catalogueParts(product);
         const blockRowCount = 2 + money.extraRows.length;
 
         rows.push({
@@ -167,11 +238,11 @@ export function buildCatalogueBlockRows(products: ProductRecord[]): CatalogueBlo
           sttRowSpan: blockRowCount,
           imagePath: product.coverImagePath || '',
           imageRowSpan: blockRowCount,
-          itemName: titleCase(product.name),
+          itemName,
           categoryName,
-          descriptionLines: productDescription(product),
-          description: productDescription(product).join('\n'),
-          unit: unitLabel(product.unit),
+          descriptionLines,
+          description,
+          unit,
           width: formatCatalogueDecimal(money.width, 2),
           height: formatCatalogueDecimal(money.height, 2),
           weight: formatCatalogueDecimal(money.productWeight, 3),
@@ -187,10 +258,10 @@ export function buildCatalogueBlockRows(products: ProductRecord[]): CatalogueBlo
           numericId: product.numericId,
           stt: '',
           imagePath: product.coverImagePath || '',
-          itemName: titleCase(product.name),
+          itemName,
           categoryName,
           descriptionLines: accessoryLines,
-          description: accessoryLines.join('\n'),
+          description: accessoryDescription,
           unit: accessoryLines.length > 0 ? 'Bộ' : '',
           width: '',
           height: '',
@@ -201,18 +272,19 @@ export function buildCatalogueBlockRows(products: ProductRecord[]): CatalogueBlo
         });
 
         money.extraRows.forEach((extraRow) => {
-          const unit = extraRow.unit === 'BO' ? 'Bộ' : extraRow.unit === 'M2' ? 'm²' : 'md';
+          const extraUnit = extraRow.unit === 'BO' ? 'Bộ' : extraRow.unit === 'M2' ? 'm²' : 'md';
+          const extraLines = extraAccessoryDescription(extraRow.item);
           rows.push({
             rowType: 'extraAccessory',
             productCode: product.code,
             numericId: product.numericId,
             stt: '',
             imagePath: product.coverImagePath || '',
-            itemName: titleCase(product.name),
+            itemName,
             categoryName,
-            descriptionLines: extraAccessoryDescription(extraRow.item),
-            description: extraAccessoryDescription(extraRow.item).join('\n'),
-            unit,
+            descriptionLines: extraLines,
+            description: extraLines.join('\n'),
+            unit: extraUnit,
             width: '',
             height: '',
             weight: formatCatalogueDecimal(extraRow.unit === 'BO' ? extraRow.quantity : extraRow.weight, 3),

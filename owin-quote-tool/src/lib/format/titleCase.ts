@@ -38,13 +38,33 @@ function formatTitleToken(token: string): string {
   return `${leading}${core.charAt(0).toLocaleUpperCase('vi-VN')}${core.slice(1).toLocaleLowerCase('vi-VN')}${trailing}`;
 }
 
+function titleCaseUncached(clean: string): string {
+  if (/@/.test(clean) || /^[a-z]+:\/\//i.test(clean) || /[\\/]/.test(clean)) return clean;
+  // Split on spaces; keep punctuation attached to tokens (handled in formatTitleToken).
+  return clean.split(' ').map(formatTitleToken).join(' ');
+}
+
+/*
+ * Hàm này chạy rất nhiều lần trên cùng những chuỗi giống nhau — tên nhóm, nhãn
+ * spec, tên phụ kiện lặp lại khắp danh mục — mà mỗi lần lại tốn vài regex unicode
+ * (`\p{L}`) và `toLocaleLowerCase('vi-VN')`. Nhớ lại kết quả cắt phần lớn chi phí
+ * dựng bảng giá. Có chặn trần để không phình bộ nhớ khi gặp chuỗi lạ liên tục.
+ */
+const MAX_TITLE_CASE_CACHE = 5000;
+const titleCaseCache = new Map<string, string>();
+
 /** Title-case mỗi từ (vi-VN). Bỏ qua email/URL/path. */
 export function titleCaseVi(value: string | null | undefined): string {
   const clean = String(value || '')
     .trim()
     .replace(/\s+/g, ' ');
   if (!clean) return '';
-  if (/@/.test(clean) || /^[a-z]+:\/\//i.test(clean) || /[\\/]/.test(clean)) return clean;
-  // Split on spaces; keep punctuation attached to tokens (handled in formatTitleToken).
-  return clean.split(' ').map(formatTitleToken).join(' ');
+
+  const cached = titleCaseCache.get(clean);
+  if (cached !== undefined) return cached;
+
+  const titled = titleCaseUncached(clean);
+  if (titleCaseCache.size >= MAX_TITLE_CASE_CACHE) titleCaseCache.clear();
+  titleCaseCache.set(clean, titled);
+  return titled;
 }
