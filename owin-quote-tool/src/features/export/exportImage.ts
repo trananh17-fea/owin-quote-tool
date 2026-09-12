@@ -222,7 +222,17 @@ function renderUrlFor(url: string, maxEdge: number, quality: number): string | n
 const VARIANT_MAX_EDGE = EXPORT_IMAGE_MAX_EDGE;
 const VARIANT_QUALITY = 0.78;
 
+/**
+ * Bật lên khi Storage từ chối ghi vào `export/` (thường là quyền bucket).
+ *
+ * Không có nó thì mỗi lần xuất đều tốn thêm một lượt 404 hỏi bản rút gọn không
+ * bao giờ tồn tại — tức chậm hơn cả lúc chưa tối ưu. Hỏng thì lặng lẽ quay về
+ * đúng đường cũ (CDN thu nhỏ tại chỗ).
+ */
+let variantWritesBlocked = false;
+
 function variantPathFor(source: string): string | null {
+  if (variantWritesBlocked) return null;
   const storagePath = storagePathFromPublicUrl(source);
   if (!storagePath || !storagePath.startsWith('img/')) return null;
   return `${storagePath.replace(/^img\//, 'export/').replace(/\.[^./]+$/, '')}.jpg`;
@@ -250,13 +260,16 @@ export async function flushExportVariants(): Promise<void> {
   if (variantQueue.size === 0) return;
   const pending = [...variantQueue];
   variantQueue.clear();
-  await mapWithConcurrency(pending, 4, async ([path, small]) => {
+  let failures = 0;
+  await mapWithConcurrency(pending, 8, async ([path, small]) => {
     try {
       await uploadImageBlob(path, small);
     } catch {
-      // Bản rút gọn chỉ là tối ưu; thiếu thì lần xuất sau tự thử lại.
+      failures += 1;
     }
   });
+  // Hỏng cả loạt = không ghi được vào bucket, không phải trục trặc mạng lẻ tẻ.
+  if (failures === pending.length) variantWritesBlocked = true;
 }
 
 let renderProbe: Promise<boolean> | null = null;
@@ -344,6 +357,7 @@ async function loadSourceOnce(source: string, preferThumb: boolean): Promise<Sou
   markImageWork(startedAt);
   try {
     const ready = async (blob: Blob): Promise<SourceBytes> => {
+      stats.images += 1;
       stats.bytesIn += blob.size;
       return { blob, extension: extensionFromType(blob.type), ...(await jpegSize(blob)) };
     };
@@ -393,6 +407,7 @@ async function loadSourceOnce(source: string, preferThumb: boolean): Promise<Sou
     }
 
     if (!heavy) return null;
+    stats.images += 1;
     stats.bytesIn += heavy.size;
 
     const small = await rescaleExportImage(heavy, VARIANT_MAX_EDGE, VARIANT_QUALITY);
@@ -451,7 +466,6 @@ async function loadFresh(source: string, options: ExportImageOptions): Promise<E
   // của sản phẩm này, nếu không mọi lần xuất sau đều ra logo.
   if (!bytes && options.fallbackLogo === true) bytes = await fallbackLogoBytes();
   if (!bytes) return null;
-  stats.images += 1;
 
   // Bytes nguồn đã vừa khung → nhúng thẳng. Đây là đường đi của gần như mọi
   // dòng bảng giá, và nó bỏ hẳn một lượt decode + mã hoá trên luồng chính.

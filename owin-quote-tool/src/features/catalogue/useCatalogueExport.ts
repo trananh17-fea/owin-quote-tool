@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ProductRecord } from '@/types/models';
 import { prefetchCatalogueExportModules } from '@/features/export/prefetchExportModules';
 import {
@@ -32,6 +32,27 @@ export function useCatalogueExport(shownRecords: ProductRecord[]) {
       { maxEdge: EXPORT_IMAGE_MAX_EDGE, quality: EXPORT_IMAGE_QUALITY },
     );
   }, [shownRecords]);
+
+  /**
+   * Nạp trước ngay khi tab rảnh tay, không đợi rê chuột.
+   *
+   * Rê chuột tới nút thường chỉ sớm hơn cú bấm vài trăm ms — không đủ cho vài
+   * trăm tấm ảnh. Bắt đầu từ lúc danh sách đã hiện xong thì tới lúc bấm, ảnh đã
+   * nằm sẵn trong bộ nhớ và lần xuất chỉ còn phần dựng file.
+   *
+   * `requestIdleCallback` để việc này xếp sau phần render danh sách; lượt tải
+   * cũng chỉ là các bản ~20KB, nhẹ hơn hẳn ảnh mà tab đang hiển thị.
+   */
+  useEffect(() => {
+    if (shownRecords.length === 0) return;
+    const idle = window.requestIdleCallback;
+    if (typeof idle !== 'function') {
+      const timer = window.setTimeout(prewarmExports, 1500);
+      return () => window.clearTimeout(timer);
+    }
+    const handle = idle(prewarmExports, { timeout: 3000 });
+    return () => window.cancelIdleCallback(handle);
+  }, [prewarmExports, shownRecords.length]);
 
   const exportWord = async () => {
     setExporting(true);
