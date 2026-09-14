@@ -7,6 +7,10 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase/client';
 import { normalizeLoginIdentifier } from '@/features/auth/authIdentifier';
 
+// Ô "Ghi nhớ đăng nhập" quyết định phiên nằm ở localStorage hay sessionStorage,
+// nên nó thuộc về lớp client; tái xuất ở đây để màn đăng nhập chỉ cần một import.
+export { getRememberSignIn, setRememberSignIn } from '@/services/supabase/client';
+
 export interface SessionState {
   session: Session | null;
   loading: boolean;
@@ -114,10 +118,13 @@ export async function signInWithOAuth(provider: OAuthProviderId): Promise<void> 
 }
 
 /**
- * Gửi email đặt lại mật khẩu. KHÔNG tiết lộ email có tồn tại hay không: câu
- * trả lời giống hệt nhau để người lạ không dò được danh sách tài khoản.
+ * Gửi mã xác nhận đặt lại mật khẩu tới email của tài khoản.
+ *
+ * KHÔNG tiết lộ email có tồn tại hay không: email lạ cũng trả về bình thường,
+ * để người ngoài không dò được danh sách tài khoản. Trả về email đã chuẩn hoá
+ * vì bước nhập mã cần đúng địa chỉ đó để đối chiếu.
  */
-export async function sendPasswordReset(identifier: string): Promise<void> {
+export async function sendPasswordResetOtp(identifier: string): Promise<string> {
   const email = normalizeLoginIdentifier(identifier);
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -131,6 +138,31 @@ export async function sendPasswordReset(identifier: string): Promise<void> {
       throw new Error(message, { cause: error });
     }
   }
+  return email;
+}
+
+export const PASSWORD_RESET_OTP_LENGTH = 6;
+
+/**
+ * Đổi mật khẩu bằng mã gửi qua email. Mã đúng mới mở được phiên, nên đây là
+ * bằng chứng người đổi thực sự đọc được hộp thư của tài khoản.
+ */
+export async function resetPasswordWithOtp(
+  email: string,
+  token: string,
+  newPassword: string,
+): Promise<void> {
+  try {
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'recovery' });
+    if (error) throw error;
+  } catch (error) {
+    const code = error && typeof error === 'object' && 'code' in error ? error.code : '';
+    if (code === 'otp_expired') {
+      throw new Error('Mã đã hết hạn. Bấm gửi lại để nhận mã mới.', { cause: error });
+    }
+    throw new Error('Mã xác nhận không đúng. Vui lòng kiểm tra lại email.', { cause: error });
+  }
+  await updatePassword(newPassword);
 }
 
 /** Đặt mật khẩu mới cho phiên đang mở từ link khôi phục. */

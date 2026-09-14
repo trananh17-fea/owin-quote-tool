@@ -21,10 +21,68 @@ export const QUOTE_IMAGE_BUCKET = 'quote-images';
 const safeUrl = url || 'https://placeholder.supabase.co';
 const safeKey = anonKey || 'placeholder-anon-key';
 
+const REMEMBER_SIGN_IN_KEY = 'owin-auth-remember';
+
+/** Mặc định là ghi nhớ; chỉ khi người dùng bỏ tick mới lưu theo tab. */
+export function getRememberSignIn(): boolean {
+  try {
+    return localStorage.getItem(REMEMBER_SIGN_IN_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+}
+
+export function setRememberSignIn(remember: boolean): void {
+  try {
+    localStorage.setItem(REMEMBER_SIGN_IN_KEY, remember ? 'true' : 'false');
+  } catch {
+    // Cửa sổ ẩn danh chặn storage: cứ coi như ghi nhớ, phiên sẽ mất khi đóng tab.
+  }
+}
+
+/**
+ * Chọn nơi lưu phiên theo ô "Ghi nhớ đăng nhập".
+ *
+ * localStorage sống qua lần đóng trình duyệt, sessionStorage chết theo tab —
+ * đó chính là khác biệt giữa tick và không tick. Đọc thì tra cả hai, còn ghi
+ * thì xoá bên kia đi để một phiên không tồn tại ở hai nơi với hai trạng thái.
+ */
+const sessionStorageAdapter = {
+  getItem(key: string): string | null {
+    try {
+      return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem(key: string, value: string): void {
+    try {
+      if (getRememberSignIn()) {
+        localStorage.setItem(key, value);
+        sessionStorage.removeItem(key);
+      } else {
+        sessionStorage.setItem(key, value);
+        localStorage.removeItem(key);
+      }
+    } catch {
+      // Không lưu được thì phiên chỉ sống trong bộ nhớ của tab hiện tại.
+    }
+  },
+  removeItem(key: string): void {
+    try {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    } catch {
+      // Không xoá được cũng không chặn được việc đăng xuất.
+    }
+  },
+};
+
 export const supabase = createClient(safeUrl, safeKey, {
   auth: {
-    persistSession: true,      // admin đăng nhập 1 lần, nhớ phiên
+    persistSession: true,
     autoRefreshToken: true,
     storageKey: 'owin-supabase-auth',
+    storage: sessionStorageAdapter,
   },
 });
