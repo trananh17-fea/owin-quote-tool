@@ -5,6 +5,7 @@
  */
 import imageCompression from 'browser-image-compression';
 import { supabase, PRODUCT_IMAGE_BUCKET, QUOTE_IMAGE_BUCKET } from '@/services/supabase/client';
+import { requireCurrentStoreId } from '@/services/supabase/currentStore';
 
 /**
  * Thumbnail chỉ cho list/bảng giá (không phải ảnh lưu chính).
@@ -57,9 +58,22 @@ function sanitize(part: string): string {
   return (part || 'x').toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'x';
 }
 
+/**
+ * Tiền tố cửa hàng cho MỌI object mới. Policy của Storage đọc đúng đoạn đầu
+ * đường dẫn này để biết object thuộc cửa hàng nào.
+ *
+ * Ảnh tạo trước khi có đa cửa hàng nằm phẳng ở gốc bucket và KHÔNG được di
+ * chuyển: URL công khai của chúng đã nằm trong JSON của sản phẩm lẫn báo giá
+ * cũ, đổi chỗ là hỏng hết. Policy nhận riêng nhóm đường dẫn phẳng đó cho cửa
+ * hàng gốc.
+ */
+function storePrefix(): string {
+  return `${requireCurrentStoreId()}/`;
+}
+
 /** Đường dẫn ảnh trong bucket, ổn định theo mã sản phẩm + tên file. */
 export function storagePathFor(productCode: string, filename: string): string {
-  return `products/${sanitize(productCode)}/${sanitize(filename)}`;
+  return `${storePrefix()}products/${sanitize(productCode)}/${sanitize(filename)}`;
 }
 
 function cleanStoragePath(path: string): string {
@@ -120,7 +134,8 @@ export type UploadedImage = { path: string; url: string };
 export async function uploadImageDedupResult(blob: Blob, seen?: Set<string>): Promise<UploadedImage> {
   const hash = await blobHash(blob);
   const ext = extensionForBlob(blob);
-  const path = `img/${hash}.${ext}`;
+  const prefix = storePrefix();
+  const path = `${prefix}img/${hash}.${ext}`;
   if (!seen?.has(hash)) {
     const { error } = await supabase.storage
       .from(PRODUCT_IMAGE_BUCKET)
@@ -131,14 +146,14 @@ export async function uploadImageDedupResult(blob: Blob, seen?: Set<string>): Pr
       const thumbBlob = await makeThumbBlob(blob);
       await supabase.storage
         .from(PRODUCT_IMAGE_BUCKET)
-        .upload(`thumb/${hash}.${ext}`, thumbBlob, { upsert: true, contentType: 'image/webp' });
+        .upload(`${prefix}thumb/${hash}.${ext}`, thumbBlob, { upsert: true, contentType: 'image/webp' });
     } catch { /* thumb là tối ưu, thiếu không sao */ }
     // Best-effort: bản cho file xuất ở export/<hash>.jpg (thiếu thì lúc xuất tự dựng).
     try {
       const exportBlob = await makeExportBlob(blob);
       await supabase.storage
         .from(PRODUCT_IMAGE_BUCKET)
-        .upload(`export/${hash}.jpg`, exportBlob, { upsert: true, contentType: 'image/jpeg' });
+        .upload(`${prefix}export/${hash}.jpg`, exportBlob, { upsert: true, contentType: 'image/jpeg' });
     } catch { /* bản xuất là tối ưu, thiếu không sao */ }
     seen?.add(hash);
   }
@@ -148,7 +163,7 @@ export async function uploadImageDedupResult(blob: Blob, seen?: Set<string>): Pr
 /** Upload a quote-only image to a private bucket and return a stable DB reference. */
 export async function uploadPrivateQuoteImage(blob: Blob): Promise<UploadedImage> {
   const hash = await blobHash(blob);
-  const path = `img/${hash}.${extensionForBlob(blob)}`;
+  const path = `${storePrefix()}img/${hash}.${extensionForBlob(blob)}`;
   const { error } = await supabase.storage
     .from(QUOTE_IMAGE_BUCKET)
     .upload(path, blob, { upsert: true, contentType: blob.type || 'image/webp' });

@@ -251,11 +251,15 @@ function variantProbeWorthIt(): boolean {
   return variantProbeHits > 0 || variantProbeMisses < 16;
 }
 
-function variantPathFor(source: string): string | null {
+/** Xuất ra để kiểm thử: phải nhận cả đường dẫn cũ lẫn đường dẫn có tiền tố cửa hàng. */
+export function variantPathFor(source: string): string | null {
   if (variantWritesBlocked) return null;
   const storagePath = storagePathFromPublicUrl(source);
-  if (!storagePath || !storagePath.startsWith('img/')) return null;
-  return `${storagePath.replace(/^img\//, 'export/').replace(/\.[^./]+$/, '')}.jpg`;
+  if (!storagePath) return null;
+  // Khớp cả `img/<hash>` (ảnh cũ, phẳng ở gốc bucket) lẫn `<store>/img/<hash>`.
+  const match = /^((?:[^/]+\/)?)img\/(.+)$/.exec(storagePath);
+  if (!match) return null;
+  return `${match[1]}export/${match[2].replace(/\.[^./]+$/, '')}.jpg`;
 }
 
 /**

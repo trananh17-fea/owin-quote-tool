@@ -882,21 +882,52 @@ exception when duplicate_object then null; end $$;
 -- Bucket product-images (Public = ON) — URL ảnh công khai vẫn tải được, nhưng
 -- anon không có policy SELECT nên không thể gọi API để liệt kê toàn bộ object.
 --
--- CHƯA ĐÓNG KHUNG THEO CỬA HÀNG. Đây là lỗ hổng đã biết duy nhất còn lại của
--- mô hình đa cửa hàng: mọi tài khoản đã đăng nhập vẫn đọc/ghi được ảnh của
--- cửa hàng khác nếu biết đường dẫn. Siết bằng cách bắt đường dẫn object bắt
--- đầu bằng <store_id>/ — phải migrate đường dẫn ảnh hiện có trước, nếu không
--- toàn bộ ảnh đang dùng sẽ mất.
+-- ĐÓNG KHUNG THEO CỬA HÀNG BẰNG ĐOẠN ĐẦU ĐƯỜNG DẪN:
+--   object mới nằm ở `<store_id>/img|thumb|export|products/...`
+--
+-- Ảnh tạo trước khi có đa cửa hàng nằm phẳng ở gốc bucket (`img/`, `thumb/`,
+-- `export/`, `products/`, `quotes/`). KHÔNG di chuyển chúng: URL công khai của
+-- chúng đã nằm trong JSON của sản phẩm lẫn báo giá cũ, đổi chỗ là hỏng hết
+-- ảnh đang dùng. Nhóm đường dẫn phẳng đó đương nhiên thuộc cửa hàng gốc
+-- 'owin' — lúc chúng được tạo ra thì chưa có cửa hàng nào khác tồn tại — nên
+-- chỉ thành viên 'owin' mới chạm được.
 -- ============================================================================
+
+-- Đoạn đầu đường dẫn thuộc một cửa hàng mình là thành viên?
+create or replace function public.storage_path_in_current_store(p_name text)
+returns boolean
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  select
+    (storage.foldername(p_name))[1] in (select public.current_store_ids())
+    or (
+      (storage.foldername(p_name))[1] in ('img', 'thumb', 'export', 'products', 'quotes')
+      and 'owin' in (select public.current_store_ids())
+    );
+$$;
+
+grant execute on function public.storage_path_in_current_store(text) to authenticated;
+revoke all on function public.storage_path_in_current_store(text) from public, anon;
 insert into storage.buckets (id, name, public)
 values ('product-images', 'product-images', true)
 on conflict (id) do update set public = excluded.public;
 
 drop policy if exists product_images_write on storage.objects;
 drop policy if exists product_images_authenticated_all on storage.objects;
-create policy product_images_authenticated_all on storage.objects
+drop policy if exists product_images_store_all on storage.objects;
+create policy product_images_store_all on storage.objects
   for all to authenticated
-  using (bucket_id = 'product-images') with check (bucket_id = 'product-images');
+  using (
+    bucket_id = 'product-images'
+    and public.storage_path_in_current_store(name)
+  )
+  with check (
+    bucket_id = 'product-images'
+    and public.storage_path_in_current_store(name)
+  );
 
 -- Ảnh ghi đè riêng của báo giá có thể gắn với công trình/khách hàng, vì vậy
 -- bucket này KHÔNG public. Client đăng nhập tải bằng Storage API rồi tạo blob URL.
@@ -906,9 +937,17 @@ on conflict (id) do update set public = excluded.public;
 
 drop policy if exists quote_images_auth_all on storage.objects;
 drop policy if exists quote_images_authenticated_all on storage.objects;
-create policy quote_images_authenticated_all on storage.objects
+drop policy if exists quote_images_store_all on storage.objects;
+create policy quote_images_store_all on storage.objects
   for all to authenticated
-  using (bucket_id = 'quote-images') with check (bucket_id = 'quote-images');
+  using (
+    bucket_id = 'quote-images'
+    and public.storage_path_in_current_store(name)
+  )
+  with check (
+    bucket_id = 'quote-images'
+    and public.storage_path_in_current_store(name)
+  );
 
 -- PostgREST cache tên bảng/cột; nạp lại ngay sau khi chạy file này.
 notify pgrst, 'reload schema';

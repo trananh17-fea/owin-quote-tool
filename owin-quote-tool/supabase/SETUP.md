@@ -57,7 +57,7 @@ on conflict (store_id, user_id) do update set status = 'active';
 
 Mọi bảng nghiệp vụ bật RLS và chỉ thành viên `active` của cửa hàng mới đọc/ghi được dữ liệu của cửa hàng đó. Trigger `revision` đánh dấu mỗi lần cập nhật; trigger xóa mềm ngăn một form cũ hồi sinh sản phẩm/báo giá đã bị xóa trên máy khác. Realtime là cơ chế tự cập nhật, không có nút Sync và không có browser database dự phòng.
 
-Storage **chưa** đóng khung theo cửa hàng: tài khoản đã đăng nhập vẫn đọc/ghi được ảnh của cửa hàng khác nếu biết đường dẫn. Siết lại cần migrate đường dẫn ảnh sang dạng `<store_id>/...` trước.
+Storage đóng khung theo cửa hàng bằng đoạn đầu đường dẫn: ảnh mới nằm ở `<store_id>/img|thumb|export|products/...`. Ảnh tạo trước khi có đa cửa hàng nằm phẳng ở gốc bucket và **cố ý không di chuyển** — URL công khai của chúng đã nằm trong JSON sản phẩm và báo giá cũ, đổi chỗ là hỏng hết ảnh đang dùng. Nhóm đường dẫn phẳng đó chỉ thành viên cửa hàng `owin` chạm được, vì lúc chúng ra đời chưa có cửa hàng nào khác.
 
 ## GitHub Pages
 
