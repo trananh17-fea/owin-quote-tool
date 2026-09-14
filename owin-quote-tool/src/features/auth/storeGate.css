@@ -6,6 +6,13 @@
 .store-gate-body p { margin:0 0 10px; color:var(--ios-label2); font-size:14px; }
 .store-gate-body strong { color:var(--ios-label); font-weight:600; word-break:break-all; }
 .store-gate-detail { font-size:12px; color:var(--ios-label3); background:var(--ios-fill); border-radius:12px; padding:10px 12px; text-align:left; word-break:break-word; }
+.store-gate-choices { display:grid; gap:12px; margin-top:22px; text-align:left; }
+.store-gate-choices button { display:flex; align-items:flex-start; gap:12px; text-align:left; width:100%; padding:16px; border:1px solid var(--ios-separator); border-radius:16px; background:var(--ios-fill); color:var(--ios-label); font-family:inherit; font-size:14px; cursor:pointer; transition:border-color .2s var(--ease-ios), background-color .2s var(--ease-ios); }
+.store-gate-choices button:hover { border-color:var(--ios-blue-ink); background:var(--ios-card); }
+.store-gate-choices svg { flex-shrink:0; margin-top:2px; color:var(--ios-blue-ink); }
+.store-gate-choices span { display:block; color:var(--ios-label3); line-height:1.5; }
+.store-gate-choices strong { display:block; margin-bottom:3px; color:var(--ios-label); font-size:15px; font-weight:600; }
+
 .store-gate-fields { text-align:left; margin-top:20px; }
 .store-gate-fields label { display:block; font-size:13px; font-weight:500; color:var(--ios-label2); margin:14px 0 7px; }
 .store-gate-fields input { width:100%; min-width:0; height:50px; padding:0 16px; border:1px solid var(--ios-separator); border-radius:14px; background:var(--ios-fill); color:var(--ios-label); font-size:15px; font-family:inherit; }

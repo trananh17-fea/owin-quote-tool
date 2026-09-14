@@ -3,10 +3,11 @@
 ## Supabase
 
 1. Project mới: chạy toàn bộ `schema.sql` trong SQL Editor. File có thể chạy lại an toàn.
-2. Project đã có dữ liệu theo schema cũ: chạy `migrations/0001_multi_store_and_naming.sql` **trước**, rồi mới chạy `schema.sql`. Migration đổi tên bảng/cột và gán dữ liệu cũ vào cửa hàng `owin`; bản web đang deploy sẽ hỏng cho tới khi deploy code mới.
+2. Project đã có dữ liệu theo schema cũ: chạy `migrations/` **theo đúng thứ tự số** trước, rồi mới chạy `schema.sql`. Migration đổi tên bảng/cột và gán dữ liệu cũ vào cửa hàng `owin`; bản web đang deploy sẽ hỏng cho tới khi deploy code mới.
 3. Bật Email/Password Auth. Muốn đăng nhập Google/Facebook thì bật provider tương ứng trong Authentication → Providers và thêm URL ứng dụng vào Redirect URLs.
-4. Bucket `product-images` cho URL ảnh catalogue công khai nhưng chặn anon list; bucket `quote-images` private cho ảnh riêng trong báo giá. RLS và Realtime được cấu hình bởi schema.
-5. Chỉ đưa Project URL và anon key vào frontend. Không bao giờ đưa `service_role` hoặc PAT vào GitHub Pages.
+4. Quên mật khẩu dùng mã OTP: vào Authentication → Email Templates → **Reset Password** và thêm `{{ .Token }}` vào nội dung email. Template mặc định chỉ có link, không có mã số.
+5. Bucket `product-images` cho URL ảnh catalogue công khai nhưng chặn anon list; bucket `quote-images` private cho ảnh riêng trong báo giá. RLS và Realtime được cấu hình bởi schema.
+6. Chỉ đưa Project URL và anon key vào frontend. Không bao giờ đưa `service_role` hoặc PAT vào GitHub Pages.
 
 ## Mô hình đa cửa hàng
 
@@ -14,17 +15,39 @@ Tài khoản, mật khẩu, Google/Facebook và quên mật khẩu do Supabase A
 
 | Bảng | Vai trò |
 | --- | --- |
-| `profiles` | Hồ sơ 1-1 với `auth.users`: tên hiển thị, email, ảnh đại diện |
-| `stores` | Cửa hàng; `is_public` quyết định landing page có đọc được bảng giá không |
+| `profiles` | Hồ sơ 1-1 với `auth.users`: tên hiển thị, email, ảnh đại diện, cờ Quản trị viên hệ thống |
+| `stores` | Cửa hàng; `status` pending/active/rejected, `is_public` quyết định landing page có đọc được bảng giá không |
 | `store_members` | Ai thuộc cửa hàng nào, `role` owner/admin/staff, `status` pending/active/disabled |
 | `products` | Bảng giá riêng của từng cửa hàng + JSON document đầy đủ |
 | `quotes` | Báo giá riêng của từng cửa hàng + snapshot đầy đủ |
 | `suggestions` | Autocomplete đã học, dùng chung trong một cửa hàng |
 | `app_documents` | Document cấu hình theo cửa hàng, gồm trạng thái tính nhôm |
 
-Người đăng nhập lần đầu được tạo `profiles` tự động nhưng **chưa thuộc cửa hàng nào**, nên không thấy dữ liệu gì. Chủ cửa hàng phải thêm họ vào `store_members` với `status = 'active'`.
+## Ba vai trò
 
-Duyệt thủ công trong SQL Editor khi chưa có giao diện quản trị:
+| Vai trò | Làm được gì | Ai duyệt |
+| --- | --- | --- |
+| Quản trị viên hệ thống | Duyệt/từ chối cửa hàng mới của toàn hệ thống | — |
+| Chủ cửa hàng (`owner`) / Quản lý (`admin`) | Duyệt nhân viên xin vào, nâng/hạ vai trò, khoá thành viên | Quản trị viên hệ thống duyệt cửa hàng |
+| Nhân viên (`staff`) | Dùng bảng giá và báo giá của cửa hàng | Chủ/Quản lý cửa hàng |
+
+Quản trị viên hệ thống **khác** chủ cửa hàng: đánh dấu bằng `profiles.is_platform_admin`. Migration 0002 gán vai trò này cho chủ cửa hàng `owin`.
+
+## Luồng duyệt
+
+Người đăng nhập lần đầu được tạo `profiles` tự động nhưng **chưa thuộc cửa hàng nào**. Màn hình sẽ mời họ chọn một trong hai:
+
+1. **Mở cửa hàng mới** — nhập tên và mã cửa hàng. Cửa hàng ở `status = 'pending'`, Quản trị viên hệ thống duyệt trong **Menu tài khoản → Quản trị cửa hàng**.
+2. **Xin vào cửa hàng có sẵn** — nhập mã cửa hàng (chính là `slug`). Yêu cầu vào `store_members` ở `status = 'pending'`, chủ/quản lý cửa hàng đó duyệt cũng ở màn Quản trị cửa hàng.
+
+Cấp thêm Quản trị viên hệ thống (chỉ làm được bằng SQL, cố ý):
+
+```sql
+update public.profiles set is_platform_admin = true
+where email = 'nguoiquantri@example.com';
+```
+
+Duyệt tay khi cần (ví dụ mất quyền vào app):
 
 ```sql
 insert into public.store_members (store_id, user_id, role, status)

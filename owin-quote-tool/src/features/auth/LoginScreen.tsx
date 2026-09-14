@@ -242,6 +242,7 @@ export function LoginScreen() {
             <svg
               className="login-architecture"
               viewBox="0 0 680 516"
+              preserveAspectRatio="xMidYMid slice"
               role="img"
               aria-label="Hình vẽ một căn nhà có cửa nhôm kính lớn"
             >
@@ -297,6 +298,7 @@ export function LoginScreen() {
                 autoComplete="username"
                 autoCapitalize="none"
                 spellCheck={false}
+                placeholder="Nhập tên đăng nhập hoặc email"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
@@ -469,13 +471,14 @@ export function LoginScreen() {
                     className="login-oauth-button"
                     onClick={() => startOAuth(id)}
                     disabled={busy || oauthBusy !== null}
+                    aria-label={`Tiếp tục với ${label}`}
                   >
                     {oauthBusy === id ? (
                       <LoaderCircle className="login-spinner" size={18} />
                     ) : (
                       <Mark />
                     )}
-                    <span>Tiếp tục với {label}</span>
+                    <span>{label}</span>
                   </button>
                 ))}
               </div>

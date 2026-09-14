@@ -34,19 +34,23 @@
 -- ---------- Hồ sơ tài khoản ----------
 -- Mỗi dòng khớp 1-1 với auth.users. Chỉ chứa thứ Supabase Auth không giữ hộ.
 create table if not exists public.profiles (
-  id           uuid primary key references auth.users (id) on delete cascade,
-  display_name text,
-  email        text,
-  avatar_url   text,
-  created_at   timestamptz not null default now(),
-  updated_at   timestamptz not null default now()
+  id                uuid primary key references auth.users (id) on delete cascade,
+  display_name      text,
+  email             text,
+  avatar_url        text,
+  -- Quản trị viên hệ thống: duyệt cửa hàng mới. Khác `owner` (chủ một cửa hàng).
+  is_platform_admin boolean not null default false,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
 );
 
 -- ---------- Cửa hàng ----------
 create table if not exists public.stores (
   id         text primary key,
   name       text not null,
-  slug       text unique,
+  slug       text unique,                     -- cũng là "mã cửa hàng" nhân viên nhập để xin vào
+  status     text not null default 'pending'
+               check (status in ('pending', 'active', 'rejected')),
   is_public  boolean not null default false,  -- landing page có được đọc bảng giá không
   owner_id   uuid not null references auth.users (id),
   created_by uuid references auth.users (id) default auth.uid(),
@@ -56,6 +60,7 @@ create table if not exists public.stores (
   deleted_at timestamptz
 );
 create index if not exists stores_owner_id_idx   on public.stores (owner_id);
+create index if not exists stores_status_idx     on public.stores (status);
 create index if not exists stores_deleted_at_idx on public.stores (deleted_at);
 
 -- ---------- Thành viên cửa hàng ----------
@@ -85,8 +90,13 @@ stable
 security definer
 set search_path = public
 as $$
-  select store_id from public.store_members
-  where user_id = auth.uid() and status = 'active';
+  select member.store_id
+  from public.store_members member
+  join public.stores store on store.id = member.store_id
+  where member.user_id = auth.uid()
+    and member.status = 'active'
+    and store.status = 'active'
+    and store.deleted_at is null;
 $$;
 
 -- Cửa hàng mà tài khoản hiện tại được quản trị (duyệt/mời/xoá thành viên).
@@ -97,8 +107,14 @@ stable
 security definer
 set search_path = public
 as $$
-  select store_id from public.store_members
-  where user_id = auth.uid() and status = 'active' and role in ('owner', 'admin');
+  select member.store_id
+  from public.store_members member
+  join public.stores store on store.id = member.store_id
+  where member.user_id = auth.uid()
+    and member.status = 'active'
+    and member.role in ('owner', 'admin')
+    and store.status = 'active'
+    and store.deleted_at is null;
 $$;
 
 -- Cửa hàng cho phép landing page đọc bảng giá công khai.
@@ -109,7 +125,22 @@ stable
 security definer
 set search_path = public
 as $$
-  select id from public.stores where is_public = true and deleted_at is null;
+  select id from public.stores
+  where is_public = true and status = 'active' and deleted_at is null;
+$$;
+
+-- Quản trị viên hệ thống: duyệt cửa hàng mới. Khác `owner` của một cửa hàng.
+create or replace function public.is_platform_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (select is_platform_admin from public.profiles where id = auth.uid()),
+    false
+  );
 $$;
 
 -- ---------- Bảng sản phẩm (bảng giá) ----------
@@ -236,17 +267,33 @@ create policy profiles_self_all on public.profiles
 drop policy if exists profiles_teammate_read on public.profiles;
 create policy profiles_teammate_read on public.profiles
   for select to authenticated
-  using (exists (
-    select 1 from public.store_members member
-    where member.user_id = public.profiles.id
-      and member.store_id in (select public.current_store_ids())
-  ));
+  using (
+    public.is_platform_admin()
+    or exists (
+      select 1 from public.store_members member
+      where member.user_id = public.profiles.id
+        and member.store_id in (select public.current_store_ids())
+    )
+  );
 
 -- Cửa hàng: thành viên đọc được; chỉ owner/admin sửa được.
 drop policy if exists stores_member_read on public.stores;
 create policy stores_member_read on public.stores
   for select to authenticated
   using (id in (select public.current_store_ids()));
+
+-- Chủ cửa hàng phải xem được cửa hàng của mình ngay cả khi còn chờ duyệt,
+-- nếu không họ không biết yêu cầu đang ở trạng thái nào.
+drop policy if exists stores_owner_read on public.stores;
+create policy stores_owner_read on public.stores
+  for select to authenticated
+  using (owner_id = auth.uid());
+
+-- Quản trị viên hệ thống thấy và duyệt được mọi cửa hàng.
+drop policy if exists stores_platform_admin_all on public.stores;
+create policy stores_platform_admin_all on public.stores
+  for all to authenticated
+  using (public.is_platform_admin()) with check (public.is_platform_admin());
 
 drop policy if exists stores_admin_write on public.stores;
 create policy stores_admin_write on public.stores
@@ -265,7 +312,11 @@ create policy stores_owner_insert on public.stores
 drop policy if exists store_members_self_read on public.store_members;
 create policy store_members_self_read on public.store_members
   for select to authenticated
-  using (user_id = auth.uid() or store_id in (select public.current_store_ids()));
+  using (
+    user_id = auth.uid()
+    or public.is_platform_admin()
+    or store_id in (select public.current_store_ids())
+  );
 
 drop policy if exists store_members_admin_write on public.store_members;
 create policy store_members_admin_write on public.store_members
@@ -400,6 +451,100 @@ create trigger suggestions_touch_updated_at before update on public.suggestions
 drop trigger if exists app_documents_touch_updated_at on public.app_documents;
 create trigger app_documents_touch_updated_at before update on public.app_documents
   for each row execute function public.touch_updated_at();
+
+-- ---------- RPC: đăng ký cửa hàng và xin vào cửa hàng ----------
+-- Hai hàm này chạy security definer vì người gọi CHƯA thuộc cửa hàng nào, nên
+-- chưa có policy nào cho họ ghi. Bù lại phải tự kiểm tra thật chặt: chỉ ghi
+-- đúng dòng của chính auth.uid(), và luôn ở trạng thái chờ duyệt.
+
+/* Đăng ký mở cửa hàng mới. Cửa hàng nằm ở trạng thái 'pending' cho tới khi
+   Quản trị viên hệ thống duyệt, nên người đăng ký chưa đọc/ghi được gì. */
+create or replace function public.request_new_store(p_name text, p_slug text)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  clean_name text := btrim(coalesce(p_name, ''));
+  clean_slug text := lower(btrim(coalesce(p_slug, '')));
+begin
+  if auth.uid() is null then
+    raise exception 'auth_required' using errcode = '28000';
+  end if;
+  if clean_name = '' then
+    raise exception 'store_name_required' using errcode = '22023';
+  end if;
+  if clean_slug !~ '^[a-z0-9][a-z0-9-]{2,39}$' then
+    raise exception 'store_slug_invalid' using errcode = '22023';
+  end if;
+  if exists (select 1 from public.stores where slug = clean_slug or id = clean_slug) then
+    raise exception 'store_slug_taken' using errcode = '23505';
+  end if;
+  -- Một người chỉ được treo một yêu cầu mở cửa hàng, tránh spam hàng loạt.
+  if exists (
+    select 1 from public.stores
+    where owner_id = auth.uid() and status = 'pending'
+  ) then
+    raise exception 'store_request_pending' using errcode = '23505';
+  end if;
+
+  insert into public.stores (id, name, slug, status, owner_id, created_by, updated_by)
+  values (clean_slug, clean_name, clean_slug, 'pending', auth.uid(), auth.uid(), auth.uid());
+
+  -- Chủ được cấp quyền sẵn; cổng chặn nằm ở stores.status, không phải ở đây.
+  insert into public.store_members (store_id, user_id, role, status)
+  values (clean_slug, auth.uid(), 'owner', 'active')
+  on conflict (store_id, user_id) do nothing;
+
+  return clean_slug;
+end $$;
+
+/* Xin vào một cửa hàng đang hoạt động bằng mã cửa hàng (slug). Luôn tạo ở
+   trạng thái 'pending' và vai trò 'staff' — người xin không tự nâng quyền được. */
+create or replace function public.request_join_store(p_slug text)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  target_id text;
+  current_status text;
+begin
+  if auth.uid() is null then
+    raise exception 'auth_required' using errcode = '28000';
+  end if;
+
+  select id into target_id from public.stores
+  where slug = lower(btrim(coalesce(p_slug, '')))
+    and status = 'active'
+    and deleted_at is null;
+
+  if target_id is null then
+    raise exception 'store_not_found' using errcode = '22023';
+  end if;
+
+  select status into current_status from public.store_members
+  where store_id = target_id and user_id = auth.uid();
+
+  if current_status = 'disabled' then
+    raise exception 'store_member_disabled' using errcode = '28000';
+  end if;
+
+  insert into public.store_members (store_id, user_id, role, status)
+  values (target_id, auth.uid(), 'staff', 'pending')
+  on conflict (store_id, user_id) do nothing;
+
+  return target_id;
+end $$;
+
+revoke all on function public.request_new_store(text, text) from public, anon;
+revoke all on function public.request_join_store(text) from public, anon;
+grant execute on function public.request_new_store(text, text) to authenticated;
+grant execute on function public.request_join_store(text) to authenticated;
+grant execute on function public.is_platform_admin() to authenticated;
+revoke all on function public.is_platform_admin() from public, anon;
 
 -- ---------- RPC: ghi document theo revision (compare-and-swap) ----------
 -- Ghi document app_documents theo revision để hai trình duyệt không thể cùng

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Clock, LogOut, RefreshCw, ShieldAlert, Store } from 'lucide-react';
+import { Clock, LogOut, RefreshCw, ShieldAlert } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { signOut } from '@/features/auth/authSession';
 import { useStoreAccess } from '@/features/auth/storeSession';
+import { CurrentStoreContext } from '@/features/auth/currentStoreContext';
+import { StoreOnboarding } from '@/features/auth/StoreOnboarding';
 import './storeGate.css';
 
 /** Màn chặn khi tài khoản đăng nhập được nhưng chưa dùng được cửa hàng nào. */
@@ -77,15 +79,7 @@ export function StoreGate({ session, children }: { session: Session; children: R
   }
 
   if (access.status === 'none') {
-    return (
-      <StoreNotice icon={<Store size={26} />} title="Chưa có cửa hàng" onRetry={reload}>
-        <p>
-          Tài khoản <strong>{email}</strong> chưa thuộc cửa hàng nào nên chưa có
-          dữ liệu để hiển thị.
-        </p>
-        <p>Gửi email này cho quản lý để được thêm vào cửa hàng.</p>
-      </StoreNotice>
-    );
+    return <StoreOnboarding email={email} onSent={reload} />;
   }
 
   if (access.status === 'disabled') {
@@ -108,5 +102,17 @@ export function StoreGate({ session, children }: { session: Session; children: R
     );
   }
 
-  return <>{children}</>;
+  return (
+    <CurrentStoreContext.Provider
+      value={{
+        store: access.store,
+        stores: access.stores,
+        role: access.role,
+        isPlatformAdmin: access.isPlatformAdmin,
+        reload,
+      }}
+    >
+      {children}
+    </CurrentStoreContext.Provider>
+  );
 }

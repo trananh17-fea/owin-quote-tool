@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, LogOut, Settings, UserRound } from 'lucide-react';
+import { ChevronDown, LogOut, Settings, ShieldCheck, UserRound } from 'lucide-react';
 import { signOut, useAuthenticatedSession } from '@/features/auth/authSession';
 import { OWIN_LOGIN_EMAIL, OWIN_LOGIN_USERNAME } from '@/features/auth/authIdentifier';
 import { flushPendingWork } from '@/lib/browser/pendingWork';
 import { SettingsDialog } from '@/features/settings/SettingsDialog';
+import { canManageMembers, useCurrentStore } from '@/features/auth/currentStoreContext';
+import { StoreAdminDialog } from '@/features/admin/StoreAdminDialog';
 import './accountMenu.css';
 
 export function AccountMenu() {
@@ -11,7 +13,10 @@ export function AccountMenu() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const [error, setError] = useState('');
+  const { store, role, isPlatformAdmin } = useCurrentStore();
+  const canAdminister = canManageMembers(role) || isPlatformAdmin;
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -82,6 +87,7 @@ export function AccountMenu() {
               <small>{email}</small>
             </span>
           </div>
+          <p className="account-menu-store">{store.name}</p>
           {error && <p className="account-menu-error" role="alert">{error}</p>}
           <button
             type="button"
@@ -94,6 +100,19 @@ export function AccountMenu() {
           >
             <Settings size={15} /> Cài đặt
           </button>
+          {canAdminister && (
+            <button
+              type="button"
+              className="btn btn-ghost account-menu-action"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                setAdminOpen(true);
+              }}
+            >
+              <ShieldCheck size={15} /> Quản trị cửa hàng
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-ghost account-menu-action account-menu-logout"
@@ -107,6 +126,7 @@ export function AccountMenu() {
       )}
 
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+      {adminOpen && <StoreAdminDialog onClose={() => setAdminOpen(false)} />}
     </div>
   );
 }

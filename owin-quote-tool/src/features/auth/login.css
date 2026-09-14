@@ -189,3 +189,50 @@
   line-height: 1.4;
 }
 
+
+/* Thẻ đăng nhập gọn lại: thấp hơn, bo góc nhẹ hơn, hai nút OAuth chung hàng. */
+.login-form { border-radius:16px; }
+.login-form h2 { font-size:24px; margin-bottom:6px; }
+.login-description { margin-bottom:16px; }
+.login-field { margin:14px 0 6px; }
+.login-form input { height:44px; border-radius:10px; }
+.login-password input { padding-right:46px; }
+.login-password button { right:4px; top:4px; width:36px; height:36px; border-radius:9px; }
+.login-forgot { margin-top:8px; min-height:28px; padding:4px 0 4px 12px; }
+.login-remember { margin:12px 0 2px; }
+.login-submit { min-height:46px; margin-top:10px; border-radius:10px; }
+.login-divider { margin:16px 0 12px; }
+.login-oauth { grid-template-columns:1fr 1fr; gap:10px; }
+.login-oauth-button { min-height:44px; padding:0 10px; border-radius:10px; gap:8px; }
+.login-help { margin-top:16px; padding-top:12px; }
+.login-recovery-send { min-height:40px; }
+@media (min-width:701px) {
+  /* Bỏ chiều cao tối thiểu 500px: thẻ chỉ cao bằng nội dung của nó. */
+  .login-form-region { min-height:0; }
+  .login-form { min-height:0; padding:24px 32px 20px; }
+}
+@media (max-height:740px) {
+  .login-form h2 { font-size:22px; }
+  .login-field { margin-top:10px; }
+}
+
+/* Hai cột cao bằng nhau và cùng canh giữa trang.
+   Ảnh minh hoạ dùng preserveAspectRatio="slice" nên phủ kín ô cao bằng thẻ
+   form thay vì để lại viền trống; bo góc chuyển ra container vì phần clip
+   trong SVG bị cắt mất khi ảnh phủ kín. */
+.login-scroll { flex:1 1 auto; justify-content:center; }
+@media (min-width:701px) {
+  /* Chiều cao hàng do nội dung thẻ form quyết định, không kéo giãn theo
+     chiều cao màn hình nữa. */
+  .login-layout { align-items:stretch; min-height:0; }
+  .login-story {
+    height:auto;
+    align-self:stretch;
+    border-radius:16px;
+    overflow:hidden;
+    background:var(--login-fill);
+  }
+  .login-architecture { height:100%; width:100%; max-height:none; }
+  .login-form-region { display:flex; align-items:stretch; justify-content:center; min-height:0; }
+  .login-form { width:100%; max-width:390px; min-height:0; }
+}

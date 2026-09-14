@@ -1,0 +1,39 @@
+.store-admin-backdrop { position:fixed; inset:0; z-index:60; display:grid; place-items:center; padding:24px; background:rgba(0,0,0,.42); backdrop-filter:blur(3px); }
+.store-admin { width:100%; max-width:660px; max-height:86dvh; overflow-y:auto; padding:24px 26px 26px; border-radius:24px; background:var(--ios-card); color:var(--ios-label); box-shadow:var(--shadow-lg); font:400 15px/1.6 var(--font-sans); }
+.store-admin-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:18px; }
+.store-admin-header h2 { margin:0 0 4px; font-size:21px; font-weight:600; letter-spacing:-.02em; }
+.store-admin-header p { margin:0; font-size:13px; color:var(--ios-label3); }
+.store-admin-header button { width:40px; height:40px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:12px; background:var(--ios-fill); color:var(--ios-label2); cursor:pointer; }
+.store-admin-header button:hover { background:var(--ios-separator); }
+.store-admin code { padding:1px 6px; border-radius:6px; background:var(--ios-fill); font-family:var(--font-mono, ui-monospace, monospace); font-size:.92em; }
+
+.store-admin-section { margin-top:22px; padding-top:20px; border-top:1px solid var(--ios-separator); }
+.store-admin-section:first-of-type { margin-top:0; padding-top:0; border-top:0; }
+.store-admin-section h3 { display:flex; align-items:center; gap:8px; margin:0 0 6px; font-size:16px; font-weight:600; }
+.store-admin-note { margin:0 0 14px; font-size:13px; color:var(--ios-label3); }
+.store-admin-empty { margin:12px 0; font-size:14px; color:var(--ios-label3); }
+.store-admin-error { margin:0 0 14px; padding:11px 13px; border-radius:13px; font-size:13px; color:#c8302a; background:color-mix(in srgb, #ff3b30 8%, var(--ios-card)); border:1px solid color-mix(in srgb, #ff3b30 22%, transparent); }
+
+.store-admin-list { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.store-admin-list li { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border:1px solid var(--ios-separator); border-radius:16px; background:var(--ios-fill); }
+.store-admin-list li[data-status='pending'] { border-color:color-mix(in srgb, var(--ios-blue-ink) 40%, var(--ios-separator)); }
+.store-admin-list li[data-status='disabled'] { opacity:.62; }
+.store-admin-who { min-width:0; display:grid; gap:2px; }
+.store-admin-who strong { font-size:15px; font-weight:600; }
+.store-admin-who span { font-size:13px; color:var(--ios-label3); word-break:break-word; }
+.store-admin-tag { font-size:12px !important; color:var(--ios-label2) !important; }
+
+.store-admin-buttons { display:flex; flex-wrap:wrap; gap:8px; }
+.store-admin-buttons button { display:inline-flex; align-items:center; gap:6px; min-height:38px; padding:0 14px; border:1px solid var(--ios-separator); border-radius:11px; background:var(--ios-card); color:var(--ios-label2); font-family:inherit; font-size:13px; font-weight:500; cursor:pointer; transition:background-color .2s var(--ease-ios), color .2s var(--ease-ios); }
+.store-admin-buttons button:hover:not(:disabled) { background:var(--ios-separator); color:var(--ios-label); }
+.store-admin-buttons button:disabled { opacity:.5; cursor:not-allowed; }
+.store-admin-approve { border-color:transparent !important; background:var(--ios-blue-ink) !important; color:#fff !important; }
+.store-admin-approve:hover:not(:disabled) { background:var(--ios-blue-hover) !important; }
+.store-admin-reject { color:#c8302a !important; border-color:color-mix(in srgb, #ff3b30 30%, transparent) !important; }
+
+@media (max-width:560px) {
+  .store-admin-backdrop { padding:0; }
+  .store-admin { max-width:none; max-height:100dvh; height:100dvh; border-radius:0; padding:20px 18px 28px; }
+  .store-admin-list li { flex-direction:column; align-items:stretch; }
+  .store-admin-buttons button { flex:1; justify-content:center; }
+}

@@ -137,3 +137,5 @@
 @media print {
   .account-menu { display: none; }
 }
+
+.account-menu-store { margin:0 0 6px; padding:8px 10px; border-radius:10px; background:var(--ios-fill); color:var(--ios-label2); font-size:13px; font-weight:600; text-align:center; }

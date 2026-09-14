@@ -22,7 +22,14 @@ export type StoreAccess =
   /** Đang hỏi Supabase. */
   | { status: 'loading' }
   /** Có cửa hàng dùng được. */
-  | { status: 'ready'; store: StoreSummary; stores: StoreSummary[]; role: StoreRole }
+  | {
+      status: 'ready';
+      store: StoreSummary;
+      stores: StoreSummary[];
+      role: StoreRole;
+      /** Duyệt được cửa hàng mới của toàn hệ thống, không chỉ cửa hàng này. */
+      isPlatformAdmin: boolean;
+    }
   /** Đã được thêm vào cửa hàng nhưng chưa được duyệt. */
   | { status: 'pending' }
   /** Tài khoản bị khoá ở mọi cửa hàng. */
@@ -45,6 +52,7 @@ export function resolveStoreAccess(
   memberships: readonly MembershipRow[],
   stores: readonly StoreSummary[],
   rememberedStoreId: string | null,
+  isPlatformAdmin = false,
 ): StoreAccess {
   const active = memberships.filter((row) => row.status === 'active');
 
@@ -61,7 +69,7 @@ export function resolveStoreAccess(
   const store = usable.find((candidate) => candidate.id === rememberedStoreId) ?? usable[0];
   const role = active.find((row) => row.store_id === store.id)?.role ?? 'staff';
 
-  return { status: 'ready', store, stores: usable, role };
+  return { status: 'ready', store, stores: usable, role, isPlatformAdmin };
 }
 
 const LAST_STORE_KEY = 'owin-current-store';
@@ -84,16 +92,19 @@ function writeLastStoreId(storeId: string): void {
 }
 
 export async function loadStoreAccess(userId: string): Promise<StoreAccess> {
-  const { data: membershipRows, error: membershipError } = await supabase
-    .from('store_members')
-    .select('store_id,role,status')
-    .eq('user_id', userId);
+  const [membershipResult, profileResult] = await Promise.all([
+    supabase.from('store_members').select('store_id,role,status').eq('user_id', userId),
+    supabase.from('profiles').select('is_platform_admin').eq('id', userId).maybeSingle(),
+  ]);
 
-  if (membershipError) return { status: 'error', message: membershipError.message };
+  if (membershipResult.error) return { status: 'error', message: membershipResult.error.message };
 
-  const memberships = (membershipRows ?? []) as MembershipRow[];
+  const isPlatformAdmin = Boolean(
+    (profileResult.data as { is_platform_admin?: boolean } | null)?.is_platform_admin,
+  );
+  const memberships = (membershipResult.data ?? []) as MembershipRow[];
   const active = memberships.filter((row) => row.status === 'active');
-  if (active.length === 0) return resolveStoreAccess(memberships, [], null);
+  if (active.length === 0) return resolveStoreAccess(memberships, [], null, isPlatformAdmin);
 
   const { data: storeRows, error: storeError } = await supabase
     .from('stores')
@@ -104,7 +115,34 @@ export async function loadStoreAccess(userId: string): Promise<StoreAccess> {
 
   if (storeError) return { status: 'error', message: storeError.message };
 
-  return resolveStoreAccess(memberships, (storeRows ?? []) as StoreSummary[], readLastStoreId());
+  return resolveStoreAccess(
+    memberships,
+    (storeRows ?? []) as StoreSummary[],
+    readLastStoreId(),
+    isPlatformAdmin,
+  );
+}
+
+/** Gửi yêu cầu mở cửa hàng mới; Quản trị viên hệ thống sẽ duyệt. */
+export async function requestNewStore(name: string, slug: string): Promise<void> {
+  const { error } = await supabase.rpc('request_new_store', { p_name: name, p_slug: slug });
+  if (!error) return;
+  const code = error.message;
+  if (code.includes('store_slug_taken')) throw new Error('Mã cửa hàng này đã có người dùng. Chọn mã khác.');
+  if (code.includes('store_slug_invalid')) throw new Error('Mã cửa hàng chỉ gồm chữ thường, số và dấu gạch ngang, từ 3 đến 40 ký tự.');
+  if (code.includes('store_name_required')) throw new Error('Chưa nhập tên cửa hàng.');
+  if (code.includes('store_request_pending')) throw new Error('Bạn đã có một yêu cầu mở cửa hàng đang chờ duyệt.');
+  throw new Error('Không gửi được yêu cầu lúc này. Vui lòng thử lại.');
+}
+
+/** Xin vào một cửa hàng đang hoạt động bằng mã cửa hàng. */
+export async function requestJoinStore(slug: string): Promise<void> {
+  const { error } = await supabase.rpc('request_join_store', { p_slug: slug });
+  if (!error) return;
+  const code = error.message;
+  if (code.includes('store_not_found')) throw new Error('Không tìm thấy cửa hàng với mã này.');
+  if (code.includes('store_member_disabled')) throw new Error('Tài khoản của bạn đã bị khoá ở cửa hàng này.');
+  throw new Error('Không gửi được yêu cầu lúc này. Vui lòng thử lại.');
 }
 
 /**

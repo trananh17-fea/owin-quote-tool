@@ -41,7 +41,18 @@ describe('resolveStoreAccess', () => {
       [owinStore],
       null,
     );
-    expect(access).toEqual({ status: 'ready', store: owinStore, stores: [owinStore], role: 'owner' });
+    expect(access).toEqual({
+      status: 'ready',
+      store: owinStore,
+      stores: [owinStore],
+      role: 'owner',
+      isPlatformAdmin: false,
+    });
+  });
+
+  it('giữ cờ Quản trị viên hệ thống khi mở cửa hàng', () => {
+    const access = resolveStoreAccess([membership('owin', 'active')], [owinStore], null, true);
+    expect(access).toMatchObject({ status: 'ready', isPlatformAdmin: true });
   });
 
   it('quay lại cửa hàng đã dùng lần trước khi thuộc nhiều cửa hàng', () => {
