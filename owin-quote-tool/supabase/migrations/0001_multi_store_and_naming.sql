@@ -189,43 +189,46 @@ do $$ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
--- 7. app_documents: khóa chính chuyển từ `key` sang `id` = <store_id>:<key>
+-- 7. app_documents: khóa document cũ nằm ở cột `key`, đổi tên thành `id`
 -- ---------------------------------------------------------------------------
-alter table public.app_documents add column if not exists id text;
+do $$ begin
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'app_documents'
+               and column_name = 'key') then
+    alter table public.app_documents rename column key to id;
+  end if;
+end $$;
 
-update public.app_documents
-set id = store_id || ':' || key
-where id is null;
-
+-- ---------------------------------------------------------------------------
+-- 8. Khóa chính ghép (store_id, id) cho mọi bảng nghiệp vụ
+--
+-- products.id và suggestions.id sinh từ dữ liệu nghiệp vụ (mã sản phẩm,
+-- type+value) nên hai cửa hàng hoàn toàn có thể trùng id. Khóa chính toàn cục
+-- sẽ chặn cửa hàng thứ hai lưu; ghép store_id vào khóa là cách giữ nguyên id
+-- cũ mà vẫn tách được dữ liệu giữa các cửa hàng.
+-- ---------------------------------------------------------------------------
 do $$
 declare
+  target text;
   pk_name text;
 begin
-  select conname into pk_name
-  from pg_constraint
-  where conrelid = 'public.app_documents'::regclass and contype = 'p';
+  foreach target in array array['products', 'quotes', 'suggestions', 'app_documents'] loop
+    select conname into pk_name
+    from pg_constraint
+    where conrelid = ('public.' || target)::regclass and contype = 'p';
 
-  if pk_name is not null and pk_name <> 'app_documents_pkey' then
-    execute format('alter table public.app_documents drop constraint %I', pk_name);
-  end if;
+    if pk_name is not null then
+      execute format('alter table public.%I drop constraint %I', target, pk_name);
+    end if;
+
+    execute format(
+      'alter table public.%I add constraint %I primary key (store_id, id)',
+      target, target || '_pkey'
+    );
+  end loop;
 end $$;
 
-alter table public.app_documents alter column id set not null;
-alter table public.app_documents alter column key set not null;
-
-do $$ begin
-  if not exists (select 1 from pg_constraint where conname = 'app_documents_pkey') then
-    alter table public.app_documents add constraint app_documents_pkey primary key (id);
-  end if;
-  if not exists (select 1 from pg_constraint where conname = 'app_documents_store_id_key_key') then
-    alter table public.app_documents
-      add constraint app_documents_store_id_key_key unique (store_id, key);
-  end if;
-end $$;
-
--- ---------------------------------------------------------------------------
--- 8. Mã sản phẩm / báo giá chỉ cần duy nhất TRONG một cửa hàng
--- ---------------------------------------------------------------------------
+-- Mã sản phẩm / báo giá chỉ cần duy nhất TRONG một cửa hàng, không toàn cục.
 do $$ begin
   if exists (select 1 from pg_constraint where conname = 'products_code_key') then
     alter table public.products drop constraint products_code_key;

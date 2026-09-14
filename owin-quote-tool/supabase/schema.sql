@@ -114,7 +114,7 @@ $$;
 
 -- ---------- Bảng sản phẩm (bảng giá) ----------
 create table if not exists public.products (
-  id               text primary key,             -- dùng product code hiện tại làm id
+  id               text not null,                -- dùng product code hiện tại làm id
   store_id         text not null references public.stores (id) on delete cascade,
   code             text not null,
   name             text,
@@ -132,6 +132,8 @@ create table if not exists public.products (
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   deleted_at       timestamptz,
+  -- Khóa chính ghép: mã sản phẩm chỉ cần duy nhất trong một cửa hàng.
+  primary key (store_id, id),
   unique (store_id, code)
 );
 create index if not exists products_store_id_idx   on public.products (store_id);
@@ -141,7 +143,7 @@ create index if not exists products_deleted_at_idx on public.products (deleted_a
 
 -- ---------- Bảng báo giá ----------
 create table if not exists public.quotes (
-  id               text primary key,
+  id               text not null,
   store_id         text not null references public.stores (id) on delete cascade,
   code             text,
   customer_name    text,
@@ -157,6 +159,7 @@ create table if not exists public.quotes (
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   deleted_at       timestamptz,
+  primary key (store_id, id),
   unique (store_id, code)
 );
 create index if not exists quotes_store_id_idx   on public.quotes (store_id);
@@ -167,7 +170,7 @@ create index if not exists quotes_deleted_at_idx on public.quotes (deleted_at);
 -- ---------- Gợi ý autocomplete ----------
 -- Học theo từng cửa hàng: nhân viên cùng cửa hàng dùng chung pool gợi ý.
 create table if not exists public.suggestions (
-  id          text primary key,
+  id          text not null,
   store_id    text not null references public.stores (id) on delete cascade,
   type        text not null,
   value       text not null,
@@ -178,7 +181,8 @@ create table if not exists public.suggestions (
   updated_by  uuid references auth.users (id) default auth.uid(),
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
-  deleted_at  timestamptz
+  deleted_at  timestamptz,
+  primary key (store_id, id)
 );
 create index if not exists suggestions_store_id_idx   on public.suggestions (store_id);
 create index if not exists suggestions_type_value_idx on public.suggestions (store_id, type, value);
@@ -187,9 +191,8 @@ create index if not exists suggestions_deleted_at_idx on public.suggestions (del
 -- ---------- Document cấu hình theo cửa hàng ----------
 -- Meta/cấu hình và trạng thái tính nhôm giữ nguyên shape app dưới dạng document.
 create table if not exists public.app_documents (
-  id          text primary key,
+  id          text not null,                     -- khoá document trong phạm vi cửa hàng
   store_id    text not null references public.stores (id) on delete cascade,
-  key         text not null,                     -- khoá document trong phạm vi cửa hàng
   data        jsonb not null,
   owner_id    uuid references auth.users (id) default auth.uid(),
   revision    bigint not null default 1,
@@ -198,7 +201,7 @@ create table if not exists public.app_documents (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
   deleted_at  timestamptz,
-  unique (store_id, key)
+  primary key (store_id, id)
 );
 create index if not exists app_documents_store_id_idx on public.app_documents (store_id);
 
@@ -407,7 +410,7 @@ drop function if exists public.compare_and_swap_app_data(text, bigint, jsonb);
 drop function if exists public.save_app_document_cas(text, bigint, jsonb);
 create or replace function public.save_app_document_cas(
   p_store_id text,
-  p_key text,
+  p_id text,
   p_expected_revision bigint,
   p_data jsonb
 )
@@ -416,22 +419,18 @@ language plpgsql
 security invoker
 set search_path = public
 as $$
-declare
-  target_id text;
 begin
   if p_store_id is null or btrim(p_store_id) = ''
-     or p_key is null or btrim(p_key) = ''
+     or p_id is null or btrim(p_id) = ''
      or p_expected_revision < 0 then
-    raise exception 'app_document_store_key_and_revision_required' using errcode = '22023';
+    raise exception 'app_document_store_id_and_revision_required' using errcode = '22023';
   end if;
-
-  target_id := p_store_id || ':' || p_key;
 
   if p_expected_revision = 0 then
     return query
-      insert into public.app_documents as target (id, store_id, key, data)
-      values (target_id, p_store_id, p_key, p_data)
-      on conflict (id) do nothing
+      insert into public.app_documents as target (id, store_id, data)
+      values (p_id, p_store_id, p_data)
+      on conflict (store_id, id) do nothing
       returning target.data, target.revision, target.updated_at;
     return;
   end if;
@@ -439,7 +438,9 @@ begin
   return query
     update public.app_documents as target
     set data = p_data
-    where target.id = target_id and target.revision = p_expected_revision
+    where target.store_id = p_store_id
+      and target.id = p_id
+      and target.revision = p_expected_revision
     returning target.data, target.revision, target.updated_at;
 end $$;
 
@@ -554,7 +555,7 @@ begin
       p_proposed,
       proposed_deleted_at
     )
-    on conflict (id) do nothing
+    on conflict (store_id, id) do nothing
     returning * into current_row;
 
     if found then
@@ -642,7 +643,7 @@ begin
       p_proposed,
       proposed_deleted_at
     )
-    on conflict (id) do nothing
+    on conflict (store_id, id) do nothing
     returning * into current_row;
 
     if found then
