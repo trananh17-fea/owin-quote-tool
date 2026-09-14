@@ -89,6 +89,10 @@ export function StoreGate({ session, children }: { session: Session; children: R
           Cửa hàng <strong>{access.store.name}</strong> đã được gửi đi, nhưng
           Quản trị viên hệ thống chưa duyệt nên chưa dùng được.
         </p>
+        <p>
+          Mã cửa hàng của bạn là <strong>{access.store.slug ?? access.store.id}</strong> — đưa mã
+          này cho nhân viên để họ xin vào sau khi cửa hàng được duyệt.
+        </p>
         <p>Được duyệt rồi thì bấm “Kiểm tra lại” để vào.</p>
       </StoreNotice>
     );

@@ -463,9 +463,69 @@ create trigger app_documents_touch_updated_at before update on public.app_docume
 -- chưa có policy nào cho họ ghi. Bù lại phải tự kiểm tra thật chặt: chỉ ghi
 -- đúng dòng của chính auth.uid(), và luôn ở trạng thái chờ duyệt.
 
+/* Mã cửa hàng sinh từ tên, bỏ dấu tiếng Việt.
+   Dùng translate() thay vì extension unaccent để không phụ thuộc thứ có thể
+   chưa được bật trên project. */
+create or replace function public.slugify_store_name(p_name text)
+returns text
+language sql
+immutable
+as $$
+  select nullif(
+    btrim(
+      regexp_replace(
+        regexp_replace(
+          translate(
+            lower(btrim(coalesce(p_name, ''))),
+            'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ',
+            'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd'
+          ),
+          '[^a-z0-9]+', '-', 'g'
+        ),
+        '(^-+)|(-+$)', '', 'g'
+      ),
+      '-'
+    ),
+    ''
+  );
+$$;
+
+/* Mã chưa ai dùng, bắt nguồn từ tên cửa hàng. Trùng thì thêm hậu tố số. */
+create or replace function public.available_store_slug(p_name text)
+returns text
+language plpgsql
+stable
+set search_path = public
+as $$
+declare
+  base text := left(coalesce(public.slugify_store_name(p_name), 'cua-hang'), 32);
+  candidate text;
+  suffix integer := 1;
+begin
+  if length(base) < 3 then
+    base := 'cua-hang-' || base;
+  end if;
+
+  candidate := base;
+  while exists (select 1 from public.stores where slug = candidate or id = candidate) loop
+    suffix := suffix + 1;
+    candidate := base || '-' || suffix;
+    if suffix > 999 then
+      -- Tên quá phổ biến: rơi về hậu tố ngẫu nhiên thay vì lặp vô tận.
+      candidate := base || '-' || substr(md5(random()::text || clock_timestamp()::text), 1, 6);
+      exit;
+    end if;
+  end loop;
+
+  return candidate;
+end $$;
+
 /* Đăng ký mở cửa hàng mới. Cửa hàng nằm ở trạng thái 'pending' cho tới khi
-   Quản trị viên hệ thống duyệt, nên người đăng ký chưa đọc/ghi được gì. */
-create or replace function public.request_new_store(p_name text, p_slug text)
+   Quản trị viên hệ thống duyệt, nên người đăng ký chưa đọc/ghi được gì.
+   Mã cửa hàng do server sinh: người dùng không cần nghĩ ra, và không thể
+   giành mã của cửa hàng khác. */
+drop function if exists public.request_new_store(text, text);
+create or replace function public.request_new_store(p_name text)
 returns text
 language plpgsql
 security definer
@@ -473,19 +533,13 @@ set search_path = public
 as $$
 declare
   clean_name text := btrim(coalesce(p_name, ''));
-  clean_slug text := lower(btrim(coalesce(p_slug, '')));
+  new_slug text;
 begin
   if auth.uid() is null then
     raise exception 'auth_required' using errcode = '28000';
   end if;
   if clean_name = '' then
     raise exception 'store_name_required' using errcode = '22023';
-  end if;
-  if clean_slug !~ '^[a-z0-9][a-z0-9-]{2,39}$' then
-    raise exception 'store_slug_invalid' using errcode = '22023';
-  end if;
-  if exists (select 1 from public.stores where slug = clean_slug or id = clean_slug) then
-    raise exception 'store_slug_taken' using errcode = '23505';
   end if;
   -- Một người chỉ được treo một yêu cầu mở cửa hàng, tránh spam hàng loạt.
   if exists (
@@ -495,15 +549,17 @@ begin
     raise exception 'store_request_pending' using errcode = '23505';
   end if;
 
+  new_slug := public.available_store_slug(clean_name);
+
   insert into public.stores (id, name, slug, status, owner_id, created_by, updated_by)
-  values (clean_slug, clean_name, clean_slug, 'pending', auth.uid(), auth.uid(), auth.uid());
+  values (new_slug, clean_name, new_slug, 'pending', auth.uid(), auth.uid(), auth.uid());
 
   -- Chủ được cấp quyền sẵn; cổng chặn nằm ở stores.status, không phải ở đây.
   insert into public.store_members (store_id, user_id, role, status)
-  values (clean_slug, auth.uid(), 'owner', 'active')
+  values (new_slug, auth.uid(), 'owner', 'active')
   on conflict (store_id, user_id) do nothing;
 
-  return clean_slug;
+  return new_slug;
 end $$;
 
 /* Xin vào một cửa hàng đang hoạt động bằng mã cửa hàng (slug). Luôn tạo ở
@@ -545,9 +601,11 @@ begin
   return target_id;
 end $$;
 
-revoke all on function public.request_new_store(text, text) from public, anon;
+revoke all on function public.request_new_store(text) from public, anon;
 revoke all on function public.request_join_store(text) from public, anon;
-grant execute on function public.request_new_store(text, text) to authenticated;
+grant execute on function public.request_new_store(text) to authenticated;
+grant execute on function public.slugify_store_name(text) to authenticated;
+grant execute on function public.available_store_slug(text) to authenticated;
 grant execute on function public.request_join_store(text) to authenticated;
 grant execute on function public.is_platform_admin() to authenticated;
 revoke all on function public.is_platform_admin() from public, anon;

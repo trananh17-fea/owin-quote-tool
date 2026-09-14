@@ -17,10 +17,13 @@ export interface StoreMemberRow {
   createdAt: string;
 }
 
-export interface PendingStoreRow {
+export type StoreRequestStatus = 'pending' | 'rejected';
+
+export interface StoreRequestRow {
   id: string;
   name: string;
   slug: string | null;
+  status: StoreRequestStatus;
   ownerEmail: string;
   ownerName: string;
   createdAt: string;
@@ -113,13 +116,19 @@ export async function removeMember(storeId: string, userId: string): Promise<voi
   if (error) throw new Error(error.message);
 }
 
-/** Cửa hàng đang chờ Quản trị viên hệ thống duyệt. */
-export async function listPendingStores(): Promise<PendingStoreRow[]> {
+/**
+ * Cửa hàng chờ Quản trị viên hệ thống xử lý.
+ *
+ * Lấy cả bản đã từ chối: từ chối không phải là xoá, và người duyệt phải đổi ý
+ * được. Bỏ chúng khỏi danh sách thì cửa hàng biến mất vĩnh viễn khỏi giao diện.
+ */
+export async function listStoreRequests(): Promise<StoreRequestRow[]> {
   const { data, error } = await supabase
     .from('stores')
-    .select('id,name,slug,owner_id,created_at')
-    .eq('status', 'pending')
+    .select('id,name,slug,status,owner_id,created_at')
+    .in('status', ['pending', 'rejected'])
     .is('deleted_at', null)
+    .order('status', { ascending: true })
     .order('created_at', { ascending: true });
   if (error) throw new Error(error.message);
 
@@ -127,6 +136,7 @@ export async function listPendingStores(): Promise<PendingStoreRow[]> {
     id: string;
     name: string;
     slug: string | null;
+    status: StoreRequestStatus;
     owner_id: string;
     created_at: string;
   }>;
@@ -139,6 +149,7 @@ export async function listPendingStores(): Promise<PendingStoreRow[]> {
       id: row.id,
       name: row.name,
       slug: row.slug,
+      status: row.status,
       ownerEmail,
       ownerName: nameFor(profile, ownerEmail),
       createdAt: row.created_at,

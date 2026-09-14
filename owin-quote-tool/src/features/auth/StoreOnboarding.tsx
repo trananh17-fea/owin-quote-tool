@@ -24,7 +24,7 @@ export function StoreOnboarding({ email, onSent }: { email: string; onSent: () =
     setBusy(true);
     setError('');
     try {
-      if (mode === 'create') await requestNewStore(storeName, storeCode);
+      if (mode === 'create') await requestNewStore(storeName);
       else await requestJoinStore(storeCode);
       onSent();
     } catch (err) {
@@ -87,7 +87,7 @@ export function StoreOnboarding({ email, onSent }: { email: string; onSent: () =
         </div>
 
         <div className="store-gate-fields">
-          {creating && (
+          {creating ? (
             <>
               <label htmlFor="store-name">Tên cửa hàng</label>
               <input
@@ -97,24 +97,27 @@ export function StoreOnboarding({ email, onSent }: { email: string; onSent: () =
                 disabled={busy}
                 required
               />
+              <p className="store-gate-hint">
+                Mã cửa hàng được tạo tự động từ tên này. Bạn sẽ thấy mã sau khi gửi,
+                và đưa nó cho nhân viên để họ xin vào.
+              </p>
+            </>
+          ) : (
+            <>
+              <label htmlFor="store-code">Mã cửa hàng</label>
+              <input
+                id="store-code"
+                value={storeCode}
+                onChange={(event) => setStoreCode(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                placeholder="Mã do chủ cửa hàng cung cấp"
+                autoCapitalize="none"
+                spellCheck={false}
+                disabled={busy}
+                required
+              />
+              <p className="store-gate-hint">Chữ thường, số và dấu gạch ngang.</p>
             </>
           )}
-          <label htmlFor="store-code">Mã cửa hàng</label>
-          <input
-            id="store-code"
-            value={storeCode}
-            onChange={(event) => setStoreCode(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-            placeholder={creating ? 'vi-du-cua-hang-b' : 'Mã do chủ cửa hàng cung cấp'}
-            autoCapitalize="none"
-            spellCheck={false}
-            disabled={busy}
-            required
-          />
-          <p className="store-gate-hint">
-            {creating
-              ? 'Chữ thường, số và dấu gạch ngang. Nhân viên sẽ dùng mã này để xin vào.'
-              : 'Mã chỉ gồm chữ thường, số và dấu gạch ngang.'}
-          </p>
           {error && <p className="store-gate-error" role="alert">{error}</p>}
         </div>
 
@@ -122,7 +125,7 @@ export function StoreOnboarding({ email, onSent }: { email: string; onSent: () =
           <button
             type="submit"
             className="store-gate-retry"
-            disabled={busy || !storeCode.trim() || (creating && !storeName.trim())}
+            disabled={busy || (creating ? !storeName.trim() : !storeCode.trim())}
           >
             {busy ? 'Đang gửi…' : 'Gửi yêu cầu'}
           </button>

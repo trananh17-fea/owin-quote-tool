@@ -38,3 +38,14 @@
   .store-admin-list li { flex-direction:column; align-items:stretch; }
   .store-admin-buttons button { flex:1; justify-content:center; }
 }
+
+/* Hàng đợi duyệt cửa hàng: gọn hơn danh sách thành viên vì mỗi dòng chỉ cần
+   tên, mã và chủ sở hữu — không phải một thẻ hồ sơ đầy đủ. */
+.store-admin-list.is-compact li { padding:10px 12px; border-radius:12px; gap:8px; }
+.store-admin-list.is-compact .store-admin-who { gap:1px; }
+.store-admin-list.is-compact .store-admin-who strong { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:14px; }
+.store-admin-list.is-compact .store-admin-who strong code { font-size:12px; font-weight:500; }
+.store-admin-list.is-compact .store-admin-who strong em { font-style:normal; font-size:11px; font-weight:600; letter-spacing:.02em; text-transform:uppercase; color:#c8302a; background:color-mix(in srgb, #ff3b30 10%, transparent); border-radius:6px; padding:1px 7px; }
+.store-admin-list.is-compact .store-admin-tag { font-size:12px !important; }
+.store-admin-list.is-compact .store-admin-buttons button { min-height:32px; padding:0 11px; font-size:12px; border-radius:9px; }
+.store-admin-list.is-compact li[data-status='rejected'] { opacity:.72; border-color:var(--ios-separator); }

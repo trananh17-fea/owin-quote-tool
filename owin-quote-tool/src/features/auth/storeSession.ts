@@ -145,13 +145,14 @@ export async function loadStoreAccess(userId: string): Promise<StoreAccess> {
   );
 }
 
-/** Gửi yêu cầu mở cửa hàng mới; Quản trị viên hệ thống sẽ duyệt. */
-export async function requestNewStore(name: string, slug: string): Promise<void> {
-  const { error } = await supabase.rpc('request_new_store', { p_name: name, p_slug: slug });
+/**
+ * Gửi yêu cầu mở cửa hàng mới; Quản trị viên hệ thống sẽ duyệt.
+ * Mã cửa hàng do server sinh từ tên, người dùng không phải nghĩ ra.
+ */
+export async function requestNewStore(name: string): Promise<void> {
+  const { error } = await supabase.rpc('request_new_store', { p_name: name });
   if (!error) return;
   const code = error.message;
-  if (code.includes('store_slug_taken')) throw new Error('Mã cửa hàng này đã có người dùng. Chọn mã khác.');
-  if (code.includes('store_slug_invalid')) throw new Error('Mã cửa hàng chỉ gồm chữ thường, số và dấu gạch ngang, từ 3 đến 40 ký tự.');
   if (code.includes('store_name_required')) throw new Error('Chưa nhập tên cửa hàng.');
   if (code.includes('store_request_pending')) throw new Error('Bạn đã có một yêu cầu mở cửa hàng đang chờ duyệt.');
   throw new Error('Không gửi được yêu cầu lúc này. Vui lòng thử lại.');

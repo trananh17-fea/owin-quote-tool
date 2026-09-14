@@ -3,10 +3,10 @@ import { createPortal } from 'react-dom';
 import { Check, Store, UserRoundX, X } from 'lucide-react';
 import { canManageMembers, useCurrentStore } from '@/features/auth/currentStoreContext';
 import type { MembershipStatus, StoreRole } from '@/features/auth/storeSession';
-import type { PendingStoreRow, StoreMemberRow } from '@/features/admin/storeAdminRepo';
+import type { StoreMemberRow, StoreRequestRow } from '@/features/admin/storeAdminRepo';
 import {
-  listPendingStores,
   listStoreMembers,
+  listStoreRequests,
   removeMember,
   setMemberRole,
   setMemberStatus,
@@ -39,7 +39,7 @@ export function StoreAdminDialog({ onClose }: { onClose: () => void }) {
   const manages = canManageMembers(role);
 
   const [members, setMembers] = useState<StoreMemberRow[]>([]);
-  const [pendingStores, setPendingStores] = useState<PendingStoreRow[]>([]);
+  const [storeRequests, setStoreRequests] = useState<StoreRequestRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyKey, setBusyKey] = useState('');
   const [error, setError] = useState('');
@@ -61,7 +61,7 @@ export function StoreAdminDialog({ onClose }: { onClose: () => void }) {
   const loadAdminData = useCallback(async () => {
     const [nextMembers, nextStores] = await Promise.all([
       manages ? listStoreMembers(store.id) : Promise.resolve<StoreMemberRow[]>([]),
-      isPlatformAdmin ? listPendingStores() : Promise.resolve<PendingStoreRow[]>([]),
+      isPlatformAdmin ? listStoreRequests() : Promise.resolve<StoreRequestRow[]>([]),
     ]);
     return { nextMembers, nextStores };
   }, [manages, isPlatformAdmin, store.id]);
@@ -72,7 +72,7 @@ export function StoreAdminDialog({ onClose }: { onClose: () => void }) {
       .then(({ nextMembers, nextStores }) => {
         if (!active) return;
         setMembers(nextMembers);
-        setPendingStores(nextStores);
+        setStoreRequests(nextStores);
         setError('');
         setLoading(false);
       })
@@ -193,34 +193,40 @@ export function StoreAdminDialog({ onClose }: { onClose: () => void }) {
           <section className="store-admin-section">
             <h3><Store size={18} /> Cửa hàng chờ duyệt</h3>
             <p className="store-admin-note">
-              Duyệt thì chủ cửa hàng dùng được ngay. Từ chối thì cửa hàng không mở.
+              Duyệt thì chủ cửa hàng dùng được ngay. Từ chối vẫn giữ lại yêu cầu,
+              đổi ý lúc nào cũng duyệt lại được.
             </p>
-            {pendingStores.length === 0 && <p className="store-admin-empty">Không có cửa hàng nào đang chờ.</p>}
-            <ul className="store-admin-list">
-              {pendingStores.map((pending) => (
-                <li key={pending.id}>
+            {storeRequests.length === 0 && <p className="store-admin-empty">Không có cửa hàng nào đang chờ.</p>}
+            <ul className="store-admin-list is-compact">
+              {storeRequests.map((request) => (
+                <li key={request.id} data-status={request.status}>
                   <div className="store-admin-who">
-                    <strong>{pending.name}</strong>
-                    <span>mã <code>{pending.slug ?? pending.id}</code></span>
-                    <span className="store-admin-tag">Chủ: {pending.ownerName} · {pending.ownerEmail}</span>
+                    <strong>
+                      {request.name}
+                      <code>{request.slug ?? request.id}</code>
+                      {request.status === 'rejected' && <em>Đã từ chối</em>}
+                    </strong>
+                    <span className="store-admin-tag">{request.ownerName} · {request.ownerEmail}</span>
                   </div>
                   <div className="store-admin-buttons">
                     <button
                       type="button"
                       className="store-admin-approve"
                       disabled={busyKey !== ''}
-                      onClick={() => run(`s-${pending.id}`, () => setStoreStatus(pending.id, 'active'))}
+                      onClick={() => run(`s-${request.id}`, () => setStoreStatus(request.id, 'active'))}
                     >
-                      <Check size={16} /> Duyệt
+                      <Check size={16} /> {request.status === 'rejected' ? 'Duyệt lại' : 'Duyệt'}
                     </button>
-                    <button
-                      type="button"
-                      className="store-admin-reject"
-                      disabled={busyKey !== ''}
-                      onClick={() => run(`sr-${pending.id}`, () => setStoreStatus(pending.id, 'rejected'))}
-                    >
-                      <X size={16} /> Từ chối
-                    </button>
+                    {request.status === 'pending' && (
+                      <button
+                        type="button"
+                        className="store-admin-reject"
+                        disabled={busyKey !== ''}
+                        onClick={() => run(`sr-${request.id}`, () => setStoreStatus(request.id, 'rejected'))}
+                      >
+                        <X size={16} /> Từ chối
+                      </button>
+                    )}
                   </div>
                 </li>
               ))}

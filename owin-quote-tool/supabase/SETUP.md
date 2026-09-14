@@ -37,7 +37,7 @@ Quản trị viên hệ thống **khác** chủ cửa hàng và khác Quản lý
 
 Người đăng nhập lần đầu được tạo `profiles` tự động nhưng **chưa thuộc cửa hàng nào**. Màn hình sẽ mời họ chọn một trong hai:
 
-1. **Mở cửa hàng mới** — nhập tên và mã cửa hàng. Cửa hàng ở `status = 'pending'`, Quản trị viên hệ thống duyệt trong **Menu tài khoản → Quản trị cửa hàng**.
+1. **Mở cửa hàng mới** — chỉ nhập tên; mã cửa hàng do server sinh từ tên đó (bỏ dấu tiếng Việt, trùng thì thêm hậu tố số). Cửa hàng ở `status = 'pending'`, Quản trị viên hệ thống duyệt trong **Menu tài khoản → Quản trị cửa hàng**. Từ chối không xoá yêu cầu — vẫn duyệt lại được sau.
 2. **Xin vào cửa hàng có sẵn** — nhập mã cửa hàng (chính là `slug`). Yêu cầu vào `store_members` ở `status = 'pending'`, chủ/quản lý cửa hàng đó duyệt cũng ở màn Quản trị cửa hàng.
 
 Cấp thêm Quản trị viên hệ thống (chỉ làm được bằng SQL, cố ý):
