@@ -2,7 +2,7 @@
 
 Công cụ quản lý sản phẩm và lập báo giá cửa nhôm cho OWIN: quản lý catalogue, tính giá theo kích thước/phụ kiện, lưu báo giá khách hàng, xuất tài liệu và tính tiền nhôm theo hệ/màu.
 
-Tài liệu mô tả mã nguồn hiện tại trong repository. Domain được cấu hình triển khai là [saigonfox.online](https://saigonfox.online); cấu hình này không phải xác nhận tình trạng dịch vụ đang chạy.
+Tài liệu mô tả mã nguồn hiện tại trong repository. Domain được cấu hình triển khai là [admin.hoanganhowin.io.vn](https://admin.hoanganhowin.io.vn); cấu hình này không phải xác nhận tình trạng dịch vụ đang chạy.
 
 ## Mục lục
 
@@ -357,7 +357,7 @@ Khi đổi layout xuất, kiểm tra file Word/Excel/PDF thực tế về dấu 
 
 ## Triển khai và vận hành
 
-GitHub Pages phục vụ frontend tĩnh; Supabase phục vụ dữ liệu/xác thực. Vite dùng `BASE_PATH` hoặc `/`, `public/CNAME` giữ domain `saigonfox.online`.
+GitHub Pages phục vụ frontend tĩnh; Supabase phục vụ dữ liệu/xác thực. Vite dùng `BASE_PATH` hoặc `/`, `public/CNAME` giữ domain `admin.hoanganhowin.io.vn`.
 
 - CI chạy khi push `main`, `full-reference-parity`, pull request hoặc thủ công; Node 22, `npm ci`, lint, test, build.
 - Pages là workflow riêng, chạy khi push `main` hoặc thủ công; Node LTS, tự chạy test/lint/build rồi upload `owin-quote-tool/dist` và deploy.

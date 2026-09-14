@@ -1,7 +1,7 @@
 # GitHub Pages deployment
 
 - Source: GitHub Actions.
-- Production domain: `saigonfox.online`.
+- Production domain: `admin.hoanganhowin.io.vn`.
 - Build root: `owin-quote-tool`.
 - Required Actions secrets: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
 - Workflow chạy lint, test và production build trước khi deploy.

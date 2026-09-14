@@ -66,7 +66,7 @@ Repository Settings → Secrets and variables → Actions cần hai secret:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 
-Push vào `main` chạy CI rồi workflow Deploy GitHub Pages. Domain production là `saigonfox.online` và file `public/CNAME` giữ custom domain.
+Push vào `main` chạy CI rồi workflow Deploy GitHub Pages. Domain production là `admin.hoanganhowin.io.vn` và file `public/CNAME` giữ custom domain.
 
 ## Trạng thái migration
 
