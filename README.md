@@ -224,10 +224,15 @@ Nguồn: [models.ts](owin-quote-tool/src/types/models.ts), [schema.sql](owin-quo
 
 | Bảng | Vai trò |
 | --- | --- |
+| `profiles` | Hồ sơ 1-1 với `auth.users`: tên hiển thị, email, ảnh đại diện |
+| `stores` | Cửa hàng; `is_public` mở bảng giá cho landing page |
+| `store_members` | Thành viên cửa hàng, `role` owner/admin/staff, `status` pending/active/disabled |
 | `products` | Cột tra cứu/sắp xếp/công khai + JSON document sản phẩm |
 | `quotes` | Thông tin tra cứu + JSON document, snapshot, items, lịch sử xuất |
 | `suggestions` | Loại gợi ý, giá trị, số lần dùng và document |
-| `app_data` | Dữ liệu chia sẻ dạng key/document, gồm đơn giá/cấu hình nhôm |
+| `app_documents` | Document cấu hình theo cửa hàng, gồm đơn giá/cấu hình nhôm |
+
+Mọi bảng nghiệp vụ mang `store_id`. RLS chỉ cho thành viên `active` của một cửa hàng thấy dữ liệu của cửa hàng đó, nên hai tài khoản khác cửa hàng không thấy báo giá hay bảng giá của nhau. Tài khoản, mật khẩu, Google/Facebook và quên mật khẩu do Supabase Auth quản lý trong schema `auth`.
 
 - `ProductRecord`: ID, mã, nhóm, đơn vị/giá, ảnh, specs, phụ kiện, cờ hiển thị, thứ tự/thời gian.
 - `QuoteRecord`: khách hàng, trạng thái `DRAFT | SAVED | EXPORTED`, tổng tiền, snapshot, items, exports, trạng thái xóa.
@@ -249,7 +254,7 @@ Autocomplete chuẩn hóa văn bản, bỏ trùng, chấm điểm theo truy vấ
 
 Merge sản phẩm/báo giá chủ yếu ở **cấp trường trên cùng**. Hai người cùng sửa mảng `items`/`specs` không được tự hòa giải từng dòng; cùng sửa một trường thì local đang lưu thắng. Cơ chế này không bảo đảm giữ mọi chỉnh sửa đồng thời trên cùng trường.
 
-`exports` được hợp nhất theo ID để giữ các lần xuất. Thứ tự dùng RPC `set_product_order`, đổi giá hàng loạt dùng `adjust_product_prices`; `app_data` dùng `compare_and_swap_app_data`, sản phẩm/báo giá dùng `save_product_cas`, `save_quote_cas`.
+`exports` được hợp nhất theo ID để giữ các lần xuất. Thứ tự dùng RPC `set_product_order`, đổi giá hàng loạt dùng `adjust_product_prices`; `app_documents` dùng `save_app_document_cas`, sản phẩm/báo giá dùng `save_product_cas`, `save_quote_cas`. Mọi RPC nhận `p_store_id` làm tham số đầu và chạy `security invoker` nên RLS vẫn đóng khung theo cửa hàng.
 
 Trigger cập nhật thời gian/revision và ngăn form cũ hồi sinh bản ghi đã xóa mềm. Hàng đợi lưu tuần tự tránh yêu cầu cùng form chạy chồng; chỉ báo đã lưu khi server xác nhận.
 
@@ -309,8 +314,8 @@ VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR_PUBLIC_ANON_KEY
 ```
 
-1. Chạy toàn bộ `supabase/schema.sql` trong SQL Editor của project đã chọn.
-2. Cấu hình Email/Password Auth, tắt public signup và tạo/xác nhận tài khoản.
+1. Chạy toàn bộ `supabase/schema.sql` trong SQL Editor của project đã chọn. Project đã có dữ liệu theo schema cũ thì chạy `supabase/migrations/` theo thứ tự trước.
+2. Cấu hình Email/Password Auth và các provider Google/Facebook muốn dùng, rồi tạo/xác nhận tài khoản.
 3. Kiểm tra bảng, RPC, Storage policy và Realtime theo schema.
 4. Chạy `npm run dev`, mở URL trong terminal (Vite mặc định cổng 5173).
 
