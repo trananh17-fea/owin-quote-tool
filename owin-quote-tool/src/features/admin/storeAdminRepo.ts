@@ -157,6 +157,58 @@ export async function listStoreRequests(): Promise<StoreRequestRow[]> {
   });
 }
 
+export interface ActiveStoreRow {
+  id: string;
+  name: string;
+  slug: string | null;
+  ownerEmail: string;
+  ownerName: string;
+  memberCount: number;
+}
+
+/** Mọi cửa hàng đang hoạt động — chỉ Quản trị viên hệ thống đọc được đủ. */
+export async function listActiveStores(): Promise<ActiveStoreRow[]> {
+  const { data, error } = await supabase
+    .from('stores')
+    .select('id,name,slug,owner_id')
+    .eq('status', 'active')
+    .is('deleted_at', null)
+    .order('name');
+  if (error) throw new Error(error.message);
+
+  const rows = (data ?? []) as Array<{
+    id: string;
+    name: string;
+    slug: string | null;
+    owner_id: string;
+  }>;
+  if (rows.length === 0) return [];
+
+  const [profiles, memberResult] = await Promise.all([
+    readProfiles(rows.map((row) => row.owner_id)),
+    supabase.from('store_members').select('store_id').eq('status', 'active'),
+  ]);
+  if (memberResult.error) throw new Error(memberResult.error.message);
+
+  const counts = new Map<string, number>();
+  for (const row of (memberResult.data ?? []) as Array<{ store_id: string }>) {
+    counts.set(row.store_id, (counts.get(row.store_id) ?? 0) + 1);
+  }
+
+  return rows.map((row) => {
+    const profile = profiles.get(row.owner_id);
+    const ownerEmail = profile?.email ?? '';
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      ownerEmail,
+      ownerName: nameFor(profile, ownerEmail),
+      memberCount: counts.get(row.id) ?? 0,
+    };
+  });
+}
+
 export async function setStoreStatus(
   storeId: string,
   status: 'active' | 'rejected',

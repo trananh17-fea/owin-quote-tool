@@ -100,6 +100,27 @@ describe('resolveStoreAccess', () => {
     expect(access).toMatchObject({ status: 'ready', store: owinStore, stores: [owinStore] });
   });
 
+  it('cho Quản trị viên hệ thống vào dù không thuộc cửa hàng nào', () => {
+    // Vai trò này quản lý các cửa hàng, không dùng dữ liệu cửa hàng nào — chặn
+    // họ ở màn "chưa có cửa hàng" là khoá đúng người cần vào nhất.
+    expect(resolveStoreAccess([], [], null, true)).toEqual({ status: 'platform_admin' });
+  });
+
+  it('đưa Quản trị viên hệ thống tới màn quản trị thay vì bắt chờ cửa hàng của chính mình', () => {
+    const access = resolveStoreAccess(
+      [membership('moi', 'active', 'owner')],
+      [pendingStore],
+      null,
+      true,
+    );
+    expect(access).toEqual({ status: 'platform_admin' });
+  });
+
+  it('vẫn ưu tiên cửa hàng dùng được nếu Quản trị viên hệ thống có một cái', () => {
+    const access = resolveStoreAccess([membership('owin', 'active')], [owinStore], null, true);
+    expect(access).toMatchObject({ status: 'ready', store: owinStore, isPlatformAdmin: true });
+  });
+
   it('bỏ qua cửa hàng đã xoá mềm dù tư cách thành viên vẫn active', () => {
     const access = resolveStoreAccess([membership('owin', 'active')], [], null);
     expect(access).toEqual({ status: 'none' });

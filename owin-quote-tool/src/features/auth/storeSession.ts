@@ -45,6 +45,12 @@ export type StoreAccess =
   | { status: 'disabled' }
   /** Chưa thuộc cửa hàng nào. */
   | { status: 'none' }
+  /**
+   * Quản trị viên hệ thống không thuộc cửa hàng nào. Công việc của vai trò này
+   * là quản lý các cửa hàng, không phải dùng dữ liệu của một cửa hàng cụ thể,
+   * nên vẫn phải vào được app — chỉ là vào thẳng màn quản trị.
+   */
+  | { status: 'platform_admin' }
   | { status: 'error'; message: string };
 
 export interface MembershipRow {
@@ -66,6 +72,7 @@ export function resolveStoreAccess(
   const active = memberships.filter((row) => row.status === 'active');
 
   if (active.length === 0) {
+    if (isPlatformAdmin) return { status: 'platform_admin' };
     if (memberships.some((row) => row.status === 'pending')) return { status: 'pending' };
     if (memberships.some((row) => row.status === 'disabled')) return { status: 'disabled' };
     return { status: 'none' };
@@ -80,10 +87,14 @@ export function resolveStoreAccess(
     // hàng thì chưa được duyệt. Không có nhánh này thì họ vào thẳng app và
     // thấy một cửa hàng rỗng không dùng được.
     const waiting = mine.find((store) => store.status === 'pending');
-    if (waiting) return { status: 'store_pending', store: waiting };
+    if (waiting && !isPlatformAdmin) return { status: 'store_pending', store: waiting };
 
     const rejected = mine.find((store) => store.status === 'rejected');
-    if (rejected) return { status: 'store_rejected', store: rejected };
+    if (rejected && !isPlatformAdmin) return { status: 'store_rejected', store: rejected };
+
+    // Quản trị viên hệ thống tự duyệt được cửa hàng của mình từ màn quản trị,
+    // nên đưa thẳng họ tới đó thay vì bắt ngồi chờ chính mình.
+    if (isPlatformAdmin) return { status: 'platform_admin' };
 
     return { status: 'none' };
   }

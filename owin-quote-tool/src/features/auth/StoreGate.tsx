@@ -6,6 +6,7 @@ import { signOut } from '@/features/auth/authSession';
 import { useStoreAccess } from '@/features/auth/storeSession';
 import { CurrentStoreContext } from '@/features/auth/currentStoreContext';
 import { StoreOnboarding } from '@/features/auth/StoreOnboarding';
+import { PlatformAdminScreen } from '@/features/admin/PlatformAdminScreen';
 import './storeGate.css';
 
 /** Màn chặn khi tài khoản đăng nhập được nhưng chưa dùng được cửa hàng nào. */
@@ -76,6 +77,12 @@ export function StoreGate({ session, children }: { session: Session; children: R
         <p>Nhắn cho quản lý để được duyệt, rồi bấm “Kiểm tra lại”.</p>
       </StoreNotice>
     );
+  }
+
+  // Quản trị viên hệ thống vào thẳng màn quản lý cửa hàng: họ không cần, và
+  // thường không có, tư cách thành viên ở cửa hàng nào.
+  if (access.status === 'platform_admin') {
+    return <PlatformAdminScreen email={email} />;
   }
 
   if (access.status === 'none') {
