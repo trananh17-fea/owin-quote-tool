@@ -63,15 +63,26 @@ create index if not exists store_members_status_idx  on public.store_members (st
 -- ---------------------------------------------------------------------------
 do $$
 declare
-  -- >>> KIỂM TRA DÒNG NÀY TRƯỚC KHI CHẠY <<<
-  -- Email của tài khoản sẽ làm CHỦ cửa hàng 'owin' và nhận toàn bộ dữ liệu
-  -- hiện có. Sai email là trao cả bảng giá lẫn báo giá cho nhầm người.
-  owner_email constant text := 'hoanganhowin@gmail.com';
+  -- >>> KIỂM TRA DANH SÁCH NÀY TRƯỚC KHI CHẠY <<<
+  -- Các tài khoản quản trị OWIN. Tất cả đều thành chủ cửa hàng 'owin' và
+  -- Quản trị viên hệ thống. Sai email là trao bảng giá lẫn báo giá cho nhầm
+  -- người, nên đối chiếu với Authentication → Users trước khi chạy.
+  admin_emails constant text[] := array[
+    'thanhvu.220809@gmail.com',
+    'hoanganhowin@gmail.com'
+  ];
   admin_id uuid;
+  found_admins integer;
   user_count integer;
 begin
+  select count(*) into found_admins from auth.users
+   where lower(email) in (select lower(item) from unnest(admin_emails) as item);
+
+  -- owner_id của bảng stores chỉ nhận đúng một người; những admin còn lại vẫn
+  -- được cấp vai trò 'owner' trong store_members ở dưới.
   select id into admin_id from auth.users
-   where lower(email) = lower(owner_email)
+   where lower(email) in (select lower(item) from unnest(admin_emails) as item)
+   order by created_at
    limit 1;
 
   if admin_id is null then
@@ -79,18 +90,20 @@ begin
 
     if user_count = 0 then
       raise exception
-        'auth.users trống — tạo tài khoản % trước khi chạy migration', owner_email;
+        'auth.users trống — tạo tài khoản quản trị trước khi chạy migration';
     end if;
 
-    -- Chỉ đoán khi không thể đoán sai. Nhiều tài khoản mà thiếu đúng email thì
-    -- dừng lại, đừng âm thầm trao dữ liệu cho một người ngẫu nhiên.
+    -- Chỉ đoán khi không thể đoán sai. Nhiều tài khoản mà không khớp email nào
+    -- thì dừng lại, đừng âm thầm trao dữ liệu cho một người ngẫu nhiên.
     if user_count > 1 then
       raise exception
-        'Không tìm thấy % trong auth.users và đang có % tài khoản. Sửa owner_email ở đầu khối này cho đúng rồi chạy lại.',
-        owner_email, user_count;
+        'Không tìm thấy admin nào trong % và đang có % tài khoản. Sửa admin_emails ở đầu khối này rồi chạy lại.',
+        admin_emails, user_count;
     end if;
 
     select id into admin_id from auth.users limit 1;
+  else
+    raise notice 'Tìm thấy % / % tài khoản quản trị.', found_admins, array_length(admin_emails, 1);
   end if;
 
   insert into public.profiles (id, display_name, email, avatar_url)
@@ -120,9 +133,12 @@ begin
   from auth.users u
   on conflict (store_id, user_id) do nothing;
 
-  -- Chủ cửa hàng ghi đè lên dòng vừa tạo ở trên.
+  -- Mọi tài khoản quản trị đều là chủ cửa hàng, ghi đè dòng 'staff' ở trên.
   insert into public.store_members (store_id, user_id, role, status)
-  values ('owin', admin_id, 'owner', 'active')
+  select 'owin', u.id, 'owner', 'active'
+  from auth.users u
+  where lower(u.email) in (select lower(item) from unnest(admin_emails) as item)
+     or u.id = admin_id
   on conflict (store_id, user_id) do update
     set role = 'owner', status = 'active';
 end $$;

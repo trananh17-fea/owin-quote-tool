@@ -32,9 +32,12 @@ end $$;
 -- Cửa hàng đã tồn tại trước luồng duyệt thì đương nhiên là đã hoạt động.
 update public.stores set status = 'active' where status = 'pending';
 
--- Chủ cửa hàng gốc là Quản trị viên hệ thống đầu tiên.
+-- Mọi chủ cửa hàng gốc đều là Quản trị viên hệ thống.
 update public.profiles set is_platform_admin = true
-where id in (select owner_id from public.stores where id = 'owin');
+where id in (
+  select user_id from public.store_members
+  where store_id = 'owin' and role = 'owner' and status = 'active'
+);
 
 create index if not exists stores_status_idx on public.stores (status);
 
