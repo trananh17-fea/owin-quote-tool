@@ -111,6 +111,16 @@ begin
   values ('owin', 'OWIN', 'owin', true, admin_id, admin_id, admin_id)
   on conflict (id) do nothing;
 
+  -- Trước migration, RLS cũ chỉ xét `authenticated`, nghĩa là MỌI tài khoản đã
+  -- đăng nhập đều thấy toàn bộ dữ liệu. Đưa hết vào cửa hàng để không ai mất
+  -- quyền khi RLS siết theo store. Vai trò 'staff' giữ đúng mức truy cập dữ
+  -- liệu như cũ — nó chỉ không được duyệt thành viên, việc trước đây chưa tồn tại.
+  insert into public.store_members (store_id, user_id, role, status)
+  select 'owin', u.id, 'staff', 'active'
+  from auth.users u
+  on conflict (store_id, user_id) do nothing;
+
+  -- Chủ cửa hàng ghi đè lên dòng vừa tạo ở trên.
   insert into public.store_members (store_id, user_id, role, status)
   values ('owin', admin_id, 'owner', 'active')
   on conflict (store_id, user_id) do update

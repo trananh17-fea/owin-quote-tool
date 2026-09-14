@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, LogOut, Settings, ShieldCheck, UserRound } from 'lucide-react';
 import { signOut, useAuthenticatedSession } from '@/features/auth/authSession';
-import { OWIN_LOGIN_EMAIL, OWIN_LOGIN_USERNAME } from '@/features/auth/authIdentifier';
 import { flushPendingWork } from '@/lib/browser/pendingWork';
 import { SettingsDialog } from '@/features/settings/SettingsDialog';
 import { canManageMembers, useCurrentStore } from '@/features/auth/currentStoreContext';
@@ -38,9 +37,7 @@ export function AccountMenu() {
   }, [open]);
 
   const email = session?.user.email ?? '';
-  const accountName = email.toLowerCase() === OWIN_LOGIN_EMAIL
-    ? OWIN_LOGIN_USERNAME
-    : email.split('@')[0] || 'Tài khoản';
+  const accountName = email.split('@')[0] || 'Tài khoản';
 
   const logout = async () => {
     setBusy(true);

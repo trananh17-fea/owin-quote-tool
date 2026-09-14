@@ -1,16 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  normalizeLoginIdentifier,
-  OWIN_LOGIN_EMAIL,
-} from '@/features/auth/authIdentifier';
+import { normalizeLoginIdentifier } from '@/features/auth/authIdentifier';
 
 describe('normalizeLoginIdentifier', () => {
-  it('đổi tên đăng nhập OWIN thành email tài khoản', () => {
-    expect(normalizeLoginIdentifier('hoanganhowin')).toBe(OWIN_LOGIN_EMAIL);
-    expect(normalizeLoginIdentifier('  HoangAnHoWin  ')).toBe(OWIN_LOGIN_EMAIL);
+  it('chuẩn hóa email trước khi gửi tới Supabase Auth', () => {
+    expect(normalizeLoginIdentifier('  ThanhVu@Gmail.COM ')).toBe('thanhvu@gmail.com');
   });
 
-  it('chuẩn hóa email trước khi gửi tới Supabase Auth', () => {
-    expect(normalizeLoginIdentifier('  HOANGANHOWIN@GMAIL.COM ')).toBe(OWIN_LOGIN_EMAIL);
+  it('không đổi thứ người dùng gõ thành một email ghi cứng nào', () => {
+    expect(normalizeLoginIdentifier('admin')).toBe('admin');
+    expect(normalizeLoginIdentifier('hoanganhowin')).toBe('hoanganhowin');
   });
 });
