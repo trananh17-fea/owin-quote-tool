@@ -242,13 +242,13 @@ export function LoginScreen() {
             <svg
               className="login-architecture"
               viewBox="0 0 680 516"
-              preserveAspectRatio="xMidYMid slice"
+              preserveAspectRatio="xMidYMax meet"
               role="img"
               aria-label="Hình vẽ một căn nhà có cửa nhôm kính lớn"
             >
               <defs>
                 <clipPath id="arch-clip">
-                  <rect width="680" height="516" rx="26" />
+                  <rect width="680" height="516" />
                 </clipPath>
               </defs>
               <g clipPath="url(#arch-clip)">
