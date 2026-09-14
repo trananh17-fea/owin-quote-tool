@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, Store, UserRoundX, X } from 'lucide-react';
 import { canManageMembers, useCurrentStore } from '@/features/auth/currentStoreContext';
 import type { MembershipStatus, StoreRole } from '@/features/auth/storeSession';
@@ -28,6 +29,10 @@ const roleLabels: Record<StoreRole, string> = {
 /**
  * Trang quản trị: duyệt nhân viên xin vào cửa hàng, và (với Quản trị viên hệ
  * thống) duyệt cửa hàng mới đăng ký.
+ *
+ * Render qua portal ra <body>: thanh điều hướng có `backdrop-filter` nên nó là
+ * containing block của con `position: fixed` — để nguyên tại chỗ thì lớp phủ bị
+ * bó lại trong header.
  */
 export function StoreAdminDialog({ onClose }: { onClose: () => void }) {
   const { store, role, isPlatformAdmin, reload } = useCurrentStore();
@@ -40,6 +45,16 @@ export function StoreAdminDialog({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState('');
 
   const [reloadToken, setReloadToken] = useState(0);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    panelRef.current?.focus();
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [onClose]);
 
   // Hàm tải KHÔNG đụng state — state chỉ đặt trong .then, để effect không gây
   // một vòng render đồng bộ thừa.
@@ -85,9 +100,17 @@ export function StoreAdminDialog({ onClose }: { onClose: () => void }) {
     }
   };
 
-  return (
-    <div className="store-admin-backdrop" role="dialog" aria-modal="true" aria-label="Quản trị cửa hàng">
-      <div className="store-admin">
+  return createPortal(
+    <div className="store-admin-backdrop" role="presentation" onClick={onClose}>
+      <div
+        className="store-admin"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Quản trị cửa hàng"
+        tabIndex={-1}
+        ref={panelRef}
+        onClick={(event) => event.stopPropagation()}
+      >
         <header className="store-admin-header">
           <div>
             <h2>Quản trị cửa hàng</h2>
@@ -209,6 +232,7 @@ export function StoreAdminDialog({ onClose }: { onClose: () => void }) {
           <p className="store-admin-empty">Bạn không có quyền quản trị cửa hàng này.</p>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

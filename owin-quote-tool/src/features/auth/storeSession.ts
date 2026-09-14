@@ -14,10 +14,13 @@ import { setCurrentStoreId } from '@/services/supabase/currentStore';
 export type StoreRole = 'owner' | 'manager' | 'staff';
 export type MembershipStatus = 'pending' | 'active' | 'disabled';
 
+export type StoreStatus = 'pending' | 'active' | 'rejected';
+
 export interface StoreSummary {
   id: string;
   name: string;
   slug: string | null;
+  status: StoreStatus;
 }
 
 export type StoreAccess =
@@ -32,8 +35,12 @@ export type StoreAccess =
       /** Duyệt được cửa hàng mới của toàn hệ thống, không chỉ cửa hàng này. */
       isPlatformAdmin: boolean;
     }
-  /** Đã được thêm vào cửa hàng nhưng chưa được duyệt. */
+  /** Đã được thêm vào cửa hàng nhưng chủ cửa hàng chưa duyệt. */
   | { status: 'pending' }
+  /** Đã mở cửa hàng nhưng Quản trị viên hệ thống chưa duyệt cửa hàng đó. */
+  | { status: 'store_pending'; store: StoreSummary }
+  /** Cửa hàng đã bị từ chối. */
+  | { status: 'store_rejected'; store: StoreSummary }
   /** Tài khoản bị khoá ở mọi cửa hàng. */
   | { status: 'disabled' }
   /** Chưa thuộc cửa hàng nào. */
@@ -65,8 +72,21 @@ export function resolveStoreAccess(
   }
 
   // Cửa hàng bị xoá mềm không đọc được, nên tư cách thành viên còn lại cũng vô nghĩa.
-  const usable = stores.filter((store) => active.some((row) => row.store_id === store.id));
-  if (usable.length === 0) return { status: 'none' };
+  const mine = stores.filter((store) => active.some((row) => row.store_id === store.id));
+  const usable = mine.filter((store) => store.status === 'active');
+
+  if (usable.length === 0) {
+    // Người vừa mở cửa hàng đã là 'owner' + 'active' ngay lúc tạo, nhưng cửa
+    // hàng thì chưa được duyệt. Không có nhánh này thì họ vào thẳng app và
+    // thấy một cửa hàng rỗng không dùng được.
+    const waiting = mine.find((store) => store.status === 'pending');
+    if (waiting) return { status: 'store_pending', store: waiting };
+
+    const rejected = mine.find((store) => store.status === 'rejected');
+    if (rejected) return { status: 'store_rejected', store: rejected };
+
+    return { status: 'none' };
+  }
 
   const store = usable.find((candidate) => candidate.id === rememberedStoreId) ?? usable[0];
   const role = active.find((row) => row.store_id === store.id)?.role ?? 'staff';
@@ -110,7 +130,7 @@ export async function loadStoreAccess(userId: string): Promise<StoreAccess> {
 
   const { data: storeRows, error: storeError } = await supabase
     .from('stores')
-    .select('id,name,slug')
+    .select('id,name,slug,status')
     .in('id', active.map((row) => row.store_id))
     .is('deleted_at', null)
     .order('name');

@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { resolveStoreAccess } from '@/features/auth/storeSession';
 import type { MembershipRow, StoreSummary } from '@/features/auth/storeSession';
 
-const owinStore: StoreSummary = { id: 'owin', name: 'OWIN', slug: 'owin' };
-const otherStore: StoreSummary = { id: 'other', name: 'Cửa hàng khác', slug: 'other' };
+const owinStore: StoreSummary = { id: 'owin', name: 'OWIN', slug: 'owin', status: 'active' };
+const otherStore: StoreSummary = { id: 'other', name: 'Cửa hàng khác', slug: 'other', status: 'active' };
+const pendingStore: StoreSummary = { id: 'moi', name: 'Cửa hàng mới', slug: 'moi', status: 'pending' };
 
 const membership = (
   store_id: string,
@@ -71,6 +72,32 @@ describe('resolveStoreAccess', () => {
       'da-bi-xoa',
     );
     expect(access).toMatchObject({ status: 'ready', store: owinStore });
+  });
+
+  it('chặn ở màn chờ duyệt khi cửa hàng vừa mở chưa được duyệt', () => {
+    // request_new_store cấp 'owner'/'active' ngay, cổng chặn nằm ở trạng thái
+    // cửa hàng — thiếu nhánh này là người mở cửa hàng vào thẳng app rỗng.
+    const access = resolveStoreAccess(
+      [membership('moi', 'active', 'owner')],
+      [pendingStore],
+      null,
+    );
+    expect(access).toEqual({ status: 'store_pending', store: pendingStore });
+  });
+
+  it('báo bị từ chối khi cửa hàng bị Quản trị viên hệ thống từ chối', () => {
+    const rejected: StoreSummary = { ...pendingStore, status: 'rejected' };
+    const access = resolveStoreAccess([membership('moi', 'active', 'owner')], [rejected], null);
+    expect(access).toEqual({ status: 'store_rejected', store: rejected });
+  });
+
+  it('vẫn mở được cửa hàng active khi cửa hàng khác còn chờ duyệt', () => {
+    const access = resolveStoreAccess(
+      [membership('owin', 'active'), membership('moi', 'active', 'owner')],
+      [owinStore, pendingStore],
+      null,
+    );
+    expect(access).toMatchObject({ status: 'ready', store: owinStore, stores: [owinStore] });
   });
 
   it('bỏ qua cửa hàng đã xoá mềm dù tư cách thành viên vẫn active', () => {

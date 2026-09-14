@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Clock, LogOut, RefreshCw, ShieldAlert } from 'lucide-react';
+import { Clock, LogOut, RefreshCw, ShieldAlert, Store } from 'lucide-react';
 import type { Session } from '@supabase/supabase-js';
 import { signOut } from '@/features/auth/authSession';
 import { useStoreAccess } from '@/features/auth/storeSession';
@@ -80,6 +80,29 @@ export function StoreGate({ session, children }: { session: Session; children: R
 
   if (access.status === 'none') {
     return <StoreOnboarding email={email} onSent={reload} />;
+  }
+
+  if (access.status === 'store_pending') {
+    return (
+      <StoreNotice icon={<Store size={26} />} title="Cửa hàng đang chờ duyệt" onRetry={reload}>
+        <p>
+          Cửa hàng <strong>{access.store.name}</strong> đã được gửi đi, nhưng
+          Quản trị viên hệ thống chưa duyệt nên chưa dùng được.
+        </p>
+        <p>Được duyệt rồi thì bấm “Kiểm tra lại” để vào.</p>
+      </StoreNotice>
+    );
+  }
+
+  if (access.status === 'store_rejected') {
+    return (
+      <StoreNotice icon={<ShieldAlert size={26} />} title="Cửa hàng không được duyệt">
+        <p>
+          Yêu cầu mở cửa hàng <strong>{access.store.name}</strong> đã bị từ chối.
+        </p>
+        <p>Liên hệ Quản trị viên hệ thống nếu bạn cho rằng đây là nhầm lẫn.</p>
+      </StoreNotice>
+    );
   }
 
   if (access.status === 'disabled') {
