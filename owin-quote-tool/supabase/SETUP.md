@@ -31,7 +31,7 @@ Tài khoản, mật khẩu, Google/Facebook và quên mật khẩu do Supabase A
 | Chủ cửa hàng (`owner`) / Quản lý (`manager`) | Duyệt nhân viên xin vào, nâng/hạ vai trò, khoá thành viên | Quản trị viên hệ thống duyệt cửa hàng |
 | Nhân viên (`staff`) | Dùng bảng giá và báo giá của cửa hàng | Chủ/Quản lý cửa hàng |
 
-Quản trị viên hệ thống **khác** chủ cửa hàng và khác Quản lý: đánh dấu bằng `profiles.is_platform_admin`. Chữ "admin" trong toàn hệ thống chỉ mang nghĩa này — vai trò quản lý bên trong một cửa hàng tên là `manager`. Migration 0002 gán vai trò này cho chủ cửa hàng `owin`.
+Quản trị viên hệ thống **khác** chủ cửa hàng và khác Quản lý: đánh dấu bằng `profiles.is_platform_admin`. Một người có thể là Quản trị viên hệ thống mà không sở hữu dữ liệu của cửa hàng nào — hai danh sách khai báo riêng ở đầu migration 0001 (`store_owner_email`) và 0002 (`platform_admin_emails`). Chữ "admin" trong toàn hệ thống chỉ mang nghĩa này — vai trò quản lý bên trong một cửa hàng tên là `manager`. Migration 0002 gán vai trò này cho chủ cửa hàng `owin`.
 
 ## Luồng duyệt
 

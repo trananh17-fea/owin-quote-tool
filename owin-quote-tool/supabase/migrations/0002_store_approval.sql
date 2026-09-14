@@ -32,12 +32,33 @@ end $$;
 -- Cửa hàng đã tồn tại trước luồng duyệt thì đương nhiên là đã hoạt động.
 update public.stores set status = 'active' where status = 'pending';
 
--- Mọi chủ cửa hàng gốc đều là Quản trị viên hệ thống.
-update public.profiles set is_platform_admin = true
-where id in (
-  select user_id from public.store_members
-  where store_id = 'owin' and role = 'owner' and status = 'active'
-);
+-- ---------------------------------------------------------------------------
+-- Quản trị viên hệ thống
+--
+-- Vai trò này DUYỆT CỬA HÀNG MỚI cho toàn hệ thống. Nó khác hẳn chủ cửa hàng:
+-- một người có thể là quản trị viên mà không sở hữu dữ liệu của cửa hàng nào.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  -- >>> KIỂM TRA DANH SÁCH NÀY TRƯỚC KHI CHẠY <<<
+  platform_admin_emails constant text[] := array[
+    'thanhvu.220809@gmail.com'
+  ];
+  granted integer;
+begin
+  update public.profiles set is_platform_admin = true
+  where lower(email) in (select lower(item) from unnest(platform_admin_emails) as item);
+
+  get diagnostics granted = row_count;
+
+  if granted = 0 then
+    raise exception
+      'Không cấp được quyền Quản trị viên hệ thống cho ai trong %. Sửa danh sách rồi chạy lại.',
+      platform_admin_emails;
+  end if;
+
+  raise notice 'Quản trị viên hệ thống: % tài khoản.', granted;
+end $$;
 
 create index if not exists stores_status_idx on public.stores (status);
 

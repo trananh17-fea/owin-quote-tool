@@ -10,8 +10,9 @@
 -- CẢNH BÁO: sau khi chạy, bản web đang deploy sẽ HỎNG cho tới khi deploy bản
 -- code mới (tên bảng/cột/RPC đều đổi). Chạy khi không có ai đang dùng.
 --
--- Dữ liệu hiện có được gán hết vào cửa hàng id='owin', chủ là tài khoản
--- hoanganhowin@gmail.com (không có thì lấy tài khoản tạo sớm nhất).
+-- Dữ liệu hiện có được gán hết vào cửa hàng id='owin'. Chủ cửa hàng khai báo
+-- ở `store_owner_email` trong mục 2; Quản trị viên hệ thống khai báo riêng ở
+-- migration 0002 vì đó là vai trò khác.
 -- ============================================================================
 
 begin;
@@ -63,26 +64,18 @@ create index if not exists store_members_status_idx  on public.store_members (st
 -- ---------------------------------------------------------------------------
 do $$
 declare
-  -- >>> KIỂM TRA DANH SÁCH NÀY TRƯỚC KHI CHẠY <<<
-  -- Các tài khoản quản trị OWIN. Tất cả đều thành chủ cửa hàng 'owin' và
-  -- Quản trị viên hệ thống. Sai email là trao bảng giá lẫn báo giá cho nhầm
-  -- người, nên đối chiếu với Authentication → Users trước khi chạy.
-  admin_emails constant text[] := array[
-    'thanhvu.220809@gmail.com',
-    'hoanganhowin@gmail.com'
-  ];
+  -- >>> KIỂM TRA DÒNG NÀY TRƯỚC KHI CHẠY <<<
+  -- CHỦ cửa hàng 'owin': người sở hữu toàn bộ bảng giá và báo giá hiện có.
+  -- Sai email là trao dữ liệu cho nhầm người, nên đối chiếu với
+  -- Authentication → Users trước khi chạy.
+  --
+  -- Quản trị viên hệ thống là vai trò KHÁC, khai báo riêng ở migration 0002.
+  store_owner_email constant text := 'hoanganhowin@gmail.com';
   admin_id uuid;
-  found_admins integer;
   user_count integer;
 begin
-  select count(*) into found_admins from auth.users
-   where lower(email) in (select lower(item) from unnest(admin_emails) as item);
-
-  -- owner_id của bảng stores chỉ nhận đúng một người; những admin còn lại vẫn
-  -- được cấp vai trò 'owner' trong store_members ở dưới.
   select id into admin_id from auth.users
-   where lower(email) in (select lower(item) from unnest(admin_emails) as item)
-   order by created_at
+   where lower(email) = lower(store_owner_email)
    limit 1;
 
   if admin_id is null then
@@ -90,20 +83,20 @@ begin
 
     if user_count = 0 then
       raise exception
-        'auth.users trống — tạo tài khoản quản trị trước khi chạy migration';
+        'auth.users trống — tạo tài khoản % trước khi chạy migration', store_owner_email;
     end if;
 
-    -- Chỉ đoán khi không thể đoán sai. Nhiều tài khoản mà không khớp email nào
-    -- thì dừng lại, đừng âm thầm trao dữ liệu cho một người ngẫu nhiên.
+    -- Chỉ đoán khi không thể đoán sai. Nhiều tài khoản mà thiếu đúng email thì
+    -- dừng lại, đừng âm thầm trao dữ liệu cho một người ngẫu nhiên.
     if user_count > 1 then
       raise exception
-        'Không tìm thấy admin nào trong % và đang có % tài khoản. Sửa admin_emails ở đầu khối này rồi chạy lại.',
-        admin_emails, user_count;
+        'Không tìm thấy % trong auth.users và đang có % tài khoản. Sửa store_owner_email ở đầu khối này rồi chạy lại.',
+        store_owner_email, user_count;
     end if;
 
     select id into admin_id from auth.users limit 1;
   else
-    raise notice 'Tìm thấy % / % tài khoản quản trị.', found_admins, array_length(admin_emails, 1);
+    raise notice 'Chủ cửa hàng owin: %', store_owner_email;
   end if;
 
   insert into public.profiles (id, display_name, email, avatar_url)
@@ -133,12 +126,9 @@ begin
   from auth.users u
   on conflict (store_id, user_id) do nothing;
 
-  -- Mọi tài khoản quản trị đều là chủ cửa hàng, ghi đè dòng 'staff' ở trên.
+  -- Chủ cửa hàng ghi đè dòng 'staff' vừa tạo ở trên.
   insert into public.store_members (store_id, user_id, role, status)
-  select 'owin', u.id, 'owner', 'active'
-  from auth.users u
-  where lower(u.email) in (select lower(item) from unnest(admin_emails) as item)
-     or u.id = admin_id
+  values ('owin', admin_id, 'owner', 'active')
   on conflict (store_id, user_id) do update
     set role = 'owner', status = 'active';
 end $$;
