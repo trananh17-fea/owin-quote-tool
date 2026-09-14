@@ -231,6 +231,26 @@ const VARIANT_QUALITY = 0.78;
  */
 let variantWritesBlocked = false;
 
+/**
+ * Bỏ hỏi bản `export/` sau khi trượt liên tiếp mà chưa trúng phát nào.
+ *
+ * Lần xuất đầu tiên trên một bucket chưa có thư mục `export/` thì mỗi tấm ảnh
+ * tốn thêm một lượt 404 (~300ms) rồi mới quay sang endpoint thu nhỏ — với 300
+ * ảnh là cộng thêm vài giây cho đúng một lần. Sau 16 lượt trượt sạch thì coi như
+ * cả bộ chưa được dựng, đi thẳng sang endpoint và vẫn xếp hàng dựng bản rút gọn
+ * cho lần sau. Phiên sau, lượt hỏi đầu tiên trúng nên cờ này không bao giờ bật.
+ *
+ * Ngưỡng 16 nằm dưới mức 32 luồng song song, nên chỉ đúng đợt đầu bị trả giá.
+ * Bucket dựng dở (vài sản phẩm mới chưa có bản rút gọn) không dính, vì chỉ cần
+ * một lượt trúng là ngưỡng này vô hiệu vĩnh viễn.
+ */
+let variantProbeHits = 0;
+let variantProbeMisses = 0;
+
+function variantProbeWorthIt(): boolean {
+  return variantProbeHits > 0 || variantProbeMisses < 16;
+}
+
 function variantPathFor(source: string): string | null {
   if (variantWritesBlocked) return null;
   const storagePath = storagePathFromPublicUrl(source);
@@ -371,15 +391,17 @@ async function loadSourceOnce(source: string, preferThumb: boolean): Promise<Sou
     //    endpoint kia phải giải mã + resize ảnh master tại chỗ nên mất ~400ms
     //    mỗi tấm. Với 300 ảnh, khác biệt đó chính là khác biệt giữa 4 giây và
     //    nửa giây.
-    if (variantPath) {
+    if (variantPath && variantProbeWorthIt()) {
       const variant = await getImageBlobByPath(publicUrl(variantPath), {
         fallbackLogo: false,
         remember: false,
       });
       if (variant) {
+        variantProbeHits += 1;
         stats.variantHits += 1;
         return ready(variant);
       }
+      variantProbeMisses += 1;
     }
 
     // 2. CDN thu nhỏ tại chỗ. Chậm, nhưng vẫn rẻ hơn nhiều so với tải ảnh master

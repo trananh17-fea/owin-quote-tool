@@ -19,9 +19,23 @@ function mb(bytes: number): string {
   return `${(bytes / 1_048_576).toFixed(2)}MB`;
 }
 
+/**
+ * Các chặng trong một lần xuất, để biết sau khi ảnh hết chậm thì thời gian còn
+ * lại nằm ở đâu — tải template, ghép dòng, chuẩn hoá XML hay đóng gói zip.
+ *
+ * Các chặng phải không chồng lấn nhau thì tổng mới đọc được.
+ */
+const phases: Array<[string, number]> = [];
+
+/** Ghi lại một chặng. `startedAt` là mốc `Date.now()` lấy ngay trước chặng đó. */
+export function markExportPhase(label: string, startedAt: number): void {
+  phases.push([label, Date.now() - startedAt]);
+}
+
 /** Bọc một lần xuất file để đo; không đổi kết quả trả về. */
 export async function trackExport<T>(label: string, run: () => Promise<T>): Promise<T> {
   resetExportImageStats();
+  phases.length = 0;
   const startedAt = Date.now();
   try {
     return await run();
@@ -35,6 +49,7 @@ export async function trackExport<T>(label: string, run: () => Promise<T>): Prom
         ` / ${stats.masterFallbacks} master / ${stats.cacheHits} sẵn có` +
         ` / ${stats.reused} nhúng thẳng)` +
         ` · tải ${mb(stats.bytesIn)} → nhúng ${mb(stats.bytesOut)}` +
+        (phases.length ? ` · ${phases.map(([name, ms]) => `${name} ${ms}ms`).join(' / ')}` : '') +
         (stats.variantsQueued ? ` · đang dựng ${stats.variantsQueued} bản rút gọn cho lần sau` : ''),
     );
     // Sau khi file đã tải về mới dựng bản rút gọn, để không giành băng thông.

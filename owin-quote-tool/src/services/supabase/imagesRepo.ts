@@ -21,6 +21,25 @@ async function makeThumbBlob(blob: Blob): Promise<Blob> {
   });
 }
 
+/**
+ * Bản dành riêng cho file xuất: ~480px JPEG, chừng 20KB.
+ *
+ * Bảng giá vài trăm dòng nhúng đúng bản này. Dựng sẵn ngay lúc upload để lúc
+ * xuất chỉ còn một lượt GET file tĩnh; nếu phải nhờ endpoint thu nhỏ của
+ * Supabase dựng tại chỗ thì mỗi tấm mất ~400ms, tức cả chục giây cho một bảng
+ * giá. Đường dẫn khớp với `variantPathFor` trong `exportImage`.
+ */
+async function makeExportBlob(blob: Blob): Promise<Blob> {
+  const file = blob instanceof File ? blob : new File([blob], 'image', { type: blob.type || 'image/webp' });
+  return imageCompression(file, {
+    maxWidthOrHeight: 480,
+    initialQuality: 0.78,
+    fileType: 'image/jpeg',
+    maxSizeMB: 0.1,
+    useWebWorker: true,
+  });
+}
+
 export const PRIVATE_QUOTE_IMAGE_PREFIX = 'quote-private:';
 
 export function privateQuoteImagePath(value: string | null | undefined): string | null {
@@ -114,6 +133,13 @@ export async function uploadImageDedupResult(blob: Blob, seen?: Set<string>): Pr
         .from(PRODUCT_IMAGE_BUCKET)
         .upload(`thumb/${hash}.${ext}`, thumbBlob, { upsert: true, contentType: 'image/webp' });
     } catch { /* thumb là tối ưu, thiếu không sao */ }
+    // Best-effort: bản cho file xuất ở export/<hash>.jpg (thiếu thì lúc xuất tự dựng).
+    try {
+      const exportBlob = await makeExportBlob(blob);
+      await supabase.storage
+        .from(PRODUCT_IMAGE_BUCKET)
+        .upload(`export/${hash}.jpg`, exportBlob, { upsert: true, contentType: 'image/jpeg' });
+    } catch { /* bản xuất là tối ưu, thiếu không sao */ }
     seen?.add(hash);
   }
   return { path, url: publicUrl(path) };

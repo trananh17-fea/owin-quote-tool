@@ -26,7 +26,7 @@ import { buildCatalogueBlockRows, type CatalogueBlockRow } from '@/lib/catalogue
 
 import quoteTemplateUrl from '@/assets/templates/Template_Bao_Gia.docx?url';
 import catalogueTemplateUrl from '@/assets/templates/Template_Bang_Gia.docx?url';
-import { trackExport } from '@/features/export/exportTiming';
+import { markExportPhase, trackExport } from '@/features/export/exportTiming';
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -1259,11 +1259,14 @@ export async function renderCatalogueDocumentXml(zip: PizZip, products: ProductR
   const embedImage = createImageEmbedder(zip);
   const imageCache = new Map<string, string | null>();
   // Tải trước song song; vòng dựng bảng bên dưới chỉ còn ghép XML.
+  const warmAt = Date.now();
   await embedImage.warm(
     rows.map((row) =>
       row.rowType === 'product' ? row.imagePath || 'owin-user-assets/logo/logo.webp' : null,
     ),
   );
+  markExportPhase('nạp ảnh', warmAt);
+  const rowsAt = Date.now();
   // Block model matched to REAL REF export (exportCatalogueV8ToDocx):
   // - category = its own cantSplit block
   // - product + accessories = one keepNext block (image not orphaned from accessories)
@@ -1323,6 +1326,9 @@ export async function renderCatalogueDocumentXml(zip: PizZip, products: ProductR
     ),
   );
 
+  markExportPhase('ghép dòng', rowsAt);
+
+  const normalizeAt = Date.now();
   documentXml = documentXml.slice(0, blockStart) + renderedRows.join('') + documentXml.slice(blockEnd);
   documentXml = ensureAllTablesBold(removeLeftoverTokens(documentXml));
   documentXml = replaceCatalogueHeaderTables(documentXml);
@@ -1330,7 +1336,9 @@ export async function renderCatalogueDocumentXml(zip: PizZip, products: ProductR
   // Header (logo · tiêu đề · dòng cột) chỉ hiện 1 lần ở đầu — bỏ lặp lại mỗi trang.
   // Ranh giới các trang sau do "hàng nhóm" (I. CỬA CHÍNH…) đảm nhận.
   documentXml = documentXml.replace(/<w:tblHeader\b[^>]*\/>/g, '');
-  return ensureBoldFontRuns(documentXml);
+  const normalized = ensureBoldFontRuns(documentXml);
+  markExportPhase('chuẩn hoá XML', normalizeAt);
+  return normalized;
 }
 
 export async function buildCatalogueWordData(products: ProductRecord[]) {
@@ -1603,12 +1611,20 @@ export function exportCatalogueWord(products: ProductRecord[]): Promise<string> 
 }
 
 async function buildCatalogueWord(products: ProductRecord[]): Promise<string> {
+  const templateAt = Date.now();
   const zip = await fetchTemplateZip(catalogueTemplateUrl);
+  markExportPhase('template', templateAt);
+
   const documentXml = await renderCatalogueDocumentXml(zip, products);
+
+  const packAt = Date.now();
   zip.file('word/document.xml', documentXml);
   // Catalogue exports are preview-only; password unlocks editing in Word.
   await applyCatalogueReadOnlyProtection(zip, CATALOGUE_WORD_EDIT_PASSWORD);
   const fileName = `Bang_gia_OWIN_${new Date().toISOString().slice(0, 10)}.docx`;
-  downloadBlob(generateDocxBlob(zip), fileName);
+  const blob = generateDocxBlob(zip);
+  markExportPhase('đóng gói', packAt);
+
+  downloadBlob(blob, fileName);
   return fileName;
 }
