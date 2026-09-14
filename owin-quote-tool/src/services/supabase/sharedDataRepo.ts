@@ -1,8 +1,10 @@
 import type { SuggestionRecord } from '@/types/models';
 import { supabase } from '@/services/supabase/client';
+import { requireCurrentStoreId } from '@/services/supabase/currentStore';
 
 interface SuggestionRow {
   id: string;
+  store_id: string;
   type: string;
   value: string;
   used_count: number;
@@ -10,7 +12,7 @@ interface SuggestionRow {
   updated_at: string;
 }
 
-interface AppDataRow<T> {
+interface AppDocumentRow<T> {
   data: T;
   revision: number;
   updated_at: string;
@@ -53,6 +55,7 @@ function suggestionFromRow(row: SuggestionRow): SuggestionRecord {
 function rowFromSuggestion(record: SuggestionRecord) {
   return {
     id: record.id,
+    store_id: requireCurrentStoreId(),
     type: record.type,
     value: record.value,
     used_count: Math.max(0, Math.floor(Number(record.usedCount) || 0)),
@@ -66,6 +69,7 @@ export async function getHostedSuggestion(id: string): Promise<SuggestionRecord 
   const { data, error } = await supabase
     .from('suggestions')
     .select(SUGGESTION_SELECT)
+    .eq('store_id', requireCurrentStoreId())
     .eq('id', id)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -73,6 +77,7 @@ export async function getHostedSuggestion(id: string): Promise<SuggestionRecord 
 }
 
 export async function listHostedSuggestions(types?: readonly string[]): Promise<SuggestionRecord[]> {
+  const storeId = requireCurrentStoreId();
   const uniqueTypes = Array.from(new Set((types ?? []).map((type) => type.trim()).filter(Boolean)));
   const pageSize = 1_000;
   const records: SuggestionRecord[] = [];
@@ -81,6 +86,7 @@ export async function listHostedSuggestions(types?: readonly string[]): Promise<
     let query = supabase
       .from('suggestions')
       .select(SUGGESTION_SELECT)
+      .eq('store_id', storeId)
       .order('used_count', { ascending: false })
       .order('value')
       .range(from, from + pageSize - 1);
@@ -96,6 +102,7 @@ export async function listHostedSuggestions(types?: readonly string[]): Promise<
 }
 
 export async function getHostedSuggestionsByIds(ids: readonly string[]): Promise<Map<string, SuggestionRecord>> {
+  const storeId = requireCurrentStoreId();
   const out = new Map<string, SuggestionRecord>();
   const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
   const chunkSize = 200;
@@ -104,6 +111,7 @@ export async function getHostedSuggestionsByIds(ids: readonly string[]): Promise
     const { data, error } = await supabase
       .from('suggestions')
       .select(SUGGESTION_SELECT)
+      .eq('store_id', storeId)
       .in('id', uniqueIds.slice(index, index + chunkSize));
     if (error) throw new Error(error.message);
     for (const row of data ?? []) {
@@ -123,7 +131,7 @@ export async function upsertHostedSuggestions(
   for (let index = 0; index < records.length; index += chunkSize) {
     const rows = records.slice(index, index + chunkSize).map(rowFromSuggestion);
     const { error } = await supabase.from('suggestions').upsert(rows, {
-      onConflict: 'id',
+      onConflict: 'store_id,id',
       ignoreDuplicates: options.ignoreExisting === true,
     });
     if (error) throw new Error(error.message);
@@ -140,13 +148,14 @@ export async function getHostedAppData<T>(key: string): Promise<T | null> {
  */
 export async function getHostedAppDataVersioned<T>(key: string): Promise<HostedAppDataSnapshot<T>> {
   const { data, error } = await supabase
-    .from('app_data')
+    .from('app_documents')
     .select('data,revision,updated_at')
-    .eq('key', key)
+    .eq('store_id', requireCurrentStoreId())
+    .eq('id', key)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return { data: null, revision: 0, updatedAt: null };
-  const row = data as AppDataRow<T>;
+  const row = data as AppDocumentRow<T>;
   return {
     data: row.data,
     revision: Math.max(1, Math.floor(Number(row.revision) || 1)),
@@ -156,8 +165,11 @@ export async function getHostedAppDataVersioned<T>(key: string): Promise<HostedA
 
 export async function upsertHostedAppData<T>(key: string, data: T): Promise<void> {
   const { error } = await supabase
-    .from('app_data')
-    .upsert({ key, data }, { onConflict: 'key' });
+    .from('app_documents')
+    .upsert(
+      { id: key, store_id: requireCurrentStoreId(), data },
+      { onConflict: 'store_id,id' },
+    );
   if (error) throw new Error(error.message);
 }
 
@@ -171,13 +183,14 @@ export async function compareAndSwapHostedAppData<T>(
   expectedRevision: number,
   data: T,
 ): Promise<HostedAppDataSnapshot<T> | null> {
-  const { data: rows, error } = await supabase.rpc('compare_and_swap_app_data', {
-    p_key: key,
+  const { data: rows, error } = await supabase.rpc('save_app_document_cas', {
+    p_store_id: requireCurrentStoreId(),
+    p_id: key,
     p_expected_revision: Math.max(0, Math.floor(expectedRevision)),
     p_data: data,
   });
   if (error) throw new Error(error.message);
-  const row = (rows as AppDataRow<T>[] | null)?.[0];
+  const row = (rows as AppDocumentRow<T>[] | null)?.[0];
   if (!row) return null;
   return {
     data: row.data,
@@ -190,10 +203,15 @@ export function subscribeToSuggestions(
   onChange: () => void,
   onStatus?: (status: RealtimeSubscriptionStatus, error?: Error) => void,
 ): () => void {
+  const storeId = requireCurrentStoreId();
   realtimeChannelSequence += 1;
   const channel = supabase
     .channel(`suggestions-live-${realtimeChannelSequence}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'suggestions' }, () => onChange())
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'suggestions', filter: `store_id=eq.${storeId}` },
+      () => onChange(),
+    )
     .subscribe((status, error) => onStatus?.(status, error));
   return () => { void supabase.removeChannel(channel).catch(() => undefined); };
 }
@@ -203,16 +221,17 @@ export function subscribeToAppData(
   onChange: () => void,
   onStatus?: (status: RealtimeSubscriptionStatus, error?: Error) => void,
 ): () => void {
+  const storeId = requireCurrentStoreId();
   realtimeChannelSequence += 1;
   const channel = supabase
-    .channel(`app-data-live-${realtimeChannelSequence}`)
+    .channel(`app-documents-live-${realtimeChannelSequence}`)
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'app_data' },
+      { event: '*', schema: 'public', table: 'app_documents', filter: `store_id=eq.${storeId}` },
       (payload) => {
-        const next = payload.new as { key?: string } | undefined;
-        const previous = payload.old as { key?: string } | undefined;
-        if (next?.key === key || previous?.key === key) onChange();
+        const next = payload.new as { id?: string } | undefined;
+        const previous = payload.old as { id?: string } | undefined;
+        if (next?.id === key || previous?.id === key) onChange();
       },
     )
     .subscribe((status, error) => onStatus?.(status, error));

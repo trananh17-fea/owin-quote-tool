@@ -79,6 +79,16 @@ body:has(.login-premium) { overflow:hidden; }
 .login-forgot { display:block; margin:13px 0 0 auto; min-height:44px; border:0; padding:8px 0 8px 12px; background:transparent; color:var(--login-blue); font-size:var(--login-fs-sm); font-weight:500; cursor:pointer; }
 .login-forgot:hover { text-decoration:underline; }
 .login-recovery { background:var(--login-fill); border:1px solid var(--login-line); padding:13px 14px; border-radius:14px; font-size:var(--login-fs-sm); line-height:1.7; color:var(--login-text); }
+.login-recovery-send { display:block; width:100%; min-height:44px; margin-top:12px; border:1px solid var(--login-blue); border-radius:12px; background:transparent; color:var(--login-blue); font-size:var(--login-fs-sm); font-weight:600; font-family:inherit; cursor:pointer; transition:background-color .2s var(--login-ease); }
+.login-recovery-send:hover:not(:disabled) { background:color-mix(in srgb, var(--login-blue) 10%, transparent); }
+.login-recovery-send:disabled { opacity:.5; cursor:not-allowed; }
+.login-divider { display:flex; align-items:center; gap:14px; margin:22px 0 16px; color:var(--login-muted); font-size:var(--login-fs-xs); }
+.login-divider::before, .login-divider::after { content:''; flex:1; height:1px; background:var(--login-line); }
+.login-oauth { display:grid; gap:10px; }
+.login-oauth-button { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:50px; padding:0 16px; border:1px solid var(--login-line); border-radius:14px; background:var(--login-input); color:var(--login-text); font-size:var(--login-fs); font-weight:500; font-family:inherit; cursor:pointer; transition:background-color .2s var(--login-ease), border-color .2s var(--login-ease); }
+.login-oauth-button:hover:not(:disabled) { background:var(--login-fill); border-color:var(--login-muted); }
+.login-oauth-button:disabled { opacity:.55; cursor:not-allowed; }
+.login-oauth-button svg { flex-shrink:0; }
 .login-submit { margin-top:12px; }
 .login-premium[data-appearance='dark'] { --login-blue:#7cbcff; }
 .login-premium[data-appearance='dark'] .login-submit { color:#0a2540; box-shadow:0 8px 24px rgba(10,132,255,.24); }

@@ -1,9 +1,11 @@
 /** Supabase repository for complete quote documents. */
 import type { QuoteRecord } from '@/types/models';
 import { supabase } from '@/services/supabase/client';
+import { requireCurrentStoreId } from '@/services/supabase/currentStore';
 
 interface QuoteRow {
   id: string;
+  store_id: string;
   code: string | null;
   customer_name: string | null;
   customer_phone: string | null;
@@ -39,6 +41,7 @@ function rowFromQuote(quote: QuoteRecord): QuoteRow {
 
   return {
     id: quote.id,
+    store_id: requireCurrentStoreId(),
     code: quote.code ?? null,
     customer_name: quote.customerName ?? null,
     customer_phone: quote.customerPhone ?? null,
@@ -67,12 +70,14 @@ export function quoteFromRow(
 }
 
 async function selectQuotes(includeDeleted: boolean): Promise<QuoteRecord[]> {
+  const storeId = requireCurrentStoreId();
   const pageSize = 1_000;
   const records: QuoteRecord[] = [];
   for (let from = 0; ; from += pageSize) {
     let query = supabase
       .from('quotes')
       .select('id,data,revision,deleted_at')
+      .eq('store_id', storeId)
       .order('quote_date', { ascending: false, nullsFirst: false })
       .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
@@ -102,6 +107,7 @@ export async function getQuoteById(id: string): Promise<QuoteRecord | null> {
   const { data, error } = await supabase
     .from('quotes')
     .select('id,data,revision,deleted_at')
+    .eq('store_id', requireCurrentStoreId())
     .eq('id', id)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -132,8 +138,9 @@ export async function compareAndSwapQuote(
 ): Promise<QuoteCasWriteResult> {
   const proposed = rowFromQuote(quote).data;
   const { data, error } = await supabase.rpc('save_quote_cas', {
-    proposed,
-    expected_revision: expectedRevision,
+    p_store_id: requireCurrentStoreId(),
+    p_proposed: proposed,
+    p_expected_revision: expectedRevision,
   });
   if (error) throw new Error(error.message);
   const payload = (data ?? {}) as QuoteCasPayload;
@@ -156,7 +163,7 @@ export async function compareAndSwapQuote(
 export async function upsertQuote(quote: QuoteRecord): Promise<void> {
   const { error } = await supabase
     .from('quotes')
-    .upsert(rowFromQuote(quote), { onConflict: 'id' });
+    .upsert(rowFromQuote(quote), { onConflict: 'store_id,id' });
   if (error) throw new Error(error.message);
 }
 
@@ -164,7 +171,7 @@ export async function upsertQuotesBatch(quotes: QuoteRecord[], chunk = 100): Pro
   for (let index = 0; index < quotes.length; index += chunk) {
     const rows = quotes.slice(index, index + chunk).map(rowFromQuote);
     if (rows.length === 0) continue;
-    const { error } = await supabase.from('quotes').upsert(rows, { onConflict: 'id' });
+    const { error } = await supabase.from('quotes').upsert(rows, { onConflict: 'store_id,id' });
     if (error) throw new Error(error.message);
   }
 }
@@ -187,12 +194,13 @@ export function subscribeToQuotes(
   onChange: () => void,
   onStatus?: (status: RealtimeSubscriptionStatus, error?: Error) => void,
 ): () => void {
+  const storeId = requireCurrentStoreId();
   realtimeChannelSequence += 1;
   const channel = supabase
     .channel(`quotes-live-${realtimeChannelSequence}`)
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'quotes' },
+      { event: '*', schema: 'public', table: 'quotes', filter: `store_id=eq.${storeId}` },
       () => onChange(),
     )
     .subscribe((status, error) => onStatus?.(status, error));

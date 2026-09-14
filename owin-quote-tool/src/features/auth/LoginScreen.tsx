@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Eye, EyeOff, LoaderCircle, Monitor, Moon, Sun, ShieldCheck } from 'lucide-react';
-import { signInWithPassword } from '@/features/auth/authSession';
+import type { OAuthProviderId } from '@/features/auth/authSession';
+import { sendPasswordReset, signInWithOAuth, signInWithPassword } from '@/features/auth/authSession';
 import { useAppearance } from '@/features/settings/appearance';
 import './login.css';
 
@@ -10,11 +11,39 @@ const appearances = [
   { value: 'system', label: 'Theo máy', Icon: Monitor },
 ] as const;
 
+/** lucide-react không còn icon thương hiệu, nên vẽ thẳng logo ở đây. */
+function GoogleMark() {
+  return (
+    <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true" focusable="false">
+      <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62Z" />
+      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.35 0-4.34-1.58-5.05-3.71H.96v2.33A9 9 0 0 0 9 18Z" />
+      <path fill="#FBBC05" d="M3.95 10.71a5.41 5.41 0 0 1 0-3.42V4.96H.96a9 9 0 0 0 0 8.08l2.99-2.33Z" />
+      <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.59C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l2.99 2.33C4.66 5.16 6.65 3.58 9 3.58Z" />
+    </svg>
+  );
+}
+
+function FacebookMark() {
+  return (
+    <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true" focusable="false">
+      <path fill="#1877F2" d="M18 9a9 9 0 1 0-10.41 8.89v-6.29H5.31V9h2.28V7.02c0-2.25 1.34-3.5 3.4-3.5.98 0 2.01.18 2.01.18v2.21h-1.13c-1.12 0-1.47.7-1.47 1.41V9h2.5l-.4 2.6h-2.1v6.29A9 9 0 0 0 18 9Z" />
+    </svg>
+  );
+}
+
+const oauthProviders: Array<{ id: OAuthProviderId; label: string; Mark: () => React.ReactElement }> = [
+  { id: 'google', label: 'Google', Mark: GoogleMark },
+  { id: 'facebook', label: 'Facebook', Mark: FacebookMark },
+];
+
 export function LoginScreen() {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [visible, setVisible] = useState(false);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
+  const [recoverySentTo, setRecoverySentTo] = useState('');
+  const [oauthBusy, setOauthBusy] = useState<OAuthProviderId | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [appearance, setAppearance] = useAppearance();
@@ -33,6 +62,33 @@ export function LoginScreen() {
     try { await signInWithPassword(identifier, password); }
     catch (err) { setError(err instanceof Error ? err.message : 'Không thể đăng nhập lúc này. Vui lòng thử lại.'); }
     finally { setBusy(false); }
+  };
+
+  const startOAuth = async (provider: OAuthProviderId) => {
+    if (busy || oauthBusy) return;
+    setOauthBusy(provider);
+    setError('');
+    try { await signInWithOAuth(provider); }
+    catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể đăng nhập lúc này. Vui lòng thử lại.');
+      setOauthBusy(null);
+    }
+    // Thành công thì trình duyệt đã rời trang, không cần tắt trạng thái chờ.
+  };
+
+  const requestRecovery = async () => {
+    const target = identifier.trim();
+    if (!target || recoveryBusy) return;
+    setRecoveryBusy(true);
+    setError('');
+    try {
+      await sendPasswordReset(target);
+      setRecoverySentTo(target);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không gửi được email lúc này. Vui lòng thử lại.');
+    } finally {
+      setRecoveryBusy(false);
+    }
   };
   return (
     <div className="login-premium" data-appearance={appearance === 'system' ? (systemDark ? 'dark' : 'light') : appearance}>
@@ -87,11 +143,46 @@ export function LoginScreen() {
                 <button type="button" onClick={() => setVisible(v => !v)} aria-label={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} aria-pressed={visible}>{visible ? <EyeOff size={19} /> : <Eye size={19} />}</button>
               </div>
               <button className="login-forgot" type="button" aria-expanded={recoveryOpen} aria-controls="login-recovery" onClick={() => setRecoveryOpen(open => !open)}>Quên mật khẩu?</button>
-              {recoveryOpen && <div className="login-recovery" id="login-recovery" role="status">Nhắn cho người quản lý tài khoản, kèm tên đăng nhập hoặc email của bạn, để được cấp mật khẩu mới. Đừng gửi mật khẩu cho bất kỳ ai.</div>}
+              {recoveryOpen && (
+                <div className="login-recovery" id="login-recovery" role="status">
+                  {recoverySentTo ? (
+                    <>Nếu <strong>{recoverySentTo}</strong> là một tài khoản hợp lệ, email đặt lại mật khẩu đã được gửi. Kiểm tra cả hộp thư rác. Đừng gửi mật khẩu cho bất kỳ ai.</>
+                  ) : (
+                    <>
+                      Nhập tên đăng nhập hoặc email ở ô phía trên, rồi bấm gửi. Chúng tôi sẽ gửi link đặt lại mật khẩu tới email của tài khoản đó.
+                      <button
+                        type="button"
+                        className="login-recovery-send"
+                        onClick={requestRecovery}
+                        disabled={recoveryBusy || !identifier.trim()}
+                      >
+                        {recoveryBusy ? 'Đang gửi…' : 'Gửi email đặt lại mật khẩu'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
               {error && <p className="login-feedback" id="login-error" role="alert">{error}</p>}
               <button className="login-submit" type="submit" disabled={busy || !identifier.trim() || !password}>{busy ? 'Đang đăng nhập…' : 'Đăng nhập'}{busy ? <LoaderCircle className="login-spinner" size={19} /> : <ArrowRight size={19} />}</button>
+
+              <div className="login-divider"><span>hoặc</span></div>
+              <div className="login-oauth">
+                {oauthProviders.map(({ id, label, Mark }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className="login-oauth-button"
+                    onClick={() => startOAuth(id)}
+                    disabled={busy || oauthBusy !== null}
+                  >
+                    {oauthBusy === id ? <LoaderCircle className="login-spinner" size={18} /> : <Mark />}
+                    <span>Tiếp tục với {label}</span>
+                  </button>
+                ))}
+              </div>
+
               <p className="login-session-note"><ShieldCheck size={16} /> Máy này sẽ nhớ đăng nhập cho lần sau.</p>
-              <div className="login-help">Chưa có tài khoản?<br /><span>Nhắn người quản lý để được mở tài khoản.</span></div>
+              <div className="login-help">Chưa có tài khoản?<br /><span>Đăng nhập bằng Google hoặc Facebook, rồi nhắn quản lý duyệt tài khoản cho bạn.</span></div>
             </form>
           </section>
         </div>

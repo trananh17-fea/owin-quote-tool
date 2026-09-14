@@ -10,6 +10,25 @@ import { normalizeLoginIdentifier } from '@/features/auth/authIdentifier';
 export interface SessionState {
   session: Session | null;
   loading: boolean;
+  /** Người dùng vừa mở link đặt lại mật khẩu, phải nhập mật khẩu mới trước khi vào app. */
+  passwordRecovery?: boolean;
+}
+
+/** Nơi Supabase trả người dùng về sau khi bấm link Google/Facebook/đặt lại mật khẩu. */
+function appRedirectUrl(): string {
+  return new URL(import.meta.env.BASE_URL, window.location.origin).href;
+}
+
+/**
+ * Link khôi phục gắn `type=recovery` vào URL trả về. Phải đọc trực tiếp từ URL
+ * chứ không chỉ dựa vào sự kiện PASSWORD_RECOVERY: supabase-js xử lý URL ngay
+ * khi import, có thể xong trước lúc React kịp đăng ký listener.
+ */
+function urlHasRecoveryMarker(): boolean {
+  if (typeof window === 'undefined') return false;
+  const { hash, search } = window.location;
+  if (new URLSearchParams(search).get('type') === 'recovery') return true;
+  return new URLSearchParams(hash.replace(/^#/, '')).get('type') === 'recovery';
 }
 
 const SupabaseSessionContext = createContext<SessionState | null>(null);
@@ -68,6 +87,69 @@ export async function signInWithPassword(identifier: string, password: string): 
   }
 }
 
+export type OAuthProviderId = 'google' | 'facebook';
+
+const providerLabels: Record<OAuthProviderId, string> = {
+  google: 'Google',
+  facebook: 'Facebook',
+};
+
+/**
+ * Chuyển sang trang đăng nhập của Google/Facebook. Không trả về khi thành công
+ * vì trình duyệt rời khỏi trang; phiên được nhận lại qua onAuthStateChange.
+ */
+export async function signInWithOAuth(provider: OAuthProviderId): Promise<void> {
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: appRedirectUrl() },
+    });
+    if (error) throw error;
+  } catch (error) {
+    throw new Error(
+      `Không thể đăng nhập bằng ${providerLabels[provider]} lúc này. Vui lòng thử lại.`,
+      { cause: error },
+    );
+  }
+}
+
+/**
+ * Gửi email đặt lại mật khẩu. KHÔNG tiết lộ email có tồn tại hay không: câu
+ * trả lời giống hệt nhau để người lạ không dò được danh sách tài khoản.
+ */
+export async function sendPasswordReset(identifier: string): Promise<void> {
+  const email = normalizeLoginIdentifier(identifier);
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: appRedirectUrl(),
+    });
+    if (error) throw error;
+  } catch (error) {
+    const message = safeSignInError(error);
+    // Sai mật khẩu không phải lỗi của luồng này; chỉ giữ lại lỗi mạng/quá tải.
+    if (message.includes('quá nhiều lần') || message.includes('kết nối')) {
+      throw new Error(message, { cause: error });
+    }
+  }
+}
+
+/** Đặt mật khẩu mới cho phiên đang mở từ link khôi phục. */
+export async function updatePassword(password: string): Promise<void> {
+  try {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  } catch (error) {
+    const code = error && typeof error === 'object' && 'code' in error ? error.code : '';
+    if (code === 'weak_password' || code === 'same_password') {
+      throw new Error(
+        'Mật khẩu mới quá yếu hoặc trùng mật khẩu cũ. Vui lòng chọn mật khẩu khác.',
+        { cause: error },
+      );
+    }
+    throw new Error('Không thể đổi mật khẩu lúc này. Vui lòng thử lại.', { cause: error });
+  }
+}
+
 export async function signOut(): Promise<void> {
   try {
     // Chỉ đăng xuất trình duyệt hiện tại; không đá các máy OWIN khác đang làm việc.
@@ -82,6 +164,7 @@ export async function signOut(): Promise<void> {
 export function useSession(): SessionState {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [passwordRecovery, setPasswordRecovery] = useState(urlHasRecoveryMarker);
 
   useEffect(() => {
     let active = true;
@@ -97,13 +180,17 @@ export function useSession(): SessionState {
       .finally(() => {
         if (active) setLoading(false);
       });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       if (!active) return;
+      // Link khôi phục mở ra một phiên hợp lệ. Không cho vào thẳng app: bắt
+      // đặt mật khẩu mới trước, nếu không link cũ trong hộp thư vẫn mở được app.
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
+      if (event === 'SIGNED_OUT' || event === 'USER_UPDATED') setPasswordRecovery(false);
       setSession(next);
       setLoading(false);
     });
     return () => { active = false; sub.subscription.unsubscribe(); };
   }, []);
 
-  return { session, loading };
+  return { session, loading, passwordRecovery };
 }
