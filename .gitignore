@@ -20,3 +20,6 @@ Thumbs.db
 *.log
 npm-debug.log*
 /.claude
+.mcp.json
+/.agents
+skills-lock.json
