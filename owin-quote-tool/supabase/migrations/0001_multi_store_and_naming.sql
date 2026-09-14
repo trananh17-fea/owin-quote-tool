@@ -63,18 +63,34 @@ create index if not exists store_members_status_idx  on public.store_members (st
 -- ---------------------------------------------------------------------------
 do $$
 declare
+  -- >>> KIỂM TRA DÒNG NÀY TRƯỚC KHI CHẠY <<<
+  -- Email của tài khoản sẽ làm CHỦ cửa hàng 'owin' và nhận toàn bộ dữ liệu
+  -- hiện có. Sai email là trao cả bảng giá lẫn báo giá cho nhầm người.
+  owner_email constant text := 'hoanganhowin@gmail.com';
   admin_id uuid;
+  user_count integer;
 begin
   select id into admin_id from auth.users
-   where lower(email) = 'hoanganhowin@gmail.com'
+   where lower(email) = lower(owner_email)
    limit 1;
 
   if admin_id is null then
-    select id into admin_id from auth.users order by created_at limit 1;
-  end if;
+    select count(*) into user_count from auth.users;
 
-  if admin_id is null then
-    raise exception 'auth.users trống — tạo tài khoản quản trị trước khi chạy migration';
+    if user_count = 0 then
+      raise exception
+        'auth.users trống — tạo tài khoản % trước khi chạy migration', owner_email;
+    end if;
+
+    -- Chỉ đoán khi không thể đoán sai. Nhiều tài khoản mà thiếu đúng email thì
+    -- dừng lại, đừng âm thầm trao dữ liệu cho một người ngẫu nhiên.
+    if user_count > 1 then
+      raise exception
+        'Không tìm thấy % trong auth.users và đang có % tài khoản. Sửa owner_email ở đầu khối này cho đúng rồi chạy lại.',
+        owner_email, user_count;
+    end if;
+
+    select id into admin_id from auth.users limit 1;
   end if;
 
   insert into public.profiles (id, display_name, email, avatar_url)
