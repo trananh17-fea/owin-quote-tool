@@ -21,7 +21,7 @@ const statusLabels: Record<MembershipStatus, string> = {
 
 const roleLabels: Record<StoreRole, string> = {
   owner: 'Chủ cửa hàng',
-  admin: 'Quản lý',
+  manager: 'Quản lý',
   staff: 'Nhân viên',
 };
 
@@ -143,10 +143,10 @@ export function StoreAdminDialog({ onClose }: { onClose: () => void }) {
                         onClick={() => run(`r-${member.userId}`, () => setMemberRole(
                           store.id,
                           member.userId,
-                          member.role === 'admin' ? 'staff' : 'admin',
+                          member.role === 'manager' ? 'staff' : 'manager',
                         ))}
                       >
-                        {member.role === 'admin' ? 'Hạ xuống nhân viên' : 'Nâng lên quản lý'}
+                        {member.role === 'manager' ? 'Hạ xuống nhân viên' : 'Nâng lên quản lý'}
                       </button>
                     )}
                     {member.status === 'pending' && (

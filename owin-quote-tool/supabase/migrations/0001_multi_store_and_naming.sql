@@ -47,7 +47,7 @@ create table if not exists public.store_members (
   store_id   text not null references public.stores (id) on delete cascade,
   user_id    uuid not null references auth.users (id) on delete cascade,
   role       text not null default 'staff'
-               check (role in ('owner', 'admin', 'staff')),
+               check (role in ('owner', 'manager', 'staff')),
   status     text not null default 'pending'
                check (status in ('pending', 'active', 'disabled')),
   invited_by uuid references auth.users (id),

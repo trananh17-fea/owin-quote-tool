@@ -9,7 +9,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/services/supabase/client';
 import { setCurrentStoreId } from '@/services/supabase/currentStore';
 
-export type StoreRole = 'owner' | 'admin' | 'staff';
+/** Vai trò TRONG một cửa hàng. Quản trị viên hệ thống là thứ khác hẳn,
+ *  nằm ở profiles.is_platform_admin — nên ở đây không có 'admin'. */
+export type StoreRole = 'owner' | 'manager' | 'staff';
 export type MembershipStatus = 'pending' | 'active' | 'disabled';
 
 export interface StoreSummary {

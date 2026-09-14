@@ -17,7 +17,7 @@ Tài khoản, mật khẩu, Google/Facebook và quên mật khẩu do Supabase A
 | --- | --- |
 | `profiles` | Hồ sơ 1-1 với `auth.users`: tên hiển thị, email, ảnh đại diện, cờ Quản trị viên hệ thống |
 | `stores` | Cửa hàng; `status` pending/active/rejected, `is_public` quyết định landing page có đọc được bảng giá không |
-| `store_members` | Ai thuộc cửa hàng nào, `role` owner/admin/staff, `status` pending/active/disabled |
+| `store_members` | Ai thuộc cửa hàng nào, `role` owner/manager/staff, `status` pending/active/disabled |
 | `products` | Bảng giá riêng của từng cửa hàng + JSON document đầy đủ |
 | `quotes` | Báo giá riêng của từng cửa hàng + snapshot đầy đủ |
 | `suggestions` | Autocomplete đã học, dùng chung trong một cửa hàng |
@@ -28,10 +28,10 @@ Tài khoản, mật khẩu, Google/Facebook và quên mật khẩu do Supabase A
 | Vai trò | Làm được gì | Ai duyệt |
 | --- | --- | --- |
 | Quản trị viên hệ thống | Duyệt/từ chối cửa hàng mới của toàn hệ thống | — |
-| Chủ cửa hàng (`owner`) / Quản lý (`admin`) | Duyệt nhân viên xin vào, nâng/hạ vai trò, khoá thành viên | Quản trị viên hệ thống duyệt cửa hàng |
+| Chủ cửa hàng (`owner`) / Quản lý (`manager`) | Duyệt nhân viên xin vào, nâng/hạ vai trò, khoá thành viên | Quản trị viên hệ thống duyệt cửa hàng |
 | Nhân viên (`staff`) | Dùng bảng giá và báo giá của cửa hàng | Chủ/Quản lý cửa hàng |
 
-Quản trị viên hệ thống **khác** chủ cửa hàng: đánh dấu bằng `profiles.is_platform_admin`. Migration 0002 gán vai trò này cho chủ cửa hàng `owin`.
+Quản trị viên hệ thống **khác** chủ cửa hàng và khác Quản lý: đánh dấu bằng `profiles.is_platform_admin`. Chữ "admin" trong toàn hệ thống chỉ mang nghĩa này — vai trò quản lý bên trong một cửa hàng tên là `manager`. Migration 0002 gán vai trò này cho chủ cửa hàng `owin`.
 
 ## Luồng duyệt
 

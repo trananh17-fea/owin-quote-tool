@@ -38,6 +38,26 @@ where id in (select owner_id from public.stores where id = 'owin');
 
 create index if not exists stores_status_idx on public.stores (status);
 
+-- ---------------------------------------------------------------------------
+-- 2. Vai trò cấp cửa hàng: 'admin' → 'manager'
+--
+-- Chữ "admin" từ nay chỉ có một nghĩa là Quản trị viên hệ thống. Vai trò quản
+-- lý bên trong một cửa hàng đổi tên để không mang cùng một chữ với hai nghĩa.
+-- ---------------------------------------------------------------------------
+do $$ begin
+  if exists (select 1 from pg_constraint where conname = 'store_members_role_check') then
+    alter table public.store_members drop constraint store_members_role_check;
+  end if;
+end $$;
+
+update public.store_members set role = 'manager' where role = 'admin';
+
+alter table public.store_members add constraint store_members_role_check
+  check (role in ('owner', 'manager', 'staff'));
+
+-- Hàm đổi tên theo, bản cũ không còn ai gọi.
+drop function if exists public.current_store_admin_ids();
+
 commit;
 
 -- Phần còn lại (hàm tra quyền, RPC, policy) nằm trong schema.sql và được

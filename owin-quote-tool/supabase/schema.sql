@@ -22,6 +22,8 @@
 --   • snake_case, không dùng nháy kép.
 --   • Tên bảng số nhiều: products, quotes, suggestions, app_documents, stores.
 --   • Khóa chính luôn tên `id` (trừ bảng nối dùng khóa chính ghép).
+--   • Vai trò trong cửa hàng: owner | manager | staff. Chữ "admin" chỉ dùng
+--     cho Quản trị viên hệ thống (profiles.is_platform_admin).
 --   • Khóa ngoại tới auth.users: `owner_id`, `user_id`, `created_by`,
 --     `updated_by`, `invited_by`. Khóa ngoại tới stores: `store_id`.
 --   • Mốc thời gian hậu tố `_at`; tiền tệ hậu tố `_vnd`; boolean tiền tố `is_`.
@@ -68,8 +70,10 @@ create index if not exists stores_deleted_at_idx on public.stores (deleted_at);
 create table if not exists public.store_members (
   store_id   text not null references public.stores (id) on delete cascade,
   user_id    uuid not null references auth.users (id) on delete cascade,
+  -- 'manager' chứ không phải 'admin': chữ admin dành riêng cho Quản trị viên
+  -- hệ thống (profiles.is_platform_admin), tránh một chữ mang hai nghĩa.
   role       text not null default 'staff'
-               check (role in ('owner', 'admin', 'staff')),
+               check (role in ('owner', 'manager', 'staff')),
   status     text not null default 'pending'
                check (status in ('pending', 'active', 'disabled')),
   invited_by uuid references auth.users (id),
@@ -99,8 +103,8 @@ as $$
     and store.deleted_at is null;
 $$;
 
--- Cửa hàng mà tài khoản hiện tại được quản trị (duyệt/mời/xoá thành viên).
-create or replace function public.current_store_admin_ids()
+-- Cửa hàng mà tài khoản hiện tại quản lý được (duyệt/mời/xoá thành viên).
+create or replace function public.current_store_manager_ids()
 returns setof text
 language sql
 stable
@@ -112,7 +116,7 @@ as $$
   join public.stores store on store.id = member.store_id
   where member.user_id = auth.uid()
     and member.status = 'active'
-    and member.role in ('owner', 'admin')
+    and member.role in ('owner', 'manager')
     and store.status = 'active'
     and store.deleted_at is null;
 $$;
@@ -296,10 +300,11 @@ create policy stores_platform_admin_all on public.stores
   using (public.is_platform_admin()) with check (public.is_platform_admin());
 
 drop policy if exists stores_admin_write on public.stores;
-create policy stores_admin_write on public.stores
+drop policy if exists stores_manager_write on public.stores;
+create policy stores_manager_write on public.stores
   for update to authenticated
-  using (id in (select public.current_store_admin_ids()))
-  with check (id in (select public.current_store_admin_ids()));
+  using (id in (select public.current_store_manager_ids()))
+  with check (id in (select public.current_store_manager_ids()));
 
 -- Tạo cửa hàng mới: người tạo phải là chủ của chính cửa hàng đó.
 drop policy if exists stores_owner_insert on public.stores;
@@ -319,10 +324,11 @@ create policy store_members_self_read on public.store_members
   );
 
 drop policy if exists store_members_admin_write on public.store_members;
-create policy store_members_admin_write on public.store_members
+drop policy if exists store_members_manager_write on public.store_members;
+create policy store_members_manager_write on public.store_members
   for all to authenticated
-  using (store_id in (select public.current_store_admin_ids()))
-  with check (store_id in (select public.current_store_admin_ids()));
+  using (store_id in (select public.current_store_manager_ids()))
+  with check (store_id in (select public.current_store_manager_ids()));
 
 -- Dữ liệu nghiệp vụ: đóng khung theo cửa hàng.
 drop policy if exists products_member_all on public.products;
@@ -835,7 +841,7 @@ begin
 end $$;
 
 revoke all on function public.current_store_ids() from public, anon;
-revoke all on function public.current_store_admin_ids() from public, anon;
+revoke all on function public.current_store_manager_ids() from public, anon;
 revoke all on function public.save_app_document_cas(text, text, bigint, jsonb) from public, anon;
 revoke all on function public.set_product_order(text, text[]) from public, anon;
 revoke all on function public.adjust_product_prices(text, double precision) from public, anon;
@@ -843,7 +849,7 @@ revoke all on function public.save_product_cas(text, jsonb, bigint) from public,
 revoke all on function public.save_quote_cas(text, jsonb, bigint) from public, anon;
 
 grant execute on function public.current_store_ids() to authenticated;
-grant execute on function public.current_store_admin_ids() to authenticated;
+grant execute on function public.current_store_manager_ids() to authenticated;
 grant execute on function public.public_store_ids() to anon, authenticated;
 grant execute on function public.save_app_document_cas(text, text, bigint, jsonb) to authenticated;
 grant execute on function public.set_product_order(text, text[]) to authenticated;

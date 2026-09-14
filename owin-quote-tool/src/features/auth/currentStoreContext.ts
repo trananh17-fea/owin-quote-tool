@@ -21,5 +21,5 @@ export function useCurrentStore(): CurrentStoreValue {
 
 /** Chủ và quản lý mới được duyệt thành viên của cửa hàng. */
 export function canManageMembers(role: StoreRole): boolean {
-  return role === 'owner' || role === 'admin';
+  return role === 'owner' || role === 'manager';
 }

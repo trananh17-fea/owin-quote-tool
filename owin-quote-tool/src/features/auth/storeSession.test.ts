@@ -57,11 +57,11 @@ describe('resolveStoreAccess', () => {
 
   it('quay lại cửa hàng đã dùng lần trước khi thuộc nhiều cửa hàng', () => {
     const access = resolveStoreAccess(
-      [membership('owin', 'active'), membership('other', 'active', 'admin')],
+      [membership('owin', 'active'), membership('other', 'active', 'manager')],
       [owinStore, otherStore],
       'other',
     );
-    expect(access).toMatchObject({ status: 'ready', store: otherStore, role: 'admin' });
+    expect(access).toMatchObject({ status: 'ready', store: otherStore, role: 'manager' });
   });
 
   it('lấy cửa hàng đầu tiên khi id đã nhớ không còn dùng được', () => {
