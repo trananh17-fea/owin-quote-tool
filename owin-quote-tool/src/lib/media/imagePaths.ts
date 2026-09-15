@@ -59,13 +59,23 @@ export function productCoverPath(code: string, name: string): string {
 
 /**
  * URL bản thumbnail (list) của 1 ảnh master trên Supabase Storage.
- * Quy ước: master ở `.../product-images/img/<hash>`, thumb ở `.../product-images/thumb/<hash>`.
+ *
+ * Quy ước: master ở `.../product-images/<store>/img/<hash>`, thumb ở
+ * `.../product-images/<store>/thumb/<hash>`. Ảnh tạo trước khi có đa cửa hàng
+ * nằm phẳng ở gốc bucket (`.../product-images/img/<hash>`) và không được dời
+ * đi, nên đoạn cửa hàng phải là tuỳ chọn — giống hệt `variantPathFor`.
+ *
+ * Bỏ sót đoạn đó thì hàm trả `null` cho mọi ảnh mới, và cả danh sách sản phẩm
+ * lẫn trình xuất file lặng lẽ rơi về ảnh master 3840px thay vì bản 640px.
+ *
  * Trả null nếu URL không phải ảnh master Supabase (không có thumb tương ứng).
  * Lightbox / export / form luôn dùng master (URL gốc), không dùng thumb.
  */
 export function thumbUrlFor(url: string | null | undefined): string | null {
-  if (!url || !url.includes('/product-images/img/')) return null;
-  return url.replace('/product-images/img/', '/product-images/thumb/');
+  if (!url) return null;
+  const match = /\/product-images\/((?:[^/]+\/)?)img\//.exec(url);
+  if (!match) return null;
+  return url.replace(match[0], `/product-images/${match[1]}thumb/`);
 }
 
 export function quoteItemImagePath(quoteId: string, itemCode: string, extension = 'webp'): string {
