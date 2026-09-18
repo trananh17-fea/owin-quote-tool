@@ -219,6 +219,14 @@ Quyết định này được khoá bằng code chứ không chỉ nằm trong t
 >
 > **Phát hiện cần bạn xác nhận:** bộ phụ kiện cố định nhân theo số lượng, còn **phụ kiện lẻ thì KHÔNG**. Đặt 3 cửa thì phào vẫn tính một lần. Đây là hành vi của engine nên tab Báo giá cũng vậy — trang công khai trùng số là đúng yêu cầu — nhưng nếu đó không phải ý định nghiệp vụ thì phải sửa ở engine, không sửa ở trang. Đã khoá bằng test để nó là lựa chọn có chủ đích.
 | **7** | owin-landing | Giao diện, sáng/tối, responsive, liên hệ | Đạt ở 1920/1440/1280/1024/768/430/390/375; 375px không tràn ngang; sáng và tối đều đọc tốt; đi hết trang bằng bàn phím; tắt chuyển động khi hệ điều hành yêu cầu |
+
+> **Xong (2026-09-18).** Điều hướng, phần lý do, liên hệ (3 nút, không form), footer, skip link.
+>
+> **Đã kiểm:** 1920/1280/1024/768/430/390/375 — không khổ nào tràn ngang, ở 375 không phần tử nào vượt mép. Tương phản WCAG AA đạt cả sáng lẫn tối (thấp nhất 5,07). `prefers-reduced-motion` đã có trong tokens.
+>
+> **CHƯA kiểm được:** focus bàn phím thật. `document.hasFocus()` luôn `false` vì cửa sổ pane không ở tiền cảnh, nên `:focus` không bao giờ khớp — không phải lỗi trang, nhưng cũng chưa được chứng minh. Cần bấm Tab một lần trên máy thật để xác nhận skip link bật ra.
+>
+> Phần lý do chỉ nói điều code làm được. Mọi tuyên bố về doanh nghiệp (số năm, bảo hành, số công trình) để chủ cửa hàng tự viết.
 | **8** | owin-landing | SEO + hoàn thiện | `lint` · `test` · `build` xanh; chia sẻ link ra Zalo/Facebook có ảnh + mô tả (host tĩnh không chạy JS cho bot → nhúng thẻ lúc build) |
 
 **Phase 1 là phase rủi ro nhất** — nó sửa vào đường tính tiền của 4 tab đang chạy thật. Chỉ dời file và đổi import, không sửa một dòng công thức nào; bộ test hiện có là lưới an toàn duy nhất.
