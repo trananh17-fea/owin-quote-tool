@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, LogOut, Settings, ShieldCheck, UserRound } from 'lucide-react';
+import { ChevronDown, Globe, LogOut, Settings, ShieldCheck, UserRound } from 'lucide-react';
 import { signOut, useAuthenticatedSession } from '@/features/auth/authSession';
 import { flushPendingWork } from '@/lib/browser/pendingWork';
 import { SettingsDialog } from '@/features/settings/SettingsDialog';
 import { canManageMembers, useCurrentStore } from '@/features/auth/currentStoreContext';
 import { StoreAdminDialog } from '@/features/admin/StoreAdminDialog';
+import { LandingContentDialog } from '@/features/landing/LandingContentDialog';
 import './accountMenu.css';
 
 export function AccountMenu() {
@@ -13,6 +14,7 @@ export function AccountMenu() {
   const [busy, setBusy] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [landingOpen, setLandingOpen] = useState(false);
   const [error, setError] = useState('');
   const { store, role, isPlatformAdmin } = useCurrentStore();
   const canAdminister = canManageMembers(role) || isPlatformAdmin;
@@ -110,6 +112,19 @@ export function AccountMenu() {
               <ShieldCheck size={15} /> Quản trị cửa hàng
             </button>
           )}
+          {canManageMembers(role) && (
+            <button
+              type="button"
+              className="btn btn-ghost account-menu-action"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                setLandingOpen(true);
+              }}
+            >
+              <Globe size={15} /> Nội dung trang web
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-ghost account-menu-action account-menu-logout"
@@ -124,6 +139,7 @@ export function AccountMenu() {
 
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
       {adminOpen && <StoreAdminDialog onClose={() => setAdminOpen(false)} />}
+      {landingOpen && <LandingContentDialog onClose={() => setLandingOpen(false)} />}
     </div>
   );
 }
