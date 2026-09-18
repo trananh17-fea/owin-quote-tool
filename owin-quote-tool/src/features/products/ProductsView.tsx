@@ -18,7 +18,9 @@ import { ProductForm, type ProductFormSaveOptions } from '@/features/products/Pr
 import { ProductList } from '@/features/products/ProductList';
 import { ProductPreviewCard } from '@/features/products/ProductPreviewCard';
 import { ProductToolbar } from '@/features/products/ProductToolbar';
+import { nextPublicState } from '@/features/products/productVisibility';
 import { BulkPriceDialog } from '@/features/products/BulkPriceDialog';
+import { BulkPublicDialog } from '@/features/products/BulkPublicDialog';
 import './products.css';
 
 /** Chuỗi để tìm kiếm của một sản phẩm — gộp mã, tên, nhóm, đơn vị, kích thước, thông số. */
@@ -72,6 +74,8 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
   const [message, setMessage] = useState('');
   const [operationError, setOperationError] = useState('');
   const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
+  const [bulkPublicOpen, setBulkPublicOpen] = useState(false);
+  const [togglingPublicId, setTogglingPublicId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<PageSize>(25);
 
@@ -195,6 +199,34 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     [handleDuplicate],
   );
 
+  /**
+   * Bật/tắt việc một sản phẩm có hiện trên trang công khai hay không.
+   *
+   * Đi qua `saveProduct` chứ không ghi cột `is_public` riêng — lý do ở
+   * `productVisibility.ts`.
+   */
+  const handleTogglePublic = useCallback(async (product: ProductRecord) => {
+    const next = nextPublicState(product);
+    setTogglingPublicId(product.id);
+    setMessage('');
+    setOperationError('');
+    try {
+      await saveProduct({ ...product, isPublic: next }, { baseRecord: product });
+      setMessage(next
+        ? `Đã hiện "${product.name}" trên trang công khai.`
+        : `Đã ẩn "${product.name}" khỏi trang công khai.`);
+    } catch {
+      setOperationError('Không thể đổi trạng thái hiển thị trên Supabase. Vui lòng thử lại.');
+    } finally {
+      setTogglingPublicId(null);
+    }
+  }, [saveProduct]);
+
+  const togglePublic = useCallback(
+    (product: ProductRecord) => { void handleTogglePublic(product); },
+    [handleTogglePublic],
+  );
+
   // Drag reorder vẫn cho phép chỉnh tay; thứ tự hiển thị mặc định theo nhóm/màu/giá.
   const canReorder = !searchQuery.trim() && !selectedCategory;
   const handleReorder = async (from: number, to: number) => {
@@ -284,6 +316,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
         canBulkPrice={productRecords.length > 0}
         onOpenCatalogue={onOpenCatalogue}
         onOpenBulkPrice={() => setBulkPriceOpen(true)}
+        onOpenBulkPublic={() => setBulkPublicOpen(true)}
         onCreate={openNew}
       />
 
@@ -300,12 +333,14 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
         loading={loading}
         totalCount={productRecords.length}
         duplicatingId={duplicatingId}
+        togglingPublicId={togglingPublicId}
         reorderable={canReorder}
         onReorder={(from, to) => void handleReorder(from, to)}
         onEdit={openEdit}
         onDelete={handleDelete}
         onDuplicate={duplicateProduct}
         onPreview={setPreviewProduct}
+        onTogglePublic={togglePublic}
       />
 
       {bulkPriceOpen && (
@@ -315,6 +350,18 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
           onDone={(text) => {
             setMessage(text);
             setBulkPriceOpen(false);
+          }}
+          onError={setOperationError}
+        />
+      )}
+
+      {bulkPublicOpen && (
+        <BulkPublicDialog
+          products={productRecords}
+          onClose={() => setBulkPublicOpen(false)}
+          onDone={(text) => {
+            setMessage(text);
+            setBulkPublicOpen(false);
           }}
           onError={setOperationError}
         />

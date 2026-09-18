@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BookOpen, Check, ChevronDown, ListFilter, Percent, Plus, Search } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, Globe, ListFilter, Percent, Plus, Search } from 'lucide-react';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
 
 /**
@@ -17,6 +17,7 @@ export function ProductToolbar({
   canBulkPrice,
   onOpenCatalogue,
   onOpenBulkPrice,
+  onOpenBulkPublic,
   onCreate,
 }: {
   searchQuery: string;
@@ -27,6 +28,7 @@ export function ProductToolbar({
   canBulkPrice: boolean;
   onOpenCatalogue?: () => void;
   onOpenBulkPrice: () => void;
+  onOpenBulkPublic: () => void;
   onCreate: () => void;
 }) {
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
@@ -125,6 +127,10 @@ export function ProductToolbar({
         <button type="button" className="btn btn-ghost" onClick={onOpenBulkPrice} disabled={!canBulkPrice}>
           <Percent size={16} aria-hidden="true" />
           Cập nhật giá
+        </button>
+        <button type="button" className="btn btn-ghost" onClick={onOpenBulkPublic} disabled={!canBulkPrice}>
+          <Globe size={16} aria-hidden="true" />
+          Hiển thị web
         </button>
         <button type="button" className="btn btn-primary product-create-button" onClick={onCreate}>
           <Plus size={18} aria-hidden="true" />

@@ -13,6 +13,7 @@ import type {
 } from '@/types/models';
 import { parseFixedAccessoriesJson, serializeFixedAccessoriesJson } from '@/lib/quote/accessoryDrafts';
 import { notifyProductsChanged } from '@/features/products/productEvents';
+import { isProductPublic } from '@/features/products/productVisibility';
 import {
   compareAndSwapProduct,
   getProductById,
@@ -384,6 +385,32 @@ export async function bulkAdjustProductPrices(percent: number): Promise<ProductR
   await adjustHostedProductPrices(percent);
   notifyProductsChanged();
   return (await getAllProductsRaw()).filter((product) => !product.deleted && !product.deletedAt);
+}
+
+/**
+ * Bật/tắt hiển thị công khai cho toàn bộ sản phẩm đang hoạt động.
+ *
+ * Trả về số sản phẩm thật sự đổi trạng thái. Sản phẩm đã xoá mềm không bị chạm
+ * tới — một thao tác toàn danh mục không được hồi sinh hay sửa tombstone.
+ */
+export async function bulkSetProductsPublic(isPublic: boolean): Promise<number> {
+  // Đọc lại tài liệu mới nhất ngay trước khi ghi. `upsertProductsBatch` ghi đè
+  // cả cột `data`, nên nếu dùng bản chụp mà màn hình đang giữ thì mọi sửa đổi
+  // từ máy khác kể từ lúc người dùng mở trang sẽ bị xoá sạch. Đọc lại thu hẹp
+  // cửa sổ đó về đúng thời gian chạy của thao tác.
+  const active = (await getAllProductsRaw()).filter((product) => !product.deleted && !product.deletedAt);
+  // Chỉ ghi những dòng thật sự đổi: bấm "ẩn tất cả" khi đã ẩn hết thì không nên
+  // bơm ra vài trăm revision mới và vài trăm sự kiện realtime cho các máy khác.
+  const changed = active.filter((product) => isProductPublic(product) !== isPublic);
+  if (changed.length === 0) return 0;
+  await upsertProductsBatch(
+    changed.map((product) => normalizeProductRecord(
+      { ...product, isPublic, updatedAt: nowIso() } as ProductInput,
+      product.numericId,
+    )),
+  );
+  notifyProductsChanged();
+  return changed.length;
 }
 
 /** Compatibility bulk write; persists directly to Supabase. */

@@ -366,9 +366,38 @@
 .product-table td[data-col='category'],
 .product-table td[data-col='unit'],
 .product-table td[data-col='size'],
+.product-table td[data-col='public'],
 .product-table td[data-col='actions'] {
   text-align: center;
 }
+
+/* ─── Cờ hiển thị công khai ───
+ * Trạng thái phải đọc được mà không cần hover: chữ "Hiện"/"Ẩn" đi kèm icon, và
+ * màu chỉ là lớp nhấn thêm — không phải kênh thông tin duy nhất. */
+.product-public-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ios-separator-opaque);
+  border-radius: var(--r-pill);
+  background: var(--ios-fill);
+  color: var(--ios-label2);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--product-weight-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.product-public-toggle:hover:not(:disabled) { background: var(--ios-fill-strong); }
+.product-public-toggle:disabled { opacity: 0.55; cursor: progress; }
+.product-public-toggle.is-public {
+  border-color: transparent;
+  background: var(--ios-green-soft);
+  color: var(--ios-green);
+}
+.product-public-toggle.is-public:hover:not(:disabled) { background: var(--ios-green-soft); filter: brightness(0.97); }
 .product-table .num {
   text-align: right;
   color: var(--ios-label);
@@ -1502,11 +1531,14 @@
     content-visibility: auto;
     contain-intrinsic-size: auto 116px;
     display: grid;
-    grid-template-columns: 64px minmax(0, 1fr);
+    /* Cột thứ ba `auto` chỉ để chứa nút bật/tắt hiển thị công khai: đặt nó cùng
+       hàng với giá thì thẻ không cao thêm dòng nào — quan trọng khi cuộn vài
+       trăm sản phẩm trên điện thoại. */
+    grid-template-columns: 64px minmax(0, 1fr) auto;
     grid-template-areas:
-      'image name'
-      'image price'
-      'actions actions';
+      'image name  name'
+      'image price public'
+      'actions actions actions';
     align-items: center;
     gap: 4px 10px;
     padding: 10px;
@@ -1535,6 +1567,10 @@
     color: var(--ios-label);
     font-size: var(--fs-lg);
     font-weight: var(--product-weight-semibold);
+  }
+  .product-table td[data-col='public'] {
+    grid-area: public;
+    justify-self: end;
   }
   .product-table td[data-col='actions'] { grid-area: actions; }
   .product-row-mobile-meta {
@@ -1711,4 +1747,82 @@
   .product-image-button,
   .product-form-back,
   .product-form-actions > .btn { transition: none; }
+}
+
+/* ─── Hộp thoại hiển thị công khai hàng loạt ─── */
+.bulk-public-modal {
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(560px, calc(100dvh - 32px));
+}
+/* Modal này hẹp hơn modal cập nhật giá, nên dòng phụ một hàng bị cắt mất phần
+   "không chạm sản phẩm đã xoá" — đúng cái cần nói rõ nhất khi thao tác sửa
+   hàng trăm dòng. Cho nó xuống dòng thay vì thêm dấu ba chấm. */
+.bulk-public-modal .product-modal-title .product-sub {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+.bulk-public-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 20px 20px;
+  background: var(--ios-card);
+}
+/* Hai con số đặt cân xứng: thao tác này sửa hàng trăm dòng nên phải thấy
+   trước sẽ chạm bao nhiêu, không phải đoán. */
+.bulk-public-status {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.bulk-public-status > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 10px;
+  border: 1px solid var(--ios-separator);
+  border-radius: var(--r-md);
+  background: var(--ios-surface-muted);
+  text-align: center;
+}
+.bulk-public-status > div:first-child { color: var(--ios-green); }
+.bulk-public-status > div:last-child { color: var(--ios-label2); }
+.bulk-public-status strong {
+  color: var(--ios-label);
+  font-size: var(--fs-2xl);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.bulk-public-status span {
+  color: var(--ios-label2);
+  font-size: var(--fs-sm);
+}
+.bulk-public-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.bulk-public-actions .btn {
+  min-height: 38px;
+  padding: 0 16px !important;
+  border: 0;
+  border-radius: var(--r-pill) !important;
+  font-size: var(--fs-sm) !important;
+}
+.bulk-public-actions .btn-ghost {
+  background: rgba(120, 120, 128, 0.12);
+  color: var(--ios-label);
+}
+.bulk-public-note {
+  margin: 16px 0 0;
+  color: var(--ios-label3);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+@media (max-width: 480px) {
+  .bulk-public-actions { flex-direction: column-reverse; align-items: stretch; }
 }

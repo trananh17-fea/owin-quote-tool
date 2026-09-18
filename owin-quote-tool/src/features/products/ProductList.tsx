@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ChevronLeft, ChevronRight, Copy, Package, Pencil, Search, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Copy, Globe, GlobeLock, Package, Pencil, Search, Trash2 } from 'lucide-react';
 import type { ProductRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
@@ -9,6 +9,7 @@ import { useProgressiveReveal } from '@/lib/list/useProgressiveReveal';
 import { mergeRowDragProps, useDragReorder } from '@/components/DragReorder';
 import { ProductThumb } from '@/components/ProductThumb';
 import { unitLabel } from '@/features/products/productUnits';
+import { isProductPublic } from '@/features/products/productVisibility';
 
 interface Props {
   /** Chỉ các sản phẩm của trang hiện tại. */
@@ -21,6 +22,8 @@ interface Props {
   loading?: boolean;
   totalCount?: number;
   duplicatingId?: string | null;
+  /** Sản phẩm đang chờ Supabase xác nhận đổi trạng thái hiển thị công khai. */
+  togglingPublicId?: string | null;
   /** Enable drag-to-reorder (only when the list is unfiltered). */
   reorderable?: boolean;
   onReorder?: (from: number, to: number) => void;
@@ -28,6 +31,7 @@ interface Props {
   onDelete: (p: ProductRecord) => void;
   onDuplicate: (p: ProductRecord) => void;
   onPreview: (p: ProductRecord) => void;
+  onTogglePublic: (p: ProductRecord) => void;
 }
 
 /**
@@ -40,18 +44,23 @@ interface Props {
 const ProductRowCells = memo(function ProductRowCells({
   product,
   duplicating,
+  togglingPublic,
   onEdit,
   onDelete,
   onDuplicate,
   onPreview,
+  onTogglePublic,
 }: {
   product: ProductRecord;
   duplicating: boolean;
+  togglingPublic: boolean;
   onEdit: (p: ProductRecord) => void;
   onDelete: (p: ProductRecord) => void;
   onDuplicate: (p: ProductRecord) => void;
   onPreview: (p: ProductRecord) => void;
+  onTogglePublic: (p: ProductRecord) => void;
 }) {
+  const isPublic = isProductPublic(product);
   return (
     <>
       <td data-col="image">
@@ -79,6 +88,23 @@ const ProductRowCells = memo(function ProductRowCells({
       <td data-col="unit">{unitLabel(product.unit)}</td>
       <td data-col="size">{product.rawSizeText || '—'}</td>
       <td className="num" data-col="price">{formatVND(product.unitPriceVnd)}</td>
+      <td data-col="public">
+        <button
+          type="button"
+          className={`product-public-toggle${isPublic ? ' is-public' : ''}`}
+          disabled={togglingPublic}
+          onClick={(event) => {
+            event.stopPropagation();
+            onTogglePublic(product);
+          }}
+          aria-pressed={isPublic}
+          aria-label={`${isPublic ? 'Ẩn' : 'Hiện'} ${product.code} trên trang công khai`}
+          title={isPublic ? 'Đang hiện trên web — bấm để ẩn' : 'Đang ẩn khỏi web — bấm để hiện'}
+        >
+          {isPublic ? <Globe size={16} /> : <GlobeLock size={16} />}
+          <span>{isPublic ? 'Hiện' : 'Ẩn'}</span>
+        </button>
+      </td>
       <td data-col="actions">
         <div className="product-table-actions">
           <button
@@ -132,12 +158,14 @@ export function ProductList({
   loading,
   totalCount,
   duplicatingId,
+  togglingPublicId,
   reorderable,
   onReorder,
   onEdit,
   onDelete,
   onDuplicate,
   onPreview,
+  onTogglePublic,
 }: Props) {
   // Tắt phân trang thì cả danh mục nằm trong một trang: trải dần theo khung hình
   // để lần dựng đầu không chiếm hết luồng chính.
@@ -191,6 +219,7 @@ export function ProductList({
               <th scope="col" data-col="unit">Đơn vị</th>
               <th scope="col" data-col="size">Kích thước mẫu</th>
               <th scope="col" data-col="price">Đơn giá</th>
+              <th scope="col" data-col="public">Web</th>
               <th scope="col" data-col="actions">Thao tác</th>
             </tr>
           </thead>
@@ -217,10 +246,12 @@ export function ProductList({
                 <ProductRowCells
                   product={p}
                   duplicating={duplicatingId === p.id}
+                  togglingPublic={togglingPublicId === p.id}
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onDuplicate={onDuplicate}
                   onPreview={onPreview}
+                  onTogglePublic={onTogglePublic}
                 />
               </tr>
             ))}
