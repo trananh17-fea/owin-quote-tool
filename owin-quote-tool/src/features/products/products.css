@@ -1826,3 +1826,36 @@
 @media (max-width: 480px) {
   .bulk-public-actions { flex-direction: column-reverse; align-items: stretch; }
 }
+
+/* Hai nút cùng nói về "lên web thế nào": sao nổi bật và công khai/ẩn. */
+.product-web-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.product-feature-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--ios-separator-opaque);
+  border-radius: var(--r-pill);
+  background: var(--ios-fill);
+  color: var(--ios-label3);
+  cursor: pointer;
+}
+
+.product-feature-toggle:hover:not(:disabled) { background: var(--ios-fill-strong); }
+
+/* Sản phẩm đang ẩn khỏi web thì nút mờ hẳn — nổi bật một thứ không ai thấy là
+   vô nghĩa, nên nói bằng hình thay vì để người dùng bấm rồi thắc mắc. */
+.product-feature-toggle:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.product-feature-toggle.is-featured {
+  border-color: transparent;
+  background: var(--ios-orange-fill);
+  color: #fff;
+}

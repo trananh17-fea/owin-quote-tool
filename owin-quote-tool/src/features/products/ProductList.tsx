@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ChevronLeft, ChevronRight, Copy, Globe, GlobeLock, Package, Pencil, Search, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Copy, Globe, GlobeLock, Package, Pencil, Search, Star, Trash2 } from 'lucide-react';
 import type { ProductRecord } from '@/types/models';
 import { formatVND } from '@/lib/format/currency';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
@@ -9,7 +9,7 @@ import { useProgressiveReveal } from '@/lib/list/useProgressiveReveal';
 import { mergeRowDragProps, useDragReorder } from '@/components/DragReorder';
 import { ProductThumb } from '@/components/ProductThumb';
 import { unitLabel } from '@/features/products/productUnits';
-import { isProductPublic } from '@/features/products/productVisibility';
+import { isProductFeatured, isProductPublic } from '@/features/products/productVisibility';
 
 interface Props {
   /** Chỉ các sản phẩm của trang hiện tại. */
@@ -24,6 +24,8 @@ interface Props {
   duplicatingId?: string | null;
   /** Sản phẩm đang chờ Supabase xác nhận đổi trạng thái hiển thị công khai. */
   togglingPublicId?: string | null;
+  /** Sản phẩm đang chờ Supabase xác nhận đổi trạng thái nổi bật. */
+  togglingFeaturedId?: string | null;
   /** Enable drag-to-reorder (only when the list is unfiltered). */
   reorderable?: boolean;
   onReorder?: (from: number, to: number) => void;
@@ -32,6 +34,7 @@ interface Props {
   onDuplicate: (p: ProductRecord) => void;
   onPreview: (p: ProductRecord) => void;
   onTogglePublic: (p: ProductRecord) => void;
+  onToggleFeatured: (p: ProductRecord) => void;
 }
 
 /**
@@ -45,22 +48,27 @@ const ProductRowCells = memo(function ProductRowCells({
   product,
   duplicating,
   togglingPublic,
+  togglingFeatured,
   onEdit,
   onDelete,
   onDuplicate,
   onPreview,
   onTogglePublic,
+  onToggleFeatured,
 }: {
   product: ProductRecord;
   duplicating: boolean;
   togglingPublic: boolean;
+  togglingFeatured: boolean;
   onEdit: (p: ProductRecord) => void;
   onDelete: (p: ProductRecord) => void;
   onDuplicate: (p: ProductRecord) => void;
   onPreview: (p: ProductRecord) => void;
   onTogglePublic: (p: ProductRecord) => void;
+  onToggleFeatured: (p: ProductRecord) => void;
 }) {
   const isPublic = isProductPublic(product);
+  const isFeatured = isProductFeatured(product);
   return (
     <>
       <td data-col="image">
@@ -89,6 +97,26 @@ const ProductRowCells = memo(function ProductRowCells({
       <td data-col="size">{product.rawSizeText || '—'}</td>
       <td className="num" data-col="price">{formatVND(product.unitPriceVnd)}</td>
       <td data-col="public">
+        {/* Hai nút cùng một ô vì cùng trả lời một câu hỏi: sản phẩm này lên
+            trang công khai thế nào. Tách thành hai cột chỉ làm bảng rộng thêm
+            mà không rõ nghĩa hơn. */}
+        <div className="product-web-controls">
+        <button
+          type="button"
+          className={`product-feature-toggle${isFeatured ? ' is-featured' : ''}`}
+          disabled={togglingFeatured || !isPublic}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleFeatured(product);
+          }}
+          aria-pressed={isFeatured}
+          aria-label={`${isFeatured ? 'Bỏ' : 'Đặt'} ${product.code} khỏi nhóm nổi bật`}
+          title={!isPublic
+            ? 'Sản phẩm đang ẩn khỏi web thì không thể nổi bật'
+            : isFeatured ? 'Đang nổi bật — bấm để bỏ' : 'Bấm để đưa vào nhóm nổi bật'}
+        >
+          <Star size={15} fill={isFeatured ? 'currentColor' : 'none'} />
+        </button>
         <button
           type="button"
           className={`product-public-toggle${isPublic ? ' is-public' : ''}`}
@@ -104,6 +132,7 @@ const ProductRowCells = memo(function ProductRowCells({
           {isPublic ? <Globe size={16} /> : <GlobeLock size={16} />}
           <span>{isPublic ? 'Hiện' : 'Ẩn'}</span>
         </button>
+        </div>
       </td>
       <td data-col="actions">
         <div className="product-table-actions">
@@ -159,6 +188,7 @@ export function ProductList({
   totalCount,
   duplicatingId,
   togglingPublicId,
+  togglingFeaturedId,
   reorderable,
   onReorder,
   onEdit,
@@ -166,6 +196,7 @@ export function ProductList({
   onDuplicate,
   onPreview,
   onTogglePublic,
+  onToggleFeatured,
 }: Props) {
   // Tắt phân trang thì cả danh mục nằm trong một trang: trải dần theo khung hình
   // để lần dựng đầu không chiếm hết luồng chính.
@@ -219,7 +250,7 @@ export function ProductList({
               <th scope="col" data-col="unit">Đơn vị</th>
               <th scope="col" data-col="size">Kích thước mẫu</th>
               <th scope="col" data-col="price">Đơn giá</th>
-              <th scope="col" data-col="public">Web</th>
+              <th scope="col" data-col="public">Trang web</th>
               <th scope="col" data-col="actions">Thao tác</th>
             </tr>
           </thead>
@@ -247,11 +278,13 @@ export function ProductList({
                   product={p}
                   duplicating={duplicatingId === p.id}
                   togglingPublic={togglingPublicId === p.id}
+                  togglingFeatured={togglingFeaturedId === p.id}
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onDuplicate={onDuplicate}
                   onPreview={onPreview}
                   onTogglePublic={onTogglePublic}
+                  onToggleFeatured={onToggleFeatured}
                 />
               </tr>
             ))}

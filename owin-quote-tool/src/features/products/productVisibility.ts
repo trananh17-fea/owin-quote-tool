@@ -24,3 +24,23 @@ export function isProductPublic(product: Pick<ProductRecord, 'isPublic'>): boole
 export function nextPublicState(product: Pick<ProductRecord, 'isPublic'>): boolean {
   return !isProductPublic(product);
 }
+
+/**
+ * Sản phẩm này có nằm trong nhóm nổi bật trên trang công khai không?
+ *
+ * Khác `isPublic` ở hai điểm, và cả hai đều cố ý:
+ *  - mặc định là KHÔNG. Nổi bật là chọn ra vài món, không phải trạng thái mà cả
+ *    danh mục rơi vào.
+ *  - cờ này chỉ nằm trong `data` jsonb, KHÔNG có cột quan hệ. `is_public` buộc
+ *    phải có cột vì RLS lọc theo nó; còn nổi bật chỉ là chuyện hiển thị, nên
+ *    giữ ở một nơi duy nhất thì không bao giờ lệch. Trang công khai lọc bằng
+ *    `data->>isFeatured`.
+ */
+export function isProductFeatured(product: Pick<ProductRecord, 'isFeatured'>): boolean {
+  return product.isFeatured === true;
+}
+
+/** Trạng thái sau khi bấm nút nổi bật. */
+export function nextFeaturedState(product: Pick<ProductRecord, 'isFeatured'>): boolean {
+  return !isProductFeatured(product);
+}

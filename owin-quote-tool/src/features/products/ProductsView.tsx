@@ -18,7 +18,7 @@ import { ProductForm, type ProductFormSaveOptions } from '@/features/products/Pr
 import { ProductList } from '@/features/products/ProductList';
 import { ProductPreviewCard } from '@/features/products/ProductPreviewCard';
 import { ProductToolbar } from '@/features/products/ProductToolbar';
-import { nextPublicState } from '@/features/products/productVisibility';
+import { nextFeaturedState, nextPublicState } from '@/features/products/productVisibility';
 import { BulkPriceDialog } from '@/features/products/BulkPriceDialog';
 import { BulkPublicDialog } from '@/features/products/BulkPublicDialog';
 import './products.css';
@@ -76,6 +76,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
   const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
   const [bulkPublicOpen, setBulkPublicOpen] = useState(false);
   const [togglingPublicId, setTogglingPublicId] = useState<string | null>(null);
+  const [togglingFeaturedId, setTogglingFeaturedId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState<PageSize>(25);
 
@@ -227,6 +228,29 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     [handleTogglePublic],
   );
 
+  /** Đưa sản phẩm vào / bỏ khỏi nhóm nổi bật trên trang công khai. */
+  const handleToggleFeatured = useCallback(async (product: ProductRecord) => {
+    const next = nextFeaturedState(product);
+    setTogglingFeaturedId(product.id);
+    setMessage('');
+    setOperationError('');
+    try {
+      await saveProduct({ ...product, isFeatured: next }, { baseRecord: product });
+      setMessage(next
+        ? `Đã đưa "${product.name}" vào nhóm nổi bật.`
+        : `Đã bỏ "${product.name}" khỏi nhóm nổi bật.`);
+    } catch {
+      setOperationError('Không đổi được nhóm nổi bật trên Supabase. Vui lòng thử lại.');
+    } finally {
+      setTogglingFeaturedId(null);
+    }
+  }, [saveProduct]);
+
+  const toggleFeatured = useCallback(
+    (product: ProductRecord) => { void handleToggleFeatured(product); },
+    [handleToggleFeatured],
+  );
+
   // Drag reorder vẫn cho phép chỉnh tay; thứ tự hiển thị mặc định theo nhóm/màu/giá.
   const canReorder = !searchQuery.trim() && !selectedCategory;
   const handleReorder = async (from: number, to: number) => {
@@ -334,6 +358,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
         totalCount={productRecords.length}
         duplicatingId={duplicatingId}
         togglingPublicId={togglingPublicId}
+        togglingFeaturedId={togglingFeaturedId}
         reorderable={canReorder}
         onReorder={(from, to) => void handleReorder(from, to)}
         onEdit={openEdit}
@@ -341,6 +366,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
         onDuplicate={duplicateProduct}
         onPreview={setPreviewProduct}
         onTogglePublic={togglePublic}
+        onToggleFeatured={toggleFeatured}
       />
 
       {bulkPriceOpen && (
