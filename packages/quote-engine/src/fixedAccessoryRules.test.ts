@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import type { FixedAccessoryPackageLike } from '@/lib/quoteEngine/types';
+import type { FixedAccessoryPackageLike } from './engineTypes';
 import {
   enrichFixedAccessoryPackageValue,
   suggestFixedAccessories,
-} from '@/lib/quoteEngine/fixedAccessoryRules';
+} from './fixedAccessoryRules';
 
 const names = (packageName: string) => suggestFixedAccessories(packageName).map((item) => item.name);
 const parse = (value: string | null): FixedAccessoryPackageLike =>

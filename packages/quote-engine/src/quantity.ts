@@ -1,5 +1,5 @@
-import { normalizeUnit } from '@/lib/quoteEngine/units';
-import type { DimensionQuantityInput } from '@/lib/quoteEngine/types';
+import { normalizeUnit } from './units';
+import type { DimensionQuantityInput } from './engineTypes';
 
 function asNumber(value: number | string | null | undefined): number {
   const parsed = Number(value || 0);

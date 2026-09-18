@@ -1,4 +1,4 @@
-import type { ProductUnit } from '@/types/models';
+import type { ProductUnit } from './models';
 
 export type QuoteEngineUnit = ProductUnit;
 export type UnitInput = QuoteEngineUnit | 'm²' | 'md' | 'Bộ' | string | null | undefined;

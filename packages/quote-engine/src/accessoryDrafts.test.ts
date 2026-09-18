@@ -11,7 +11,7 @@ import {
   serializeExtraAccessoriesJson,
   serializeFixedAccessoriesJson,
   syncFixedPackageQuantityToTotalSl,
-} from '@/lib/quote/accessoryDrafts';
+} from './accessoryDrafts';
 
 describe('fixed accessory draft normalization', () => {
   it('defaults fixed accessory item quantities to zero', () => {

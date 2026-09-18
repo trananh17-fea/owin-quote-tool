@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { titleCaseVi } from '@/lib/format/titleCase';
-import { normalizeCategoryName } from '@/lib/products/categoryOrder';
+import { titleCaseVi } from './titleCase';
+import { normalizeCategoryName } from './categoryOrder';
 
 describe('titleCaseVi', () => {
   it('capitalizes each Vietnamese word', () => {

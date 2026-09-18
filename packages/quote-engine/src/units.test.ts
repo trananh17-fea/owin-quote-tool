@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isAreaUnit, isMeterUnit, isSetUnit, normalizeUnit } from '@/lib/quoteEngine/units';
+import { isAreaUnit, isMeterUnit, isSetUnit, normalizeUnit } from './units';
 
 /**
  * BR-3 — chuẩn hoá đơn vị về 3 hệ ProductUnit: M2 | METER | BO.

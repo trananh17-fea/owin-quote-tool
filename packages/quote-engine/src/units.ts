@@ -1,4 +1,4 @@
-import type { QuoteEngineUnit, UnitInput } from '@/lib/quoteEngine/types';
+import type { QuoteEngineUnit, UnitInput } from './engineTypes';
 
 export function normalizeUnit(input: UnitInput): QuoteEngineUnit {
   if (!input) return 'M2';

@@ -1,5 +1,5 @@
-import { roundMoneyDownToHundredThousands } from '@/lib/quoteEngine/rounding';
-import type { QuoteTotals, QuoteTotalsInput } from '@/lib/quoteEngine/types';
+import { roundMoneyDownToHundredThousands } from './rounding';
+import type { QuoteTotals, QuoteTotalsInput } from './engineTypes';
 
 export function calculateProductSubtotal(lines: Array<{ lineTotalVnd: number }>): number {
   return lines.reduce((sum, line) => sum + line.lineTotalVnd, 0);

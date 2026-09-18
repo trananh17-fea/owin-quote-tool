@@ -4,7 +4,7 @@ import {
   calculateProductSubtotal,
   calculateQuoteTotals,
   calculateRoundedTotal,
-} from '@/lib/quoteEngine/totals';
+} from './totals';
 
 describe('calculateProductSubtotal — cộng dồn tiền dòng', () => {
   it('cộng lineTotalVnd của mọi dòng', () => {

@@ -6,7 +6,7 @@ import {
   calculateMeterQuantity,
   roundMoneyToVnd,
   roundQuantity3,
-} from '@/lib/quoteEngine/quantity';
+} from './quantity';
 
 /* ────────────── BR-3 — Khối lượng theo 3 hệ ĐVT ────────────── */
 describe('BR-3 — khối lượng theo hệ ĐVT', () => {

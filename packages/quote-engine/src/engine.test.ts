@@ -5,7 +5,7 @@ import {
   calculateProductSubtotal,
   calculateQuoteTotals,
   roundMoneyToVnd,
-} from '@/lib/quoteEngine';
+} from './engine';
 
 /**
  * Chạy trọn chuỗi BR-3 → BR-1 → BR-1b như QuoteView/wordExport ghép lại,

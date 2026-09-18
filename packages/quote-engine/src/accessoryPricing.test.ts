@@ -5,7 +5,7 @@ import {
   calculateExtraAccessoryLineTotal,
   calculateLegacyAccessoryLineTotal,
   isWeightBasedAccessoryUnit,
-} from '@/lib/quoteEngine/accessoryPricing';
+} from './accessoryPricing';
 
 describe('isWeightBasedAccessoryUnit — m²/md tính theo KL, Bộ tính theo SL', () => {
   it('m² và md là hệ tính theo khối lượng', () => {
