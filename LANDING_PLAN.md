@@ -177,7 +177,13 @@ Phase 1–3 nằm trong **repo hiện tại**. Phase 4 trở đi nằm trong **`
 >
 > **Xong (2026-09-17):** nút bật/tắt lẻ trên từng dòng + hàng loạt cho cả danh mục. `tsc` · `lint` · 321 test · `build` xanh. Kiểm giao diện ở 375px và desktop.
 >
-> **Chưa làm, cố ý:** mục sửa nội dung landing (hero/liên hệ) và phân quyền chủ/quản lý cho nó. Nó cần policy anon của Phase 2 và cần nội dung thật từ chủ cửa hàng — làm bây giờ là dựng một trình soạn cho một trang chưa tồn tại.
+> **Nội dung — xong (2026-09-18).** Mục "Nội dung trang web" trong menu tài khoản, chỉ chủ/quản lý thấy. Sửa phần mở đầu (dòng nhỏ, tiêu đề, mô tả, chữ hai nút, ảnh) và liên hệ (số gọi, số hiển thị, Zalo, Messenger, địa chỉ, giờ). Lưu vào `app_documents` khoá `owin_landing_content_v1` bằng CAS — đụng độ thì tải lại bản mới và báo, không ghi đè công sức người khác.
+>
+> **Ô trống = dùng mặc định của trang**, không phải xoá trắng. Điền dở dang vẫn ra một trang hoàn chỉnh.
+>
+> **Chặn XSS ở cả hai phía.** Zalo/Messenger đi thẳng vào `href` trên trang công khai, nên `javascript:` ở đó là XSS lưu trữ chạy trên máy khách. Chỉ nhận http/https; admin cảnh báo ngay lúc gõ, và **trang công khai lọc lại lần nữa** vì tài liệu có thể bị sửa bằng đường khác ngoài giao diện này.
+>
+> **Chưa làm:** chọn sản phẩm nổi bật + thứ tự (thứ tự hiện đã theo kéo-thả ở tab Sản phẩm), và sửa logo thương hiệu (trang đang hiện tên bằng chữ).
 | **4** | owin-landing | Scaffold + `file:` dependency sang engine + bộ token sáng/tối | `build` xanh; bundle **không** chứa `exceljs`/`jspdf`/`pizzip` và component của admin |
 
 > **Xong (2026-09-17).** `D:\work_place\owin-landing` — Vite + React 19 + TS, git repo riêng. Bundle 222 kB, đã kiểm **không** chứa `exceljs`/`jspdf`/`pizzip`/`lucide`/`supabase`/`html2canvas`. Bộ token sáng/tối mới (nền tối không dùng đen tuyệt đối). Không tràn ngang ở 375px. Engine giá chạy thật trong trình duyệt.
