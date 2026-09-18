@@ -229,6 +229,12 @@ Quyết định này được khoá bằng code chứ không chỉ nằm trong t
 > Phần lý do chỉ nói điều code làm được. Mọi tuyên bố về doanh nghiệp (số năm, bảo hành, số công trình) để chủ cửa hàng tự viết.
 | **8** | owin-landing | SEO + hoàn thiện | `lint` · `test` · `build` xanh; chia sẻ link ra Zalo/Facebook có ảnh + mô tả (host tĩnh không chạy JS cho bot → nhúng thẻ lúc build) |
 
+> **Xong (2026-09-18).** Plugin Vite nhúng thẻ chia sẻ thẳng vào `index.html` lúc build, lấy từ chính `content.ts`. Favicon (logo thật của cửa hàng) + `robots.txt`. `lint` · **27 test** · `build` xanh.
+>
+> **Hai thứ cố ý TẮT cho tới khi có dữ liệu thật:** canonical/`og:url` chỉ bật khi `seo.siteUrl` có tên miền; JSON-LD `LocalBusiness` chỉ bật khi số liên hệ đã thật. Khai số giả trong dữ liệu có cấu trúc còn tệ hơn không khai. Đây là các nhánh chỉ chạy đúng ngày lên sóng nên đã tách sang `src/seo.ts` và phủ test, gồm cả việc thoát `</script>` lọt vào JSON-LD.
+>
+> **Hiệu năng:** thay `supabase-js` bằng `postgrest-js`. Trang chỉ chạy `select` nhưng client đầy đủ đang đóng gói cả realtime (kèm phoenix) lẫn auth cho mọi khách. Bundle **465 → 267 kB** (gzip **133 → 83 kB**), đã kiểm `RealtimeClient`/`GoTrue`/`phoenix` biến mất khỏi bundle và dữ liệu vẫn đọc đúng như cũ.
+
 **Phase 1 là phase rủi ro nhất** — nó sửa vào đường tính tiền của 4 tab đang chạy thật. Chỉ dời file và đổi import, không sửa một dòng công thức nào; bộ test hiện có là lưới an toàn duy nhất.
 
 ### Bảng đối chiếu giá (Phase 4) — mỗi ô phải **bằng tuyệt đối** với tab Báo giá
