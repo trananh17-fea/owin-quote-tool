@@ -183,7 +183,15 @@ Phase 1–3 nằm trong **repo hiện tại**. Phase 4 trở đi nằm trong **`
 >
 > **Chặn XSS ở cả hai phía.** Zalo/Messenger đi thẳng vào `href` trên trang công khai, nên `javascript:` ở đó là XSS lưu trữ chạy trên máy khách. Chỉ nhận http/https; admin cảnh báo ngay lúc gõ, và **trang công khai lọc lại lần nữa** vì tài liệu có thể bị sửa bằng đường khác ngoài giao diện này.
 >
-> **Chưa làm:** chọn sản phẩm nổi bật + thứ tự (thứ tự hiện đã theo kéo-thả ở tab Sản phẩm), và sửa logo thương hiệu (trang đang hiện tên bằng chữ).
+> **Nổi bật — xong (2026-09-18).** Nút sao trong bảng sản phẩm, cạnh nút Hiện/Ẩn vì cả hai cùng trả lời một câu hỏi: sản phẩm này lên trang công khai thế nào. Trang công khai có phần "Sản phẩm nổi bật" trên đầu; chưa ai được chọn thì **ẩn hẳn**, không tự lấy bừa vài sản phẩm đầu danh sách rồi gọi là nổi bật.
+>
+> Cờ này **chỉ nằm trong `data`, không có cột quan hệ** — khác `is_public` (buộc phải có cột vì RLS lọc theo nó, và chính vì thế mới phải giữ đồng bộ hai nơi). Nổi bật chỉ là chuyện hiển thị nên để một nơi thì không bao giờ lệch. Trang lọc bằng `data->>isFeatured`, đã kiểm chạy được với anon.
+>
+> Nút sao **khoá khi sản phẩm đang ẩn** khỏi web — nổi bật thứ không ai thấy thì vô nghĩa.
+>
+> **Thứ tự** thì đã có sẵn từ trước: trang công khai xếp theo `sort_order`, tức đúng thứ tự kéo-thả trong tab Sản phẩm.
+>
+> **Chưa làm:** sửa logo thương hiệu (trang đang hiện tên bằng chữ).
 | **4** | owin-landing | Scaffold + `file:` dependency sang engine + bộ token sáng/tối | `build` xanh; bundle **không** chứa `exceljs`/`jspdf`/`pizzip` và component của admin |
 
 > **Xong (2026-09-17).** `D:\work_place\owin-landing` — Vite + React 19 + TS, git repo riêng. Bundle 222 kB, đã kiểm **không** chứa `exceljs`/`jspdf`/`pizzip`/`lucide`/`supabase`/`html2canvas`. Bộ token sáng/tối mới (nền tối không dùng đen tuyệt đối). Không tràn ngang ở 375px. Engine giá chạy thật trong trình duyệt.
