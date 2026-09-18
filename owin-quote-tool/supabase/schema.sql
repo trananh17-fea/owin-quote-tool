@@ -242,7 +242,10 @@ create index if not exists app_documents_store_id_idx on public.app_documents (s
 
 -- ---------- Cấp quyền cho Data API (vì "auto expose new tables" đang tắt) ----------
 grant usage on schema public to anon, authenticated;
-grant select on public.products to anon;
+-- anon chỉ cần ĐỌC, và chỉ ở hai bảng này. RLS bên dưới mới là thứ giới hạn
+-- dòng nào đọc được; grant chỉ mở cánh cửa vào bảng.
+grant select on public.products      to anon;
+grant select on public.app_documents to anon;
 grant all privileges on public.profiles      to authenticated;
 grant all privileges on public.stores        to authenticated;
 grant all privileges on public.store_members to authenticated;
@@ -337,9 +340,17 @@ create policy products_member_all on public.products
   using (store_id in (select public.current_store_ids()))
   with check (store_id in (select public.current_store_ids()));
 
-drop policy if exists products_anon_read on public.products;
-create policy products_anon_read on public.products
-  for select to anon
+-- Trang công khai đọc sản phẩm công khai của cửa hàng công khai — BẤT KỂ trạng
+-- thái đăng nhập. Áp cho cả hai role là cố ý: nếu chỉ áp cho `anon` thì người
+-- đang đăng nhập mở trang công khai sẽ thấy trống, vì role `authenticated` chỉ
+-- còn `products_member_all` (đòi phải là thành viên cửa hàng đó).
+--
+-- Quyền công khai và quyền thành viên là hai đường riêng được OR với nhau.
+-- Đường này mở đúng phạm vi dưới đây, cho mọi người như nhau.
+drop policy if exists products_anon_read   on public.products;
+drop policy if exists products_public_read on public.products;
+create policy products_public_read on public.products
+  for select to anon, authenticated
   using (
     deleted_at is null
     and is_public = true
@@ -363,6 +374,19 @@ create policy app_documents_member_all on public.app_documents
   for all to authenticated
   using (store_id in (select public.current_store_ids()))
   with check (store_id in (select public.current_store_ids()));
+
+-- Nội dung website cho trang công khai. app_documents là bảng dùng chung cho
+-- nhiều loại cấu hình theo cửa hàng — trong đó có state tab Tính nhôm — nên
+-- policy này khoá đúng MỘT khoá document. Thêm loại nội dung công khai mới thì
+-- thêm khoá vào điều kiện, đừng nới nó thành `true`.
+drop policy if exists app_documents_public_read on public.app_documents;
+create policy app_documents_public_read on public.app_documents
+  for select to anon, authenticated
+  using (
+    deleted_at is null
+    and id = 'owin_landing_content_v1'
+    and store_id in (select public.public_store_ids())
+  );
 
 -- ---------- Tạo hồ sơ tự động khi có tài khoản mới ----------
 -- Chạy cho cả đăng ký email lẫn đăng nhập Google/Facebook lần đầu.
