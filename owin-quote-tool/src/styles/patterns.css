@@ -384,11 +384,49 @@
   font-size: var(--fs-sm);
   font-weight: 500;
 }
+/* Toast nổi lên trên nội dung, KHÔNG chiếm chỗ trong luồng.
+ *
+ * Trước đây nó là một khối bình thường nên mỗi lần hiện lại đẩy cả danh sách
+ * xuống vài chục pixel rồi kéo ngược lên khi tắt — bấm bật/tắt liên tục thì cả
+ * bảng nhảy theo, và hàng đang định bấm tiếp trượt khỏi con trỏ.
+ *
+ * `fixed` chứ không phải `absolute`: không cần tổ tiên nào phải được định vị,
+ * và toast ở yên khi người dùng cuộn trang. `data-error` thì giữ nguyên trong
+ * luồng — lỗi phải nằm lại cho người ta đọc và xử lý, không tự trôi đi. */
 .toast {
-  width: min(420px, 100%);
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  z-index: 60;
+  width: max-content;
+  max-width: min(420px, calc(100vw - 32px));
+  margin-bottom: 0;
   border: 1px solid rgba(52, 199, 89, 0.24);
-  background: var(--ios-green-soft);
+  /* Nền phải ĐỤC. `--ios-green-soft` là màu trong suốt — hồi toast còn nằm
+     trong luồng thì không sao, nhưng khi nó nổi lên trên nội dung thì chữ và
+     nút phía dưới xuyên qua, đọc không ra. Lớp nền thẻ đặc ở dưới, lớp xanh
+     nhạt phủ lên trên: vẫn đúng màu cũ mà không nhìn xuyên được. */
+  background-color: var(--ios-card);
+  background-image: linear-gradient(var(--ios-green-soft), var(--ios-green-soft));
   color: var(--ios-green);
+  box-shadow: var(--shadow-md, 0 6px 20px rgba(0, 0, 0, 0.12));
+  transform: translateX(-50%);
+  animation: toast-in 160ms ease-out;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, -6px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Máy nào tắt hiệu ứng chuyển động thì hiện thẳng, đừng trượt. */
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}
+
+/* Toast là phản hồi thao tác trên màn hình, không thuộc về bản in. */
+@media print {
+  .toast { display: none; }
 }
 .data-error {
   justify-content: space-between;

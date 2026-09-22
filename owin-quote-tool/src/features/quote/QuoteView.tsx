@@ -11,6 +11,7 @@ import type {
 } from '@/types/models';
 import { useProducts } from '@/features/products';
 import { normalizeCategoryName } from '@/lib/products/categoryOrder';
+import { useTransientMessage } from '@/lib/browser/useTransientMessage';
 import { reorderList, useDragReorder } from '@/components/DragReorder';
 import { calculateQuote } from '@/lib/quote/quoteCalculator';
 import { generateQuoteCode } from '@/features/quote/quoteCode';
@@ -129,7 +130,7 @@ export function QuoteView() {
   // Tab lọc ngang hạng mục theo loại cửa ('all' = tất cả).
   const [itemCategoryFilter, setItemCategoryFilter] = useState('all');
   const [productPickerOpen, setProductPickerOpen] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useTransientMessage();
   const [saving, setSaving] = useState(false);
   const [saveUiState, setSaveUiState] = useState<SaveUiState>('idle');
   const [saveError, setSaveError] = useState('');

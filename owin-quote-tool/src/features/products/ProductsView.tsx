@@ -5,6 +5,7 @@ import { sortCategoryNames } from '@/lib/products/categoryOrder';
 import { sortProductsForCatalog } from '@/lib/products/productSort';
 import { paginateItems, type PageSize } from '@/lib/list/paginateItems';
 import { usePaginationEnabled } from '@/features/settings/paginationSettings';
+import { useTransientMessage } from '@/lib/browser/useTransientMessage';
 import { rememberProductSuggestions } from '@/features/suggestions/suggestionStore';
 import { useSuggestions } from '@/features/suggestions/useSuggestions';
 import { useProducts } from '@/features/products/useProducts';
@@ -71,7 +72,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
   const [selectedCategory, setSelectedCategory] = useState('');
   const [previewProduct, setPreviewProduct] = useState<ProductRecord | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useTransientMessage();
   const [operationError, setOperationError] = useState('');
   const [bulkPriceOpen, setBulkPriceOpen] = useState(false);
   const [bulkPublicOpen, setBulkPublicOpen] = useState(false);
@@ -136,7 +137,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     setMessage('');
     setOperationError('');
     setShowForm(true);
-  }, []);
+  }, [setMessage]);
   const closeForm = useCallback(() => {
     setShowForm(false);
     setEditing(null);
@@ -151,7 +152,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     } catch {
       setOperationError('Không thể xoá sản phẩm trên Supabase. Vui lòng thử lại.');
     }
-  }, [deleteProduct]);
+  }, [deleteProduct, setMessage]);
 
   const handleDuplicate = useCallback(async (product: ProductRecord) => {
     setDuplicatingId(product.id);
@@ -193,7 +194,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     } finally {
       setDuplicatingId(null);
     }
-  }, [refreshSuggestions, saveProduct]);
+  }, [refreshSuggestions, saveProduct, setMessage]);
 
   const duplicateProduct = useCallback(
     (product: ProductRecord) => { void handleDuplicate(product); },
@@ -221,7 +222,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     } finally {
       setTogglingPublicId(null);
     }
-  }, [saveProduct]);
+  }, [saveProduct, setMessage]);
 
   const togglePublic = useCallback(
     (product: ProductRecord) => { void handleTogglePublic(product); },
@@ -244,7 +245,7 @@ export function ProductsView({ onOpenCatalogue }: { onOpenCatalogue?: () => void
     } finally {
       setTogglingFeaturedId(null);
     }
-  }, [saveProduct]);
+  }, [saveProduct, setMessage]);
 
   const toggleFeatured = useCallback(
     (product: ProductRecord) => { void handleToggleFeatured(product); },
